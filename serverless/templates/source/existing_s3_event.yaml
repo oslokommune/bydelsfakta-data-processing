@@ -1,0 +1,12 @@
+handler: {{ handler }}
+timeout: {{ timeout }}
+events:
+  {%- for ds in dataset %}
+  - existingS3:
+      bucket: ok-origo-dataplatform-${self:provider.stage}
+      events:
+        - s3:ObjectCreated:*
+      rules:
+        - prefix: raw/green/{{ ds }}/
+        - suffix: .csv
+  {%- endfor %}

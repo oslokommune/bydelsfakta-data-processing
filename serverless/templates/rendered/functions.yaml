@@ -1,0 +1,1 @@
+aldersbefolkning_bydel: ${file(serverless/templates/rendered/aldersbefolkning_bydel.yaml)}

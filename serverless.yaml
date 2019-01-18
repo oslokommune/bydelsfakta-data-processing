@@ -22,8 +22,7 @@ package:
   include:
     - '*.py'
 
-functions:
-  aldersbefolkning_bydel: ${file(serverless/functions/aldersbefolkning_bydel.yaml)}
+functions: ${file(serverless/templates/rendered/functions.yaml)}
 
 custom:
   pythonRequirements:
