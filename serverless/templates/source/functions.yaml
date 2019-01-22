@@ -1,1 +1,1 @@
-{{ name }}: ${file(serverless/templates/rendered/{{ name }}.yaml)
+{{ name }}: ${file(serverless/templates/rendered/{{ name }}.yaml)}
