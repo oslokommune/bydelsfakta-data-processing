@@ -1,5 +1,5 @@
-.PHONY: render deploy
-deploy:
+.PHONY: deploy
+deploy: render
 	sls deploy && sls s3deploy
 
 .PHONY: render_function

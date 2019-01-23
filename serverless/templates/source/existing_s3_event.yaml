@@ -1,4 +1,4 @@
-handler: {{ handler }}
+handler: {{ name }}.{{ handler }}
 timeout: {{ timeout }}
 events:
   {%- for ds in dataset %}
@@ -10,3 +10,4 @@ events:
         - prefix: raw/green/{{ ds }}/
         - suffix: .csv
   {%- endfor %}
+layers: ${self:custom.layers}
