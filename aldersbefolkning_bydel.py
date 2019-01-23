@@ -3,10 +3,57 @@
 
 import numpy as np
 import pandas as pd
-import json
+import json, boto3, re
 
 # Add missing ages
 tempdf = pd.DataFrame(data=np.zeros(120))
+
+
+def handler(event, context):
+    for record in event['Records']:
+        bucket = record['s3']['bucket']['name']
+        key = record['s3']['object']['key']
+
+        p = re.compile(r'^(\w+)/(\w+)/(\w+)/(\w+)/(\d+)/([^/]+)[.](csv?)$', flags=re.IGNORECASE)
+        m = p.match(key)
+        if not m:
+            raise ValueError('S3 key does not satisfy pattern')
+
+        (condition, confidentiality, dataset, version, edition, prefix, suffix) = m.groups()
+
+        out_key = 'processed/{confidentiality}/{dataset}/{version}/{edition}/{distribution}'.format(
+            confidentiality=confidentiality,
+            dataset="aldersbefolkning_bydel",
+            version=version,
+            edition=edition,
+            distribution=prefix + '.' + "json")
+
+        source = pd.read_csv('s3://{bucket}/{key}'.format(bucket=bucket, key=key),
+                             sep=";",
+                             encoding='utf8')
+
+        df = init_dataframe(source)
+
+        jsonlist = [create_specific_bydel(district, transform(df)) for district in districts]
+        s3 = boto3.resource('s3', region_name='eu-west-1')
+        s3.Object(bucket, out_key).put(Body=json.dumps(jsonlist), ContentType='application/json')
+
+
+def transform(df):
+    df = df.append(bydel_avg(df))
+    df = df.append(bydel_max(df))
+
+    df['Mann'] = df['Mann'].fillna(0)
+    df['Kvinne'] = df['Kvinne'].fillna(0)
+    df['value'] = df['Mann'] + df['Kvinne']
+
+    return (df.groupby(['aargang', 'bydel2', 'geography', 'totalRow', 'avgRow'], as_index=True)
+            .apply(lambda x: toDict(x))
+            .apply(lambda x: processDict(x))
+            .reset_index()
+            .rename(columns={0: 'values'})
+            .to_dict(orient='records'))
+
 
 def bydel_avg(dataframe):
     averages_df = dataframe.groupby(['aargang', 'bydel2', 'alderu']
@@ -36,10 +83,7 @@ def bydel_max(dataframe):
     return max_df
 
 
-def init_dataframe():
-    df = pd.read_csv('./bydelsfakta_csv/befolkningen_etter_bydel_og_aldersgrupper.csv',
-                     sep=";",  encoding='utf8')
-
+def init_dataframe(df):
     df = df.drop(columns="Obs")
     df = df[df['aargang'] == df['aargang'].max()]
     df = df.rename(columns={'delbydel001ny': 'geography'})
@@ -76,7 +120,7 @@ def processDict(row):
                 count += 1
             else:
                 if newRow[idx]['alderu'] == idx:
-                    newRow.append({'Mann': 0.0, 'Kvinne': 0.0, 'alderu': count, 'value': 0, 'ratio': 0}) 
+                    newRow.append({'Mann': 0.0, 'Kvinne': 0.0, 'alderu': count, 'value': 0, 'ratio': 0})
                     count += 1
         except:
             newRow.append({'Mann': 0.0, 'Kvinne': 0.0,
@@ -86,11 +130,11 @@ def processDict(row):
     return newRow
 
 
-def create_specific_bydel(bydel):
+def create_specific_bydel(bydel, df):
     final = {
         'meta': {
             'scope': 'bydel',
-            'heading': 'Størrelsen av alderssegmenter i Bydel Grünerløkka (01.01.2018)',
+            'heading': 'Størrelsen av alderssegmenter i Bydel ' + bydel + ' (01.01.2018)',
             'help': 'Dette er en beskrivelse for hvordan dataene leses',
             'publishedDate': '2019-06-01',
             'dataSource': {
@@ -116,9 +160,8 @@ def create_specific_bydel(bydel):
             final['data'].append(df[idx])
         if df[idx]['bydel2'] == 'Oslo':
             final['data'].append(df[idx])
+    return final
 
-    with open(bydel + '.json', 'w') as outfile:
-        json.dump(final, outfile, ensure_ascii=False)
 
 def merge_df(x):
     new_df = x.join(tempdf, how="right", on="alderu")
@@ -128,23 +171,20 @@ def merge_df(x):
     return new_df
 
 
-init = init_dataframe()
-df = init
-df = df.append(bydel_avg(init))
-df = df.append(bydel_max(init))
-
-
-df['Mann'] = df['Mann'].fillna(0)
-df['Kvinne'] = df['Kvinne'].fillna(0)
-df['value'] = df['Mann'] + df['Kvinne']
-
-
-df = (df.groupby(['aargang', 'bydel2', 'geography', 'totalRow', 'avgRow'], as_index=True)
-        .apply(lambda x: toDict(x))
-      .apply(lambda x: processDict(x))
-      .reset_index()
-      .rename(columns={0: 'values'})
-      .to_dict(orient='records'))
-
-
-create_specific_bydel('Søndre Nordstrand')
+districts = [
+    "Alna",
+    "Bjerke",
+    "Frogner",
+    "Gamle Oslo",
+    "Grorud",
+    "Grünerløkka",
+    "Nordre Aker",
+    "Nordstrand",
+    "Sagene",
+    "St. Hanshaugen",
+    "Stovner",
+    "Søndre Nordstrand",
+    "Ullern",
+    "Vestre Aker",
+    "Østensjø"
+]

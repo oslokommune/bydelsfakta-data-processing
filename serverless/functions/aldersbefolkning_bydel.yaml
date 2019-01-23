@@ -1,0 +1,5 @@
+name: aldersbefolkning_bydel
+handler: handler
+timeout: 60
+dataset:
+  - befolkningen_etter_bydel_og_aldersgrupper

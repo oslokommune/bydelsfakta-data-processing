@@ -1,0 +1,29 @@
+service: bydelsfakta-data-processing
+
+provider:
+  name: aws
+  runtime: python3.7
+  region: ${opt:region, 'eu-west-1'}
+  stage: ${opt:stage, 'dev'}
+  deploymentBucket:
+    name: ok-origo-dataplatform-config-${self:provider.stage}
+    serverSideEncryption: AES256
+  deploymentPrefix: deploy
+  iamRoleStatements:
+    - ${file(serverless/PutBucketNotification.yaml)}
+
+plugins:
+  - serverless-python-requirements
+  - serverless-plugin-existing-s3
+
+package:
+  exclude:
+    - "./**"
+  include:
+    - '*.py'
+
+functions: ${file(serverless/templates/rendered/functions.yaml)}
+
+custom:
+  pythonRequirements:
+    dockerizePip: non-linux

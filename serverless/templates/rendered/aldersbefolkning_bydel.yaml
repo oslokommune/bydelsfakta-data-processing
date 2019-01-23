@@ -1,0 +1,10 @@
+handler: handler
+timeout: 60
+events:
+  - existingS3:
+      bucket: ok-origo-dataplatform-${self:provider.stage}
+      events:
+        - s3:ObjectCreated:*
+      rules:
+        - prefix: raw/green/befolkningen_etter_bydel_og_aldersgrupper/
+        - suffix: .csv
