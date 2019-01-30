@@ -8,11 +8,11 @@ pd.set_option('display.max_colwidth', -1)
 pd.set_option('display.max_columns', 30)
 
 
-def generate_metadata(bydel, data):
+def generate_metadata(district, data):
     return {
         "meta": {
             "scope": "bydel",
-            "heading": "Gjennomsnittpris (kr) pr kvm for blokkleilighet i {bydel}".format(bydel=bydel),
+            "heading": "Gjennomsnittpris (kr) pr kvm for blokkleilighet i {district}".format(district=district),
             "help": "Dette er en beskrivelse for hvordan dataene leses",
             "series": [
                 {"heading": "gj.snittpris", "subheading": " pr kvm for blokkleilighet"}
@@ -50,16 +50,16 @@ def read_csv():
     process_source(df_source[df_source.År == 2017], 'status')
 
 
-def fix_area_prefix(line):
+def fix_district_prefix(line):
     if line.startswith("Bydel "):
-        return fix_area_prefix(line[6:])
+        return fix_district_prefix(line[6:])
     elif line.startswith("St "):
         return re.sub('^%s' % "St ", "St.", line)
     else:
         return line
 
 
-def district_as_dict(key, values):
+def subdistrict_as_dict(key, values):
     return {'geography': key, 'values': values}
 
 def area_as_dict(key, values, scope):
@@ -71,43 +71,44 @@ def area_as_dict(key, values, scope):
 
 def process_source(df_source, suffix):
 
-    source_area = area_source(df_source)
-    districts = pd.unique(source_area.geography)
-    delbydel_list = [create_dataset_for_area(dis, df_source) for dis in districts]
-    for dis, delbydel in delbydel_list:
-        bydel = generate_metadata(dis, delbydel)
+    source_district = district_source(df_source)
+    districts_list = pd.unique(source_district.geography)
+
+    subdistrict_list = [create_dataset_for_district(dis, df_source) for dis in districts_list]
+    for dis, subdistrict in subdistrict_list:
+        district = generate_metadata(dis, subdistrict)
         with open("out/{dis}-{suffix}.json".format(dis=dis, suffix=suffix), 'w+') as file:
-            file.write(json.dumps(bydel, ensure_ascii=False))
+            file.write(json.dumps(district, ensure_ascii=False))
 
 
-def create_dataset_for_area(dis, df_source):
-    source_district = df_source.dropna()
+def create_dataset_for_district(dis, df_source):
+    source_subdistrict = df_source.dropna()
     source_oslo = oslo_source(df_source)
-    source_area = area_source(df_source)
+    source_district = district_source(df_source)
 
-    delbydel = source_district[source_district['bydelsnavn'] == dis]
-    delbydel = delbydel.groupby(['geography'])['År', 'value'].apply(
+    subdistrict = source_subdistrict[source_subdistrict['bydelsnavn'] == dis]
+    subdistrict = subdistrict.groupby(['geography'])['År', 'value'].apply(
         lambda x: x.astype(object).to_dict(orient='records'))
-    delbydel = [district_as_dict(key, values) for key, values in delbydel.items()]
+    subdistrict = [subdistrict_as_dict(key, values) for key, values in subdistrict.items()]
     "======="
-    area = source_area[source_area['geography'] == dis]
-    area = area[['År', 'value']]
-    area = area_as_dict(dis, area.astype(object).to_dict(orient='records'), 'bydel')
+    district = source_district[source_district['geography'] == dis]
+    district = district[['År', 'value']]
+    district = area_as_dict(dis, district.astype(object).to_dict(orient='records'), 'bydel')
     "======="
     oslo = source_oslo[['År', 'value']]
     oslo = area_as_dict('Oslo i alt ', oslo.astype(object).to_dict(orient='records'), 'oslo')
-    delbydel.append(area)
-    delbydel.append(oslo)
-    return dis, delbydel
+    subdistrict.append(district)
+    subdistrict.append(oslo)
+    return dis, subdistrict
 
 
-def area_source(df_source: pd.DataFrame):
+def district_source(df_source: pd.DataFrame):
     df_source = df_source[pd.isnull(df_source['geography'])]
     drop_numbers = df_source.drop(columns=['geography']).rename(columns={'bydelsnavn': 'geography'})
 
-    area = drop_numbers[drop_numbers['geography'] != "Oslo i alt"]
-    area['geography'] = area['geography'].apply(lambda x: fix_area_prefix(x))
-    return area
+    district = drop_numbers[drop_numbers['geography'] != "Oslo i alt"]
+    district['geography'] = district['geography'].apply(lambda x: fix_district_prefix(x))
+    return district
 
 
 def oslo_source(df_source: pd.DataFrame):
