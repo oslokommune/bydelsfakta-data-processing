@@ -23,9 +23,12 @@ class TestRead_csv(TestCase):
 
         produced = s3.Bucket(s3_bucket).objects.filter(Prefix='processed/')
 
-        self.assertEqual(sum(1 for _ in produced), 17*2)
         for object in produced:
+            print(object.key)
             s3.Bucket(s3_bucket).download_file(object.key, "out/" + object.key.split('/')[-1])
+
+        self.assertEqual(sum(1 for _ in produced), 18*2)
+
 
 
 def contains_all_json(json_list):
