@@ -1,22 +1,35 @@
+import unittest
 from unittest import TestCase
-import boligpriser as bp
-import os, json, unittest
+import os, json
 import logging
-#logging.basicConfig(level=logging.DEBUG)
+import boto3
+from moto import mock_s3
+import boligpriser as bp
+import random
+
+
+# logging.basicConfig(level=logging.DEBUG)
 
 class TestRead_csv(TestCase):
-    def test_read_csv(self):
-        bp.read_csv()
-        for file in os.listdir("out/"):
-            logging.debug("File: {file}".format(file=file))
-            with open("out/{file}".format(file=file), 'r') as jsonfile:
-                json_list: list = json.loads(jsonfile.read())
-                if not file.startswith('Marka'):
-                    self.assertTrue(contains_all_json(json_list))
+
+    @mock_s3
+    def test_handler(self):
+        s3 = boto3.resource('s3', region_name='eu-central-1')
+        s3.create_bucket(Bucket=s3_bucket)
+        with open('test_data/Boligpriser.csv', 'r') as file:
+            bp.pl.write_json_to_s3(s3_bucket, s3_object_key, file.read())
+
+        bp.handler(s3_event, {})
+
+        produced = s3.Bucket(s3_bucket).objects.filter(Prefix='processed/')
+
+        self.assertEqual(sum(1 for _ in produced), 17*2)
+        for object in produced:
+            s3.Bucket(s3_bucket).download_file(object.key, "out/" + object.key.split('/')[-1])
 
 
 def contains_all_json(json_list):
-    districts = True # TODO: Check that all districts are present
+    districts = True  # TODO: Check that all districts are present
     area = False
     oslo = False
 
@@ -32,3 +45,39 @@ def contains_all_json(json_list):
     logging.debug("area: {file}".format(file=area))
     logging.debug("oslo: {file}".format(file=oslo))
     return False
+
+s3_object_key = 'raw/green/boligpriser/1/2017/Boligpriser.csv'
+s3_bucket = 'test-bucket'
+s3_event = {
+    "Records": [
+        {
+            "eventVersion": "2.0",
+            "eventSource": "aws:s3",
+            "awsRegion": "us-west-2",
+            "requestParameters": {
+                "sourceIPAddress": "ip-address-where-request-came-from"
+            },
+            "responseElements": {
+                "x-amz-request-id": "Amazon S3 generated request ID",
+                "x-amz-id-2": "Amazon S3 host that processed the request"
+            },
+            "s3": {
+                "s3SchemaVersion": "1.0",
+                "configurationId": "ID found in the bucket notification configuration",
+                "bucket": {
+                    "name": s3_bucket,
+                    "ownerIdentity": {
+                        "principalId": "Amazon-customer-ID-of-the-bucket-owner"
+                    },
+                    "arn": "bucket-ARN"
+                },
+                "object": {
+                    "key": s3_object_key,
+                    "eTag": "object eTag",
+                    "versionId": "object version if bucket is versioning-enabled, otherwise null",
+                    "sequencer": "a string representation of a hexadecimal value used to determine event sequence"
+                }
+            }
+        }
+    ]
+}

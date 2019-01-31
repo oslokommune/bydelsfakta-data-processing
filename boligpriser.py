@@ -3,51 +3,54 @@ import json
 import pandas as pd
 import numpy as np
 import re
+import pandas_layer as pl
+import bydelsfakta_layer as bl
+import logging
 
 pd.set_option('display.max_colwidth', -1)
 pd.set_option('display.max_columns', 30)
 
-
-def generate_metadata(district, data):
-    return {
-        "meta": {
-            "scope": "bydel",
-            "heading": "Gjennomsnittpris (kr) pr kvm for blokkleilighet i {district}".format(district=district),
-            "help": "Dette er en beskrivelse for hvordan dataene leses",
-            "series": [
-                {"heading": "gj.snittpris", "subheading": " pr kvm for blokkleilighet"}
-            ],
-            "xAxis": {
-                "format": "%",
-                "title": False
-            },
-            "publishedDate": "2019-06-01",
-            "dataSource": {
-                "url": "http://ssb.no/data/1234124/",
-                "label": "Statistisk sentralbyrå"
-            },
-            "files": [
-                {
-                    "url": "http://data.oslo.kommune.no/data/1234123/data.xls",
-                    "type": "Excel"
-                },
-                {
-                    "url": "http://data.oslo.kommune.no/data/1234123/data.csv",
-                    "type": "csv"
-                }
-            ]
-        },
-
-        "data": data
-    }
+logging.basicConfig(level=logging.INFO)
 
 
-def read_csv():
+def handler(event, context):
+    logging.info(event)
+    bucket, key, groups = pl.match_s3_key(event)
+    df = read_csv(bucket, key)
+    historic = process_source(df)
+    # TODO: Since we are missing aggregated date for districts from 2018, we cannot use max() of this row yet
+    status = process_source(df[df.År == 2017])
+
+    unfinished_output_key = 'processed/green/{dataset}/{version}/{edition}/'.format(
+        dataset=groups['dataset'],
+        version=groups['version'],
+        edition=groups['edition']
+    )
+
+    write_dataset(historic, 'historic', bucket, unfinished_output_key)
+    write_dataset(status, 'status', bucket, unfinished_output_key)
+
+
+def write_dataset(df, suffix, bucket, unfinished_output_key):
+    logging.info('Writing ' + suffix)
+    for current_district, subdistrict in df:
+        s3_key = unfinished_output_key + "{current_district}-{suffix}.json".format(current_district=current_district,
+                                                                                   suffix=suffix)
+        district = bl.generate_metadata(current_district,
+                                        heading="Gjennomsnittpris (kr) pr kvm for blokkleilighet",
+                                        series=None,
+                                        data=subdistrict
+                                        )
+        pl.write_json_to_s3(bucket=bucket, key=s3_key, data=json.dumps(district, ensure_ascii=False))
+    logging.info('Complete ' + suffix)
+
+
+def read_csv(bucket, key):
     df_source = pd.read_csv('test_data/Boligpriser.csv', sep=";", verbose=True)
+    # df_source = pl.read_csv_from_s3(bucket, key, separator=';')
     df_source = df_source.drop(columns=['antall omsatte blokkleieligheter', 'Delbydelnummer']) \
         .rename(columns={'kvmpris': 'value', 'Oslo-Bydelsnavn': 'bydelsnavn', 'Delbydelsnavn': 'geography'})
-    process_source(df_source, 'historisk')
-    process_source(df_source[df_source.År == 2017], 'status')
+    return df_source
 
 
 def fix_district_prefix(line):
@@ -62,6 +65,7 @@ def fix_district_prefix(line):
 def subdistrict_as_dict(key, values):
     return {'geography': key, 'values': values}
 
+
 def area_as_dict(key, values, scope):
     if scope == 'bydel':
         return {'geography': key, 'values': values, 'avgRow': True}
@@ -69,16 +73,13 @@ def area_as_dict(key, values, scope):
         return {'geography': key, 'values': values, 'totalRow': True}
 
 
-def process_source(df_source, suffix):
-
+def process_source(df_source):
     source_district = district_source(df_source)
     districts_list = pd.unique(source_district.geography)
-
+    logging.debug("This is slow")
     subdistrict_list = [create_dataset_for_district(dis, df_source) for dis in districts_list]
-    for dis, subdistrict in subdistrict_list:
-        district = generate_metadata(dis, subdistrict)
-        with open("out/{dis}-{suffix}.json".format(dis=dis, suffix=suffix), 'w+') as file:
-            file.write(json.dumps(district, ensure_ascii=False))
+    logging.debug("Complete")
+    return subdistrict_list
 
 
 def create_dataset_for_district(dis, df_source):
@@ -107,7 +108,7 @@ def district_source(df_source: pd.DataFrame):
     drop_numbers = df_source.drop(columns=['geography']).rename(columns={'bydelsnavn': 'geography'})
 
     district = drop_numbers[drop_numbers['geography'] != "Oslo i alt"]
-    district['geography'] = district['geography'].apply(lambda x: fix_district_prefix(x))
+    district['geography'] = district['geography'].map(lambda x: fix_district_prefix(x))
     return district
 
 
@@ -120,4 +121,11 @@ def oslo_source(df_source: pd.DataFrame):
 
 
 if __name__ == '__main__':
-    read_csv()
+    event = {'Records': [
+        {'s3': {
+            'bucket': {'name': 'test-bucket'},
+            'object': {'key': 'raw/green/datasetid/version/1030/distribution.csv'}
+        }
+        }
+    ]}
+    handler(event, {})
