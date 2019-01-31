@@ -46,8 +46,7 @@ def write_dataset(df, suffix, bucket, unfinished_output_key):
 
 
 def read_csv(bucket, key):
-    df_source = pd.read_csv('test_data/Boligpriser.csv', sep=";", verbose=True)
-    # df_source = pl.read_csv_from_s3(bucket, key, separator=';')
+    df_source = pl.read_csv_from_s3(bucket, key, separator=';')
     df_source = df_source.drop(columns=['antall omsatte blokkleieligheter', 'Delbydelnummer']) \
         .rename(columns={'kvmpris': 'value', 'Oslo-Bydelsnavn': 'bydelsnavn', 'Delbydelsnavn': 'geography'})
     return df_source

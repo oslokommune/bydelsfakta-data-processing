@@ -1,0 +1,11 @@
+handler: boligpriser.handler
+timeout: 60
+events:
+  - existingS3:
+      bucket: ok-origo-dataplatform-${self:provider.stage}
+      events:
+        - s3:ObjectCreated:*
+      rules:
+        - prefix: raw/green/boligpriser/
+        - suffix: .csv
+layers: ${self:custom.layers}
