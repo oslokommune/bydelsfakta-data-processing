@@ -1,0 +1,5 @@
+name: boligpriser
+handler: handler
+timeout: 60
+dataset:
+  - boligpriser
