@@ -6,10 +6,10 @@ import pandas as pd
 s3_bucket = "ok-origo-dataplatform-dev"
 
 
-def read_from_s3(s3_key, value_column, date_column="År"):
-    return pd.read_csv(f's3://{s3_bucket}/{s3_key}', sep=';', converters={
-        'delbydelid': lambda x: str(x) if x else np.nan
-    }).rename(columns={value_column: 'value', date_column: 'date'})
+def read_from_s3(s3_key, value_column, date_column="År", dtypes = None):
+    if dtypes is None:
+        dtypes = { 'delbydelid': object }
+    return pd.read_csv(f's3://{s3_bucket}/{s3_key}', sep=';', dtypes=dtypes).rename(columns={value_column: 'value', date_column: 'date'})
 
 
 def _historic(*dfs):
@@ -22,3 +22,8 @@ def _status(*dfs):
     uniques = [df['date'].max() for df in dfs]
     maxDate = reduce(lambda a, b: max(a,b), uniques)
     return [df[df['date'] == maxDate] for df in dfs]
+
+
+def _add_district_id(df):
+    df['district'] = df['delbydelid'].str.slice(4, 6)
+    return df
