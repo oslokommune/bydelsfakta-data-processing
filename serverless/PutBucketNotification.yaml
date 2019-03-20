@@ -1,7 +1,0 @@
-Effect: "Allow"
-Action:
-- "s3:PutBucketNotification"
-Resource:
-  Fn::Join:
-  - ""
-  - - "arn:aws:s3:::ok-origo-dataplatform-${self:provider.stage}"

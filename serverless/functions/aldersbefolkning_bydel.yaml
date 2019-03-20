@@ -1,5 +1,3 @@
-name: aldersbefolkning_bydel
-handler: handler
+handler: functions/aldersbefolkning_bydel.handler
 timeout: 60
-dataset:
-  - befolkningen_etter_bydel_og_aldersgrupper
+layers: ${self:custom.layers}
