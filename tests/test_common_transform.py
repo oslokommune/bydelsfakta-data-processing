@@ -1,5 +1,4 @@
-
-import common
+import common.transform as transform
 import pandas as pd
 import numpy as np
 
@@ -10,7 +9,7 @@ def test_add_district_id_simple():
     df = pd.DataFrame({'value': "some_value", 'delbydelid': delbydelids})
     df_expected = pd.DataFrame({'value': "some_value", 'delbydelid': delbydelids, 'district': districts})
 
-    result = common._add_district_id(df)
+    result = transform.add_district_id(df)
     print(result)
     print(df_expected)
     assert result.equals(df_expected)
@@ -25,7 +24,7 @@ def test_historic():
     df_c = gen_df(2008, 2033)
     df_d = gen_df(1999, 2017)
     df_e = gen_df(1999, 2033)
-    results = common._historic(df_a, df_b, df_c,df_d,df_e)
+    results = transform.historic(df_a, df_b, df_c,df_d,df_e)
     for result in results:
         print(result['date'].values.tolist())
         print(list(range(2008, 2017, 1)))
@@ -40,6 +39,5 @@ def test_status():
     df_c = gen_df(2008, 2033)
     df_d = gen_df(1999, 2017)
     df_e = gen_df(1999, 2033)
-    results = common._status(df_a, df_b, df_c,df_d,df_e)
+    results = transform.status(df_a, df_b, df_c,df_d,df_e)
     assert any([result['date'].values.tolist() == [2032] for result in results])
-
