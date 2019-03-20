@@ -1,2 +1,2 @@
-aldersbefolkning_bydel: ${file(serverless/templates/rendered/aldersbefolkning_bydel.yaml)}
-boligpriser: ${file(serverless/templates/rendered/boligpriser.yaml)}
+aldersbefolkning_bydel: ${file(serverless/functions/aldersbefolkning_bydel.yaml)}
+boligpriser: ${file(serverless/functions/boligpriser.yaml)}

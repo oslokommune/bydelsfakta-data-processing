@@ -9,14 +9,11 @@ provider:
     name: ok-origo-dataplatform-config-${self:provider.stage}
     serverSideEncryption: AES256
   deploymentPrefix: deploy
-  iamRoleStatements:
-    - ${file(serverless/PutBucketNotification.yaml)}
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/AmazonS3FullAccess
 
 plugins:
   - serverless-python-requirements
-  - serverless-plugin-existing-s3
 
 package:
   exclude:
@@ -29,10 +26,7 @@ functions: ${file(serverless/templates/rendered/functions.yaml)}
 custom:
   layers:
     - arn:aws:lambda:eu-west-1:399891621064:layer:AWSLambda-Python37-SciPy1x:2 # numpy
-    - arn:aws:lambda:eu-west-1:988529151833:layer:lambda-python-layers-Python37-Pandas23x:7 #pandas
-    - arn:aws:lambda:eu-west-1:988529151833:layer:lambda-python-layers-Python37-bydelsfakta:2
+    - { Ref: PythonRequirementsLambdaLayer }
   pythonRequirements:
     dockerizePip: non-linux
-    fileName: requirements-deploy.txt
-    pipCmdExtraArgs:
-      - --no-deps
+    layer: true

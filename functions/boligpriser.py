@@ -21,8 +21,7 @@ def handler(event, context):
     # TODO: Since we are missing aggregated date for districts from 2018, we cannot use max() of this row yet
     status = create_dataset(df[df.År == 2017])
 
-    unfinished_output_key = 'processed/green/{dataset}/{version}/{edition}/'.format(
-        dataset=groups['dataset'],
+    unfinished_output_key = 'processed/green/boligpriser_alle/{version}/{edition}/'.format(
         version=groups['version'],
         edition=groups['edition']
     )
