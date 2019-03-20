@@ -21,3 +21,16 @@ def add_district_id(org, district_column):
     df['district'] = df['delbydelid'].str.slice(4, 6)
     df.loc[df['district'].isnull(), 'district'] = df[df['district'].isnull()][district_column].apply(util.get_district_id)
     return df
+
+
+def apply_ratio_colums(df, columns):
+    for col in columns:
+        df[f'{col}_ratio']=compute_ratio(df, columns, col)
+    return df
+
+
+def compute_ratio(df, columns, target):
+    col_sum = 0.0
+    for col in columns:
+        col_sum += df[col]
+    return df[target]/col_sum

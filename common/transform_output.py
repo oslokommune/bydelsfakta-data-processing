@@ -145,16 +145,3 @@ def value_entry_c(values, data_point):
             'value': values[data_point],
             'date': values['date']
         }
-
-
-def apply_ratio_colums(df, columns):
-    for col in columns:
-        df[f'{col}_ratio']=compute_ratio(df, columns, col)
-    return df
-
-
-def compute_ratio(df, columns, target):
-    col_sum = 0.0
-    for col in columns:
-        col_sum += df[col]
-    return df[target]/col_sum
