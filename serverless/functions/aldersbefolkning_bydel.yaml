@@ -1,3 +1,3 @@
-name: aldersbefolkning_bydel
-handler: handler
+handler: functions/aldersbefolkning_bydel.handler
 timeout: 60
+layers: ${self:custom.layers}

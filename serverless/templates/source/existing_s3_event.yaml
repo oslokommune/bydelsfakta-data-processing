@@ -1,3 +1,0 @@
-handler: {{ name }}.{{ handler }}
-timeout: {{ timeout }}
-layers: ${self:custom.layers}

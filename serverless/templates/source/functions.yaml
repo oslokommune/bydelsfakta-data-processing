@@ -1,1 +1,2 @@
-{{ name }}: ${file(serverless/templates/rendered/{{ name }}.yaml)}
+{% set name = name.split('.')[:-1] | join('.') -%}
+{{ name }}: ${file(serverless/functions/{{ name }}.yaml)}
