@@ -40,18 +40,72 @@ def _check_data_consistency(df):
     print(count_sub_districts)
 
 
-def aggregate_from_subdistricts(df, data_points, agg_func='sum'):
+def _wmean(df, data_points, data_point_weights, agg_to):
+
+    """
+    Internal function to calculate weighted mean, for one district or Oslo total.
+
+    Param:
+        agg_to (str): Valids ['district', 'Oslo']
+
+    """
+    if agg_to == 'district':
+        groupby = ['date', 'district']
+    elif agg_to == 'Oslo':
+        groupby = ['date']
+    else:
+        raise Exception('agg_to needs to be "district" or "Oslo".')
+
+    df = df[[*groupby, *set(data_points), *set(data_point_weights)]]
+    df_aggs = []
+
+    for dp_col, dpw_col in zip(data_points, data_point_weights):
+        df_tmp = df.copy()
+        df_tmp['product_col'] = df_tmp[dp_col] * df_tmp[dpw_col]
+        df_tmp = df_tmp.drop(dp_col, axis=1)
+        df_tmp = df_tmp.groupby(by=groupby, as_index=False).sum()
+        df_tmp[dp_col] = df_tmp['product_col'] / df_tmp[dpw_col]
+        df_tmp = df_tmp[[*groupby, dp_col]]
+        df_aggs.append(df_tmp)
+
+    df_tmp = df[[*groupby, *set(data_point_weights)]].copy()
+    df_tmp = df_tmp.groupby(by=groupby, as_index=False).sum()
+    df_aggs.append(df_tmp)
+
+    if len(df_aggs) == 1:
+        df_agg = df_aggs[0]
+    elif len(df_aggs) > 1:
+        df_agg = df_aggs[0]
+        for next_df_agg in df_aggs[1:]:
+            df_agg = pd.merge(df_agg, next_df_agg, how='inner', on=groupby)
+    else:
+        raise Except('Something went wrong in the _wmean function.')
+
+    return df_agg
+
+
+def aggregate_from_subdistricts(df, agg_func, data_points, data_point_weights=None):
 
     """
     This function aggregates values from lower-level districts into higher-level districts.
     In reality: sub_districts --> districts --> Oslo_total
 
-    TBD: 'mean' can be done, but this is not 'weighted mean', which is what we need
+    The aggregate function can be given as any Numpy aggregate function which can be passed to the .agg method.
+    This would typically be 'sum' or 'mean'. In addition, an option 'wmean' is available, which gives the weighted
+    average between (sub)districts. E.g. two districts with mean_income=[400000, 500000] and
+    inhabitants=[2000, 3000] will give a weighted mean incom of 460000, while normal 'mean' will give 450000.
+    When 'wmean' is used, a list of weights corresponding to the data points have to be provided. In the above example,
+    data_points = ['mean_income'], while data_point_weights=['inhabitants'].
+
+    Note: This function only supports one type of aggregation at a time. If you need to perform different types of
+    aggregation on the same DataFrame, a possible solution is to run the function twice and join the results, possibly
+    using the available merge_df function in this module.
 
     Args:
-        df (pd.DataFrame): A DataFrame
+        df (pd.DataFrame): The DataFrame with the relevant data.
+        agg_func (str): The aggregate function to be used, see description above. Typically 'sum' or 'wmean'.
         data_points (list): The column names of the columns to be aggregated.
-        agg_func (str): A valid aggregate function. Default is 'sum', (unweighted) 'mean' can also be used.
+        data_point_weights (list): This is only used when agg_func=='wmean'.
 
     Returns:
         df_agg (pd.DataFrame): The original DataFrame with additional rows for districts and Oslo total.
@@ -60,10 +114,18 @@ def aggregate_from_subdistricts(df, data_points, agg_func='sum'):
         ValueError: One or more of arguments are not as expected.
     """
 
-    # Simple validity check
+    # Some validity checking
     _check_data_point_validity(df, data_points)
-    if agg_func not in ['sum', 'mean']:
-        raise ValueError('{af} is not a valid aggregation function.'.format(af=agg_func))
+    if agg_func == 'wmean' and data_point_weights is None:
+        raise ValueError('agg_func is "wmean", but you have not provided input to data_point_weights.')
+    if agg_func != 'wmean' and data_point_weights is not None:
+        raise ValueError('agg_func is not "wmean", but you have provided input to data_point_weights.')
+    if agg_func == 'wmean':
+        ldp = len(data_points)
+        ldpw = len(data_point_weights)
+        if ldp != ldpw:
+            raise ValueError('The length of data_points (len=={l1}) and data_point_weights (len=={l2}) '
+                             'needs to be the same.'.format(l1=ldp, l2=ldpw))
 
     # Some initialization
     df_no_agg = df[df['sub_district'].notnull()].copy()  # Remove pre-existing aggregations in the DataFrame
@@ -75,8 +137,12 @@ def aggregate_from_subdistricts(df, data_points, agg_func='sum'):
 
         # Aggregation
         df_district = df_no_agg[df_no_agg['district'] == district].copy()
-        district_agg = df_district[['district', 'date', *data_points]].groupby(by=['date'],
-                                                                                 as_index=False).agg(agg_func)
+        if agg_func == 'wmean':
+            district_agg = _wmean(df_district, data_points, data_point_weights, 'district')
+        else:
+            #district_agg = df_district[['district', 'date', *data_points]].groupby(by=['date'],
+            #                                                                       as_index=False).agg(agg_func)
+            district_agg = df_district[['date', *data_points]].groupby(by=['date'], as_index=False).agg(agg_func)
         district_agg['sub_district'] = np.nan
         district_agg['district'] = district
 
@@ -85,7 +151,11 @@ def aggregate_from_subdistricts(df, data_points, agg_func='sum'):
 
     # Aggregate Oslo in total from sub_districts
     # Decision: "Marka", "Sentrum" and "ikke registrert" should be included in Oslo total, according to Niels Henning.
-    oslo_agg = df_no_agg[['date', *data_points]].groupby(by=['date'], as_index=False).agg(agg_func)
+    if agg_func == 'wmean':
+        oslo_agg = _wmean(df_no_agg, data_points, data_point_weights, 'Oslo')
+    else:
+        oslo_agg = df_no_agg[['date', *data_points]].groupby(by=['date'], as_index=False).agg(agg_func)
+
     oslo_agg['sub_district'] = np.nan
     oslo_agg['district'] = '00'
     df_agg = pd.concat((df_agg, oslo_agg), axis=0, sort=False).reset_index(drop=True)
@@ -167,21 +237,25 @@ if __name__ == '__main__':
     # This section is present to demonstrate functionality.
     # Also check
 
+    sys.path.insert(0, r'..\tests')  # Needed to import the module to be tested
     import datasets_for_testing
 
     df = datasets_for_testing.df1
-    data_points = ['value_A', 'value_B']
+
     print('Note that the total will drop in 2018 since district 02 doesn\'t have data for 2018.')
     df['district'] = df['sub_district'].str.slice(4, 6)  # This will be done by a function in the "add_features" module.
     print(df)
 
-    print('Perform aggregation.')
-    df = aggregate_from_subdistricts(df, data_points, agg_func='sum')
+    print('Perform aggregation with "sum".')
+    data_points = ['value_A', 'value_B']
+    df = aggregate_from_subdistricts(df, 'sum', data_points)
     print(df)
 
     print('Add ratios.')
     df = add_ratios(df, data_points)
     print(df)
+
+    import time; time.sleep(1)
 
     TEST_MERGE = False
     if TEST_MERGE:
@@ -190,11 +264,11 @@ if __name__ == '__main__':
         print(df2.shape)
 
         df2['value_A'] = [500, 500, 500, 500, 400, 400, 400, 400]
-        df2['value_C'] = list('ABCDEFGH')
+        df2['value_E'] = list('ABCDEFGH')
         data_points2 = ['value_A', 'value_C']
 
         df2['district'] = df2['sub_district'].str.slice(4, 6)
-        df2 = aggregate_from_subdistricts(df2, data_points2, agg_func='sum')
+        df2 = aggregate_from_subdistricts(df2, 'sum', data_points2)
 
         print('Merging it with the following DataFrame...')
         print(df2)
@@ -202,6 +276,20 @@ if __name__ == '__main__':
         print('..results in this DataFrame:')
         df_merge = merge_dfs(df, df2)
         print(df_merge)
+
+    TEST_WMEAN = True
+    if TEST_WMEAN:
+        df = datasets_for_testing.df1
+        df['district'] = df['sub_district'].str.slice(4, 6)  # Will later be done with the "add_features" module.
+        print(df)
+
+        print('Perform aggregation with "wmean".')
+        data_points = ['value_A', 'value_B']
+        data_point_weights = ['value_C', 'value_C']  # Not value_D
+        df = aggregate_from_subdistricts(df, 'wmean', data_points, data_point_weights)
+        print(df)
+
+
 
 
 
