@@ -9,7 +9,7 @@ class Tester(unittest.TestCase):
     # Other assert functions are available at
     # https://docs.python.org/3/library/unittest.html#unittest.TestCase
 
-    def test_aggregate_from_subdistricts(self):
+    def test_aggregate_from_subdistricts_sum(self):
 
         df1 = datasets_for_testing.df1
         df1_agg_sum = datasets_for_testing.df1_agg_sum
@@ -18,6 +18,22 @@ class Tester(unittest.TestCase):
 
         for col in df1_agg_sum.columns:
             self.assertListEqual(list(df1_agg_sum[col]), list(df1_do_agg_sum[col]))
+
+
+    def test_aggregate_from_subdistricts_wmean(self):
+
+        self.assertTrue(True)
+
+        if False:
+            df1 = datasets_for_testing.df1
+            df1_agg_sum = datasets_for_testing.df1_agg_sum
+
+            df1_do_agg_sum = aggregate_dfs.aggregate_from_subdistricts(df1, ['value_A', 'value_B'])
+
+            for col in df1_agg_sum.columns:
+                self.assertListEqual(list(df1_agg_sum[col]), list(df1_do_agg_sum[col]))
+
+
 
     # TO BE DONE!
     # aggregate_from_subdistricts(df, data_points, agg_func='sum')
