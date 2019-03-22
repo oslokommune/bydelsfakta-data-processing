@@ -38,15 +38,6 @@ df1_agg_sum = pd.DataFrame({'sub_district': [*SUB_DISTRICT, *SUM_SUB_DISTRICT],
                             'district': [*district, *SUM_DISTRICT],
                             'value_A': [*VALUE_A, *SUM_VALUE_A],
                             'value_B': [*VALUE_B, *SUM_VALUE_B]})
-print('TBD: Aggregert VALUE_C og VALUE_D.')
-
-# DATASET 2
-#df2 = df.loc[:7, ['sub_district', 'date']].copy()
-#df2['value_A'] = [500, 500, 500, 500, 400, 400, 400, 400]
-#df2['value_C'] = list('ABCDEFGH')
-
-
-#df2['district'] = df2['sub_district'].str.slice(4, 6)
 
 data_sets = {'df1': df1,
              'df1_agg_sum': df1_agg_sum}
