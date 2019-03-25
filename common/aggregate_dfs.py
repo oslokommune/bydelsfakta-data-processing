@@ -31,9 +31,9 @@ def _check_data_consistency(df):
         None
     """
 
-    COLS = ['sub_district', 'date']
+    COLS = ['delbydelid', 'date']
 
-    count_dates = df[COLS].groupby(by=['sub_district']).agg('count').reset_index(drop=False)
+    count_dates = df[COLS].groupby(by=['delbydelid']).agg('count').reset_index(drop=False)
     count_sub_districts = df[COLS].groupby(by=['date']).agg('count').reset_index(drop=False)
 
     print(count_dates)
@@ -128,6 +128,9 @@ def aggregate_from_subdistricts(df, aggregations):
     The example above will aggregate (sum) the number of inhabitants and also their mean income, weighted by the number
     of inhabitants in each (sub)district.
 
+    In the rare cases where you need to do more than one aggregation on a column, this needs to be done by doing the
+    aggregations separately and merging the resulting DataFrames.
+
     Args:
         df (pd.DataFrame): The DataFrame with the relevant data.
         aggregations (list of dicts): Best understood by looking at the example above.
@@ -158,7 +161,7 @@ def aggregate_from_subdistricts(df, aggregations):
     _check_data_point_validity(df, expected_columns)
 
     # Some initialization
-    df_no_agg = df[df['sub_district'].notnull()].copy()  # Remove pre-existing aggregations in the DataFrame
+    df_no_agg = df[df['delbydelid'].notnull()].copy()  # Remove pre-existing aggregations in the DataFrame
     df_agg = df_no_agg.copy()  # Then start to add aggregations to this DataFrame
     all_districts = list(df['district'].unique())  # This does not include Oslo total as a district.
 
@@ -166,7 +169,7 @@ def aggregate_from_subdistricts(df, aggregations):
     for district in all_districts:
 
         district_agg = _aggregate_district(df_no_agg, district, aggregations)
-        district_agg['sub_district'] = np.nan
+        district_agg['delbydelid'] = np.nan
 
         # Concatenate aggregation to main DataFrame
         df_agg = pd.concat((df_agg, district_agg), axis=0, sort=False).reset_index(drop=True)
@@ -174,23 +177,25 @@ def aggregate_from_subdistricts(df, aggregations):
     # Aggregate Oslo in total from sub_districts
     # Decision: "Marka", "Sentrum" and "ikke registrert" should be included in Oslo total, according to Niels Henning.
     oslo_agg = _aggregate_district(df_no_agg, '00', aggregations)
-    oslo_agg['sub_district'] = np.nan
+    oslo_agg['delbydelid'] = np.nan
     oslo_agg['district'] = '00'
     df_agg = pd.concat((df_agg, oslo_agg), axis=0, sort=False).reset_index(drop=True)
 
     return df_agg
 
 
-def add_ratios(df, data_points):
+def add_ratios(df, data_points, ratio_of):
 
     """
     This function adds a ratio column for all the data points specified.
+    The value in each of these data points will be devided by the sum of the fields in ratio_of
 
     Normally it will be used after aggregate_from_subdistricts.
 
     Args:
         df (pd.DataFrame): A DataFrame containing the data.
         data_points (list): The column names of the columns to be used in the ratio calculation.
+        ratio_of (list): The sum of these data fields will be in the denominator when calculating the ratio (No: 'nevner')
 
     Returns:
         df_ratios (pd.DataFrame): The original DataFrame with additional columns for ratios.
@@ -203,7 +208,7 @@ def add_ratios(df, data_points):
     _check_data_point_validity(df, data_points)
 
     df_ratios = df.copy()
-    sums = df[data_points].sum(axis=1)
+    sums = df[ratio_of].sum(axis=1)
 
     for dp in data_points:
         col_name = '{dp}_ratio'.format(dp=dp)
@@ -216,7 +221,7 @@ def merge_dfs(df1, df2, how='inner', suffixes=['_1', '_2']):
 
     """
     This function can be used to merge DataFrames, normally, but not necessarily after aggregation.
-    It is a requirement that both DataFrames contain the columns 'date', 'district' and 'sub_district'.
+    It is a requirement that both DataFrames contain the columns 'date', 'district' and 'delbydelid'.
 
     Args:
         df1 (pd.DataFrame): A DataFrame to be merged.
@@ -225,7 +230,7 @@ def merge_dfs(df1, df2, how='inner', suffixes=['_1', '_2']):
         suffixes (list of str): Suffixes to be added to new column if there are overlapping column names in df1 and df2.
 
     Returns:
-        df_merged (pd.DataFrame): The original DataFrame with additional columns for ratios.
+        df_merged (pd.DataFrame): The resulting DataFrame after the merge.
 
     Raise:
         ValueError: If there is found anything unexpected with the arguments passed.
@@ -233,7 +238,7 @@ def merge_dfs(df1, df2, how='inner', suffixes=['_1', '_2']):
 
     # Input check - DataFrames
     for df in [df1, df2]:
-        for col in ['date', 'district', 'sub_district']:
+        for col in ['date', 'district', 'delbydelid']:
             if col not in df.columns:
                 print(df.columns)
                 raise ValueError('Column {col} is not found in the DataFrame header'.format(col=col))
@@ -242,10 +247,10 @@ def merge_dfs(df1, df2, how='inner', suffixes=['_1', '_2']):
         raise ValueError('The argument how needs to be either "inner", "left", "right" or "outer".')
     # Input check - suffixes
     if len(suffixes) != 2:
-        print('Suffixes={s}'.format(s=str(suffixes)))
+        print('Suffixes={s}'.format(s=suffixes))
         raise ValueError('The length of suffixes is {length}, not 2 as expected.'.format(length=len(suffixes)))
 
-    df_merged = pd.merge(df1, df2, how=how, on=['date', 'district', 'sub_district'], suffixes=['_1', '_2'])
+    df_merged = pd.merge(df1, df2, how=how, on=['date', 'district', 'delbydelid'], suffixes=['_1', '_2'])
 
     return df_merged
 

@@ -22,12 +22,12 @@ def _sort_dfs(dfs):
     """
 
     def _sort_df(df):
-        basic_cols = ['date', 'sub_district', 'district']
+        basic_cols = ['date', 'delbydelid', 'district']
         used_basic_cols = [col for col in basic_cols if col in list(df.columns)]
         other_cols = sorted([col for col in list(df.columns) if col not in basic_cols])
         col_order = [*used_basic_cols, *other_cols]
         df = df[col_order]
-        sort_order = [col for col in ['sub_district', 'district', 'date'] if col in used_basic_cols]
+        sort_order = [col for col in ['delbydelid', 'district', 'date'] if col in used_basic_cols]
         df = df.sort_values(by=sort_order).reset_index(drop=True)
 
         return df
@@ -93,16 +93,16 @@ class Tester(unittest.TestCase):
         for col in df_act.columns:
             # In self.assertListEqual nan!=nan.
             # Because of this test only on
-            if col == 'sub_district':
-                mask = df_act['sub_district'].notnull()
+            if col == 'delbydelid':
+                mask = df_act['delbydelid'].notnull()
                 self.assertListEqual(list(df_act[mask][col]), list(df_exp[mask][col]))
             else:
                 self.assertListEqual(list(df_act[col]), list(df_exp[col]))
 
     def test_merge_df(self):
 
-        df1 = df_org[['date', 'district', 'sub_district', 'mean_income']].copy()
-        df2 = df_org[['date', 'district', 'sub_district', 'inhabitants']].copy()
+        df1 = df_org[['date', 'district', 'delbydelid', 'mean_income']].copy()
+        df2 = df_org[['date', 'district', 'delbydelid', 'inhabitants']].copy()
 
         df_act = aggregate_dfs.merge_dfs(df1, df2)
 
@@ -118,7 +118,7 @@ class Tester(unittest.TestCase):
 
         df['double_mean_income'] = df['mean_income'] * 2
 
-        df = aggregate_dfs.add_ratios(df, ['mean_income', 'double_mean_income'])
+        df = aggregate_dfs.add_ratios(df, ['mean_income', 'double_mean_income'], ['mean_income', 'double_mean_income'])
 
         self.assertListEqual([1/3 for i in range(len(df))], list(df['mean_income_ratio']))
         self.assertListEqual([2/3 for i in range(len(df))], list(df['double_mean_income_ratio']))
