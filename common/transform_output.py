@@ -25,7 +25,7 @@ def generate_output_list(df, template, data_points):
         filter(lambda x: x not in ['00', '16', '17', '99'], df['district'].unique())
         )
     output_list = []
-    oslo_total = [district_time_series(df, '00', template, data_points)]
+    oslo_total = [district_time_series(df, '00', template, data_points, total_row=True)]
     for district in district_list:
         output_list.append({
             'district': district,
@@ -38,7 +38,8 @@ def generate_output_list(df, template, data_points):
     return output_list
 
 def district_time_series_list(df, district, template, data_points):
-    time_series = [district_time_series(df, '00', template, data_points), district_time_series(df, district, template, data_points)]
+    time_series = [district_time_series(df, '00', template, data_points, total_row=True),
+                   district_time_series(df, district, template, data_points, avg_row=True)]
     sub_districts = list(
         filter(lambda x: x is not None, df[df['district'] == district]['sub_district'].unique())
         )
@@ -47,10 +48,10 @@ def district_time_series_list(df, district, template, data_points):
     return time_series
 
 
-def district_time_series(df, district, template, data_points):
+def district_time_series(df, district, template, data_points, avg_row=False, total_row=False):
     district_df = df[df['district'] == district]
     district_df = district_df[district_df['sub_district'].isnull()]
-    return df_to_template(district, district_df, template, data_points)
+    return df_to_template(district, district_df, template, data_points, avg_row=avg_row, total_row=total_row)
 
 
 def sub_district_time_series(df, sub_district, template, data_points):
@@ -58,20 +59,20 @@ def sub_district_time_series(df, sub_district, template, data_points):
     return df_to_template(sub_district, sub_district_df, template, data_points)
 
 
-def df_to_template(geography, df, template, data_points):
+def df_to_template(geography, df, template, data_points, avg_row=False, total_row=False):
     if template.lower() == 'a':
         return df_to_template_a(geography, df, data_points)
     elif template.lower() == 'c':
-        return df_to_template_c(geography, df, data_points)
+        return df_to_template_c(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     elif template.lower() == 'i':
         return df_to_template_i(geography, df, data_points)
     else:
         raise Exception(f'Template {template} does not exist')
 
 
-def df_to_template_a(geography, df, data_points):
+def df_to_template_a(geography, df, data_points, link_to=False):
     obj_a = {
-        'linkTo': False,
+        'linkTo': link_to,
         'geography': geography,
         'values': []
     }
@@ -83,12 +84,12 @@ def df_to_template_a(geography, df, data_points):
     return obj_a
 
 
-def df_to_template_c(geography, df, data_points):
+def df_to_template_c(geography, df, data_points, avg_row=False, total_row=False):
     obj_c = {
         'geography': geography,
         'values': [],
-        'avgRow': False,
-        'totalRow': False
+        'avgRow': avg_row,
+        'totalRow': total_row
     }
     time_series = list_to_time_series(data_points)
     for values in df.to_dict('r'):

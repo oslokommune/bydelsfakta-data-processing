@@ -28,7 +28,7 @@ district_01_time_series_list = [
             ]
         ],
         'avgRow': False,
-        'totalRow': False
+        'totalRow': True
     },
     {
         'geography': '01',
@@ -58,7 +58,7 @@ district_01_time_series_list = [
                 }
             ]
         ],
-        'avgRow': False,
+        'avgRow': True,
         'totalRow': False
     },
     {
@@ -160,7 +160,7 @@ output_list = [
                     ]
                 ],
                 'avgRow': False,
-                'totalRow': False
+                'totalRow': True
             },
             {
                 'geography': '01',
@@ -190,7 +190,7 @@ output_list = [
                         }
                     ]
                 ],
-                'avgRow': False,
+                'avgRow': True,
                 'totalRow': False
             },
             {
@@ -290,7 +290,7 @@ output_list = [
                     ]
                 ],
                 'avgRow': False,
-                'totalRow': False
+                'totalRow': True
             },
             {
                 'geography': '02',
@@ -320,7 +320,7 @@ output_list = [
                         }
                     ]
                 ],
-                'avgRow': False,
+                'avgRow': True,
                 'totalRow': False
             },
             {
@@ -420,7 +420,7 @@ output_list = [
                     ]
                 ],
                 'avgRow': False,
-                'totalRow': False
+                'totalRow': True
             },
             {
                 'geography': '01',
