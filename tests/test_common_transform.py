@@ -41,15 +41,3 @@ def test_status():
     df_e = gen_df(1999, 2033)
     results = transform.status(df_a, df_b, df_c,df_d,df_e)
     assert any([result['date'].values.tolist() == [2032] for result in results])
-
-def test_apply_ration_columns():
-    data_points_1 = np.array([2.0, 1.0])
-    data_points_2 = np.array([3.0, 4.0])
-    df = pd.DataFrame({'data_point_1': data_points_1, 'data_point_2': data_points_2})
-    df_expected = pd.DataFrame({'data_point_1': data_points_1,
-                                'data_point_2': data_points_2,
-                                'data_point_1_ratio': [0.4, 0.2],
-                                'data_point_2_ratio': [0.6, 0.8]})
-    result = transform.apply_ratio_colums(df, ['data_point_1', 'data_point_2'])
-    assert result.equals(df_expected)
-
