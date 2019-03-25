@@ -7,10 +7,10 @@ import pandas as pd
 s3_bucket = "ok-origo-dataplatform-dev"
 
 
-def read_from_s3(s3_key, value_column, date_column="År", dtypes=None):
-    if dtypes is None:
-        dtypes = {'delbydelid': object}
-    return pd.read_csv(f's3://{s3_bucket}/{s3_key}', sep=';', dtypes=dtypes).rename(
+def read_from_s3(s3_key, value_column, date_column="År", dtype=None):
+    if dtype is None:
+        dtype = {'delbydelid': object}
+    return pd.read_csv(f's3://{s3_bucket}/{s3_key}', sep=';', dtype=dtype).rename(
             columns={value_column: 'value', date_column: 'date'})
 
 
