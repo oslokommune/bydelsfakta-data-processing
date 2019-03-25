@@ -18,7 +18,6 @@ generate_output_list:
         The labels in this list must correspond to existing column labels in the input dataframe.
         If the dataframe also contains ratio columns('data_point_ration'), these should not be in the data_points parameter list
 """
-import numpy as np
 
 def generate_output_list(df, template, data_points):
     district_list = [x for x in df['district'].unique() if x not in ['00', '16', '17', '99']]
@@ -40,7 +39,7 @@ def district_time_series_list(df, district, template, data_points):
                    district_time_series(df, district, template, data_points, avg_row=True)]
 
     district_df = df[df['district'] == district]
-    sub_districts = [x for x in district_df[district_df['delbydelid'].notnull()]['delbydelid'].unique()]
+    sub_districts = district_df[district_df['delbydelid'].notnull()]['delbydelid'].unique()
     for sub_district in sub_districts:
         time_series.append(sub_district_time_series(district_df, sub_district, template, data_points))
     return time_series
