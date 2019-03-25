@@ -21,9 +21,7 @@ generate_output_list:
 import numpy as np
 
 def generate_output_list(df, template, data_points):
-    district_list =  list(
-        filter(lambda x: x not in ['00', '16', '17', '99'], df['district'].unique())
-        )
+    district_list = [x for x in df['district'].unique() if x not in ['00', '16', '17', '99']]
     output_list = []
     oslo_total = [district_time_series(df, '00', template, data_points, total_row=True)]
     for district in district_list:
@@ -40,9 +38,9 @@ def generate_output_list(df, template, data_points):
 def district_time_series_list(df, district, template, data_points):
     time_series = [district_time_series(df, '00', template, data_points, total_row=True),
                    district_time_series(df, district, template, data_points, avg_row=True)]
-    sub_districts = list(
-        filter(lambda x: x is not np.nan, df[df['district'] == district]['delbydelid'].unique())
-        )
+
+    sub_districts = [x for x in df[df['district'] == district]['delbydelid'].unique() if x is not np.nan]
+
     for sub_district in sub_districts:
         time_series.append(sub_district_time_series(df, sub_district, template, data_points))
     return time_series
