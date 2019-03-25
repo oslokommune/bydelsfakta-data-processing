@@ -111,3 +111,6 @@ node_modules/
 .idea/
 
 out/
+
+# local csv files
+test_data/
