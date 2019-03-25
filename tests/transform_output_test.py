@@ -2,16 +2,17 @@ import unittest
 
 import common.transform_output as transform
 import tests.transform_output_test_data as test_data
+import numpy
 import pandas as pd
 
-def empty_str_to_none(s):
+def empty_str_to_nan(s):
     if len(s) == 0:
-        return None
+        return numpy.nan
     else:
         return s
 
 test_df = pd.read_csv(f'tests/transform_output_test_input.csv', sep=';', converters={
-        'delbydelid': lambda x: empty_str_to_none(str(x)),
+        'delbydelid': lambda x: empty_str_to_nan(str(x)),
         'district': lambda x: str(x)
     })
 
