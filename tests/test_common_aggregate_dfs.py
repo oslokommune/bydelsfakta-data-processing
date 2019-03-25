@@ -5,23 +5,13 @@ import unittest
 import datasets_for_testing
 sys.path.insert(0, r'..\common')  # Needed to import the module to be tested
 import aggregate_dfs
+import datasets_for_testing
 
-df_org = pd.DataFrame({'date': [2017, 2017, 2018, 2018],
-                       'sub_district': ['0300010001', '0300020001', '0300010001', '0300020001'],
-                       'district': ['01', '02', '01', '02'],
-                       'mean_income': [400000, 500000, 420000, 525000],
-                       'inhabitants': [2000, 3000, 2200, 3300]})
-
-df_agg_districts = df_org.copy()
-df_agg_districts['sub_district'] = [np.nan, np.nan, np.nan, np.nan]
-
-df_agg_Oslo = pd.DataFrame({'date': [2017, 2018],
-                            'sub_district': [np.nan, np.nan],
-                            'district': ['00', '00'],
-                            'mean_income': [460000.0, 483000.0],
-                            'inhabitants': [5000, 5500]})
-
-df_agg_total = pd.concat((df_org, df_agg_districts, df_agg_Oslo), axis=0, sort=True)
+# Local copies of the test data in datasets_for_testing
+df_org = datasets_for_testing.data_sets['df2_org'].copy()
+df_agg_districts = datasets_for_testing.data_sets['df2_agg_districts'].copy()
+df_agg_Oslo = datasets_for_testing.data_sets['df2_agg_Oslo'].copy()
+df_agg_total = datasets_for_testing.data_sets['df2_agg_total'].copy()
 
 
 def _sort_dfs(dfs):
@@ -122,13 +112,18 @@ class Tester(unittest.TestCase):
         for col in df_act.columns:
             self.assertListEqual(list(df_act[col]), list(df_exp[col]))
 
+    def test_add_ratios(self):
 
-    # TO BE DONE!
-    # add_ratios(df, data_points)
+        df = df_org.copy()
 
+        df['double_mean_income'] = df['mean_income'] * 2
+
+        df = aggregate_dfs.add_ratios(df, ['mean_income', 'double_mean_income'])
+
+        self.assertListEqual([1/3 for i in range(len(df))], list(df['mean_income_ratio']))
+        self.assertListEqual([2/3 for i in range(len(df))], list(df['double_mean_income_ratio']))
 
 
 if __name__ == '__main__':
 
     unittest.main()
-

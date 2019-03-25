@@ -143,7 +143,7 @@ def aggregate_from_subdistricts(df, aggregations):
     for a in aggregations:
 
         try:
-            print(a['data_weights'])
+            dummy = a['data_weights']
         except KeyError:
             a['data_weights'] = None
 
@@ -264,11 +264,8 @@ if __name__ == '__main__':
     AGGS = [{'agg_func': 'sum',
              'data_points': 'value_A'},
             {'agg_func': 'wmean',
-             'data_points': 'value_A',
-             'data_weights': 'value_C'},
-            {'agg_func': 'wmean',
-             'data_points': 'value_B',
-             'data_weights': 'value_C'},
+             'data_points': 'value_C',
+             'data_weights': 'value_D'},
             {'agg_func': 'sum',
              'data_points': 'value_D'}]
 
@@ -277,13 +274,4 @@ if __name__ == '__main__':
     print('Aggreated:')
     print(df)
 
-    print('TBD: THIS FAILS BECAUSE TWO AGGREGATIONS ARE DONE ON COL A! That won\'t ever happen (I think) - '
-          'remove and check at the start of the aggregate function!')
-    print('If really needed - do twice and merge the resulting tables.')
-    print('TBD2: Add test for ratio.')
-
-
-
-
-
-
+    print('If we need to do two aggregations of the same column - do twice and merge the resulting tables.')
