@@ -4,9 +4,9 @@ generate_output_list:
     Arguments:
     * df: input dataframe
         Input dataframe must have the following columns:
-        | sub_district | district | date | data_point1 - n (values) |
+        | delbydelid | district | date | data_point1 - n (values) |
 
-        sub_district: 4-character code for sub_district
+        delbydelid: 10-character code for sub_district
         district: 2-digit code for district
         date: year
         data_point1- n: One column for each data_point
@@ -41,7 +41,7 @@ def district_time_series_list(df, district, template, data_points):
     time_series = [district_time_series(df, '00', template, data_points, total_row=True),
                    district_time_series(df, district, template, data_points, avg_row=True)]
     sub_districts = list(
-        filter(lambda x: x is not None, df[df['district'] == district]['sub_district'].unique())
+        filter(lambda x: x is not None, df[df['district'] == district]['delbydelid'].unique())
         )
     for sub_district in sub_districts:
         time_series.append(sub_district_time_series(df, sub_district, template, data_points))
@@ -50,12 +50,12 @@ def district_time_series_list(df, district, template, data_points):
 
 def district_time_series(df, district, template, data_points, avg_row=False, total_row=False):
     district_df = df[df['district'] == district]
-    district_df = district_df[district_df['sub_district'].isnull()]
+    district_df = district_df[district_df['delbydelid'].isnull()]
     return df_to_template(district, district_df, template, data_points, avg_row=avg_row, total_row=total_row)
 
 
 def sub_district_time_series(df, sub_district, template, data_points):
-    sub_district_df = df[df['sub_district'] == sub_district]
+    sub_district_df = df[df['delbydelid'] == sub_district]
     return df_to_template(sub_district, sub_district_df, template, data_points)
 
 

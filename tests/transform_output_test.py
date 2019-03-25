@@ -11,7 +11,7 @@ def empty_str_to_none(s):
         return s
 
 test_df = pd.read_csv(f'tests/transform_output_test_input.csv', sep=';', converters={
-        'sub_district': lambda x: empty_str_to_none(str(x)),
+        'delbydelid': lambda x: empty_str_to_none(str(x)),
         'district': lambda x: str(x)
     })
 
@@ -44,7 +44,7 @@ class Tester(unittest.TestCase):
 
     def test_df_to_template_a(self):
         geography = '0301010101'
-        input_df = test_df_latest[test_df_latest['sub_district'] == geography]
+        input_df = test_df_latest[test_df_latest['delbydelid'] == geography]
         data_points = ['d1', 'd2']
         output = transform.df_to_template_a(geography, input_df, data_points)
         expected = {
@@ -58,7 +58,7 @@ class Tester(unittest.TestCase):
 
     def test_df_to_template_c(self):
         geography = '0301010101'
-        input_df = test_df[test_df['sub_district'] == geography]
+        input_df = test_df[test_df['delbydelid'] == geography]
         data_points = ['d1', 'd2']
         output = transform.df_to_template_c(geography, input_df, data_points)
         expected = {
@@ -81,7 +81,7 @@ class Tester(unittest.TestCase):
 
     def test_df_to_template_i(self):
         geography = '0301010101'
-        input_df = test_df_latest[test_df_latest['sub_district'] == geography]
+        input_df = test_df_latest[test_df_latest['delbydelid'] == geography]
         data_points = ['d1', 'd2']
         output = transform.df_to_template_i(geography, input_df, data_points)
         expected = {
