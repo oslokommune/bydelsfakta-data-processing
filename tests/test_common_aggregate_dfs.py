@@ -99,6 +99,17 @@ class Tester(unittest.TestCase):
             else:
                 self.assertListEqual(list(df_act[col]), list(df_exp[col]))
 
+    def test_aggregate_from_subdistricts_2(self):
+
+        aggregations = [{'agg_func': 'sum',
+                         'data_points': ['inhabitants']},
+                        {'agg_func': 'wmean',
+                         'data_points': 'mean_income',
+                         'data_weights': 'inhabitants'}]
+
+        with self.assertRaises(ValueError):
+            aggregate_dfs.aggregate_from_subdistricts(df_org, aggregations)
+
     def test_merge_df(self):
 
         df1 = df_org[['date', 'district', 'delbydelid', 'mean_income']].copy()
