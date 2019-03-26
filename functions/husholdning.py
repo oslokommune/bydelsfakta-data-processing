@@ -13,7 +13,10 @@ import json
 os.environ['METADATA_API_URL'] = ''
 
 s3_bucket = 'ok-origo-dataplatform-dev'
+
 historic_id = 'husholdning_totalt_historisk-UNIQUE-ZYX'
+status_id = ''
+matrix_id = ''
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
@@ -53,9 +56,9 @@ def start(bucket, key):
                                                   template='i',
                                                   data_points=data_points)
 
-    _write_to_intermediate('husholdning-totalt-historisk-xyz', household_total_historic)
-    _write_to_intermediate('husholdning-totalt-status-xyz', household_total_status)
-    _write_to_intermediate('husholdning-totalt-matrise-xyz', household_total_matrix)
+    _write_to_intermediate(historic_id, household_total_historic)
+    _write_to_intermediate(matrix_id, household_total_status)
+    _write_to_intermediate(matrix_id, household_total_matrix)
 
 
 def _aggregations(data_points):
