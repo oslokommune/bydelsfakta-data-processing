@@ -25,6 +25,3 @@ def add_district_id(org, district_column = None):
     else:
         return df[df['district'].str.len() > 0]
 
-def add_date_column(df, date_column):
-    df['date'] = df[date_column]
-    return df
