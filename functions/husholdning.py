@@ -103,7 +103,7 @@ def household_data_point(household_type):
 
 
 def _output_key(dataset_id, version_id):
-    return f'intermediate/green/{dataset_id}/{version_id}/edition=??'
+    return f'intermediate/green/{dataset_id}/version={version_id}/edition=edition-1'
 
 
 def _write_to_intermediate(dataset_id, version_id, output_list):
@@ -115,3 +115,11 @@ def _write_to_intermediate(dataset_id, version_id, output_list):
     heading = "Husholdninger"
     output_key = _output_key(dataset_id, version_id)
     common_aws.write_to_intermediate(output_key, output_list, heading, series)
+
+if __name__ == '__main__':
+    handle(
+            {'bucket': 'ok-origo-dataplatform-dev',
+             'keys': {
+                 'Husholdninger_med_barn-XdfNB': 'raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/edition=EDITION-ivaYi/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv'}
+             }
+            , {})
