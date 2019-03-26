@@ -7,11 +7,11 @@ import pandas as pd
 s3_bucket = "ok-origo-dataplatform-dev"
 
 
-def read_from_s3(s3_key, value_column, date_column="År", dtype=None):
+def read_from_s3(s3_key, date_column="År", dtype=None):
     if dtype is None:
         dtype = {'delbydelid': object}
     return pd.read_csv(f's3://{s3_bucket}/{s3_key}', sep=';', dtype=dtype).rename(
-            columns={value_column: 'value', date_column: 'date'})
+            columns={date_column: 'date'})
 
 
 def write_to_intermediate(output_key: str, output_list: list, heading: str, series: list):

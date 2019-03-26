@@ -16,8 +16,15 @@ def status(*dfs):
     return [df[df['date'] == maxDate] for df in dfs]
 
 
-def add_district_id(org, district_column):
+def add_district_id(org, district_column = None):
     df = org.copy()
     df['district'] = df['delbydelid'].str.slice(4, 6)
-    df.loc[df['district'].isnull(), 'district'] = df[df['district'].isnull()][district_column].apply(util.get_district_id)
+    if district_column:
+        df.loc[df['district'].isnull(), 'district'] = df[df['district'].isnull()][district_column].apply(util.get_district_id)
+        return df
+    else:
+        return df[df['district'].str.len() > 0]
+
+def add_date_column(df, date_column):
+    df['date'] = df[date_column]
     return df
