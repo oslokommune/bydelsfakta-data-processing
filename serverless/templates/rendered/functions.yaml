@@ -1,2 +1,3 @@
 aldersbefolkning_bydel: ${file(serverless/functions/aldersbefolkning_bydel.yaml)}
 boligpriser: ${file(serverless/functions/boligpriser.yaml)}
+boligpriser: ${file(serverless/functions/husholdning.yaml)}
