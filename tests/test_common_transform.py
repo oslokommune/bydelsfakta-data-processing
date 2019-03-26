@@ -7,7 +7,7 @@ def test_add_district_id_simple():
     delbydelids = np.array(["0301010101", "0301030303", "0301010103", "0301010104", None])
     districts = np.array(["01", "03", "01", "01", None])
     df = pd.DataFrame({'value': "some_value", 'delbydelid': delbydelids})
-    df_expected = pd.DataFrame({'value': "some_value", 'delbydelid': delbydelids, 'district': districts})
+    df_expected = pd.DataFrame({'value': "some_value", 'delbydelid': delbydelids[:-1], 'district': districts[:-1]})
 
     result = transform.add_district_id(df)
     print(result)
