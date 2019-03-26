@@ -14,13 +14,16 @@ os.environ['METADATA_API_URL'] = ''
 
 s3_bucket = 'ok-origo-dataplatform-dev'
 
-historic_id = 'husholdning_totalt_historisk-UNIQUE-ZYX'
-status_id = ''
-matrix_id = ''
+historic_dataset_id = 'Husholdning-totalt-historisk-NZrxf'
+historic_version_id = '1-Xh69qF9c'
+status_dataset_id = 'Husholdning-totalt-status-FzFf5'
+status_version_id = '1-wgHdAJWY'
+matrix_dataset_id = 'Husholdning-totalt-matrise-e9w4m'
+matrix_version_id = '1-8fZLJ6dC'
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
-    s3_key = event['keys']['boligpriser-urFqK']
+    s3_key = event['keys']['Husholdninger_med_barn-XdfNB']
     bucket = event['bucket']
     start(bucket, s3_key)
     return "OK"
@@ -31,10 +34,6 @@ def start(bucket, key):
         s3_key=key,
         date_column='År'
     )
-
-    #     pd.read_csv(f'test_data/Husholdninger_med_barn.csv', sep=';', converters={
-    #     'delbydelid': lambda x: str(x)
-    # })
 
     data_points = ['single_adult', 'no_children', 'with_children']
 
@@ -56,9 +55,9 @@ def start(bucket, key):
                                                   template='i',
                                                   data_points=data_points)
 
-    _write_to_intermediate(historic_id, household_total_historic)
-    _write_to_intermediate(matrix_id, household_total_status)
-    _write_to_intermediate(matrix_id, household_total_matrix)
+    _write_to_intermediate(historic_dataset_id, historic_version_id, household_total_historic)
+    _write_to_intermediate(status_dataset_id, status_version_id, household_total_status)
+    _write_to_intermediate(matrix_dataset_id, matrix_version_id, household_total_matrix)
 
 
 def _aggregations(data_points):
@@ -103,16 +102,16 @@ def household_data_point(household_type):
         raise Exception(f'No data_point for Hushodningstype={household_type}')
 
 
-def _output_key(dataset_id):
-    return f'intermediate/green/{dataset_id}/version=1/edition=??'
+def _output_key(dataset_id, version_id):
+    return f'intermediate/green/{dataset_id}/{version_id}/edition=??'
 
 
-def _write_to_intermediate(dataset_id, output_list):
+def _write_to_intermediate(dataset_id, version_id, output_list):
     series = [
         {"heading": "Antall aleneboende", "subheading": ""},
         {"heading": "Antall øvrige husholdninger uten barn", "subheading": ""},
         {"heading": "Antall husholdninger med barn", "subheading": ""},
     ]
     heading = "Husholdninger"
-    output_key = _output_key(dataset_id)
-    common_aws.write_to_intermediate(output_key, output_list,heading, series)
+    output_key = _output_key(dataset_id, version_id)
+    common_aws.write_to_intermediate(output_key, output_list, heading, series)
