@@ -2,129 +2,81 @@ district_01_time_series_list = [
     {
         'geography': '00',
         'values': [
-            [
-                {
-                    'value': 'd1_00_2017',
-                    'ratio': 'd1_00_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd1_00_2018',
-                    'ratio': 'd1_00_2018_ratio',
-                    'date': 2018
-                }
-            ],
-            [
-                {
-                    'value': 'd2_00_2017',
-                    'ratio': 'd2_00_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd2_00_2018',
-                    'ratio': 'd2_00_2018_ratio',
-                    'date': 2018
-                }
-            ]
+            {
+                'value': 'd1_00_2018',
+                'ratio': 'd1_00_2018_ratio',
+                'date': 2018
+            },
+            {
+                'value': 'd2_00_2018',
+                'ratio': 'd2_00_2018_ratio',
+                'date': 2018
+            }
         ],
+        'linkTo': False,
         'avgRow': False,
         'totalRow': True
     },
     {
         'geography': '01',
         'values': [
-            [
-                {
-                    'value': 'd1_01_2017',
-                    'ratio': 'd1_01_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd1_01_2018',
-                    'ratio': 'd1_01_2018_ratio',
-                    'date': 2018
-                }
-            ],
-            [
-                {
-                    'value': 'd2_01_2017',
-                    'ratio': 'd2_01_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd2_01_2018',
-                    'ratio': 'd2_01_2018_ratio',
-                    'date': 2018
-                }
-            ]
+            {
+                'value': 'd1_01_2018',
+                'ratio': 'd1_01_2018_ratio',
+                'date': 2018
+            },
+            {
+                'value': 'd2_01_2018',
+                'ratio': 'd2_01_2018_ratio',
+                'date': 2018
+            }
+
         ],
+        'linkTo': False,
         'avgRow': True,
         'totalRow': False
     },
     {
         'geography': '0301010101',
         'values': [
-            [
-                {
-                    'value': 'd1_0101_2017',
-                    'ratio': 'd1_0101_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd1_0101_2018',
-                    'ratio': 'd1_0101_2018_ratio',
-                    'date': 2018
-                }
-            ],
-            [
-                {
-                    'value': 'd2_0101_2017',
-                    'ratio': 'd2_0101_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd2_0101_2018',
-                    'ratio': 'd2_0101_2018_ratio',
-                    'date': 2018
-                }
-            ]
+
+            {
+                'value': 'd1_0101_2018',
+                'ratio': 'd1_0101_2018_ratio',
+                'date': 2018
+            },
+            {
+                'value': 'd2_0101_2018',
+                'ratio': 'd2_0101_2018_ratio',
+                'date': 2018
+            }
+
         ],
+        'linkTo': False,
         'avgRow': False,
         'totalRow': False
     },
     {
         'geography': '0301010102',
         'values': [
-            [
-                {
-                    'value': 'd1_0102_2017',
-                    'ratio': 'd1_0102_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd1_0102_2018',
-                    'ratio': 'd1_0102_2018_ratio',
-                    'date': 2018
-                }
-            ],
-            [
-                {
-                    'value': 'd2_0102_2017',
-                    'ratio': 'd2_0102_2017_ratio',
-                    'date': 2017
-                },
-                {
-                    'value': 'd2_0102_2018',
-                    'ratio': 'd2_0102_2018_ratio',
-                    'date': 2018
-                }
-            ]
+
+            {
+                'value': 'd1_0102_2018',
+                'ratio': 'd1_0102_2018_ratio',
+                'date': 2018
+            },
+            {
+                'value': 'd2_0102_2018',
+                'ratio': 'd2_0102_2018_ratio',
+                'date': 2018
+            }
+
         ],
+        'linkTo': False,
         'avgRow': False,
         'totalRow': False
     }
 ]
-
 
 output_list = [
     {

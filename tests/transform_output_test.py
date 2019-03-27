@@ -34,9 +34,9 @@ class Tester(unittest.TestCase):
         values_with_ratio = {'d1': 1.0, 'd1_ratio': 0.5, 'date': 2018}
 
         self.assertDictEqual(transform.value_entry_a(values_no_ratio, 'd1'),
-                             {'value': 1.0})
+                             {'value': 1.0, 'date': 2018})
         self.assertDictEqual(transform.value_entry_a(values_with_ratio, 'd1'),
-                             {'value': 1.0, 'ratio': 0.5})
+                             {'value': 1.0, 'ratio': 0.5, 'date': 2018})
 
     def test_list_to_time_series(self):
         data_points = ['d1', 'd2', 'd3']
@@ -51,9 +51,11 @@ class Tester(unittest.TestCase):
         expected = {
             'geography': '0301010101',
             'linkTo': False,
+            'avgRow': False,
+            'totalRow': False,
             'values': [
-                {'value': 'd1_0101_2018', 'ratio': 'd1_0101_2018_ratio'},
-                {'value': 'd2_0101_2018', 'ratio': 'd2_0101_2018_ratio'}]
+                {'value': 'd1_0101_2018', 'ratio': 'd1_0101_2018_ratio', 'date': 2018},
+                {'value': 'd2_0101_2018', 'ratio': 'd2_0101_2018_ratio', 'date': 2018}]
         }
         self.assertDictEqual(output, expected)
 
@@ -87,9 +89,11 @@ class Tester(unittest.TestCase):
         output = transform.df_to_template_i(geography, input_df, data_points)
         expected = {
             'geography': '0301010101',
+            'avgRow': False,
+            'totalRow': False,
             'values': [
-                {'value': 'd1_0101_2018', 'ratio': 'd1_0101_2018_ratio'},
-                {'value': 'd2_0101_2018', 'ratio': 'd2_0101_2018_ratio'}]
+                {'value': 'd1_0101_2018', 'ratio': 'd1_0101_2018_ratio', 'date': 2018},
+                {'value': 'd2_0101_2018', 'ratio': 'd2_0101_2018_ratio', 'date': 2018}]
         }
         self.assertDictEqual(output, expected)
 
@@ -139,7 +143,7 @@ class Tester(unittest.TestCase):
 
     def test_district_time_series_list(self):
         district = '01'
-        template = 'c'
+        template = 'a'
         data_points = ['d1', 'd2']
         output = transform.district_time_series_list(test_df, district, template, data_points)
         expected = test_data.district_01_time_series_list
