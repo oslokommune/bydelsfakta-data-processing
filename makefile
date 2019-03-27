@@ -15,4 +15,4 @@ clean_rendered:
 	touch serverless/templates/rendered/functions.yaml
 
 .PHONY: render
-render: clean_rendered render_fu'nctions
+render: clean_rendered render_functions
