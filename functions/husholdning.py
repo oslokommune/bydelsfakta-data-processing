@@ -16,10 +16,13 @@ s3_bucket = 'ok-origo-dataplatform-dev'
 
 historic_dataset_id = 'Husholdning-totalt-historisk-NZrxf'
 historic_version_id = '1-Xh69qF9c'
+historic_edition_id = 'EDITION-gvinX'
 status_dataset_id = 'Husholdning-totalt-status-FzFf5'
 status_version_id = '1-wgHdAJWY'
+status_edition_id = 'EDITION-nibxq'
 matrix_dataset_id = 'Husholdning-totalt-matrise-e9w4m'
 matrix_version_id = '1-8fZLJ6dC'
+matrix_edition_id = 'EDITION-756ZB'
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
@@ -55,9 +58,9 @@ def start(bucket, key):
                                                   template='i',
                                                   data_points=data_points)
 
-    _write_to_intermediate(historic_dataset_id, historic_version_id, household_total_historic)
-    _write_to_intermediate(status_dataset_id, status_version_id, household_total_status)
-    _write_to_intermediate(matrix_dataset_id, matrix_version_id, household_total_matrix)
+    _write_to_intermediate(historic_dataset_id, historic_version_id, historic_edition_id, household_total_historic)
+    _write_to_intermediate(status_dataset_id, status_version_id, status_edition_id, household_total_status)
+    _write_to_intermediate(matrix_dataset_id, matrix_version_id, matrix_edition_id, household_total_matrix)
 
 
 def _aggregations(data_points):
@@ -102,24 +105,24 @@ def household_data_point(household_type):
         raise Exception(f'No data_point for Hushodningstype={household_type}')
 
 
-def _output_key(dataset_id, version_id):
-    return f'intermediate/green/{dataset_id}/version={version_id}/edition=edition-1'
+def _output_key(dataset_id, version_id, edition_id):
+    return f'processed/green/{dataset_id}/version={version_id}/edition={edition_id}/'
 
 
-def _write_to_intermediate(dataset_id, version_id, output_list):
+def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
     series = [
         {"heading": "Antall aleneboende", "subheading": ""},
         {"heading": "Antall øvrige husholdninger uten barn", "subheading": ""},
         {"heading": "Antall husholdninger med barn", "subheading": ""},
     ]
     heading = "Husholdninger"
-    output_key = _output_key(dataset_id, version_id)
+    output_key = _output_key(dataset_id, version_id, edition_id)
     common_aws.write_to_intermediate(output_key, output_list, heading, series)
 
 if __name__ == '__main__':
     handle(
-            {'bucket': 'ok-origo-dataplatform-dev',
-             'keys': {
-                 'Husholdninger_med_barn-XdfNB': 'raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/edition=EDITION-ivaYi/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv'}
+            {"bucket": "ok-origo-dataplatform-dev",
+             "keys": {
+                 "Husholdninger_med_barn-XdfNB": "raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/edition=EDITION-ivaYi/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"}
              }
             , {})

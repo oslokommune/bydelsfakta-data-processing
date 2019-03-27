@@ -6,6 +6,6 @@
     "serverless-plugin-existing-s3": "^2.3.0"
   },
   "devDependencies": {
-    "serverless-python-requirements": "^4.2.5"
+    "serverless-python-requirements": "^4.3.0"
   }
 }

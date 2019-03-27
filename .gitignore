@@ -114,3 +114,6 @@ out/
 
 # local csv files
 test_data/
+
+# osx DS_Store
+.DS_Store
