@@ -1,21 +1,21 @@
 import common.aws
 import common.transform
 import common.util
+import common.transform_output
 
 
 def handler(event, context):
     """ Assuming we recieve a complete s3 key"""
     s3_key = event['keys']['boligpriser-urFqK']
     bucket = event['bucket']
-    start(bucket, s3_key)
+    start(s3_key)
     return "OK"
 
 
-def start(bucket, key):
+def start(key):
     original = common.aws.read_from_s3(
             s3_key=key,
-            value_column="kvmpris",
-            date_column="År"
+            value_column="kvmpris"
     )
     original = common.transform.add_district_id(original, "Oslo-Bydelsnavn")
     original = original.drop(
@@ -24,17 +24,16 @@ def start(bucket, key):
     status = common.transform.status(original)
     historic = common.transform.historic(original)
 
-    create_ds(bucket, "boligpriser_historic-4owcY", *historic)
-    create_ds(bucket, "boligpriser_status-pD7ZV", *status)
+    create_ds("boligpriser_historic-4owcY", *historic)
+    create_ds("boligpriser_status-pD7ZV", *status)
 
 
-def create_ds(bucket, dataset_id, df):
+def create_ds(dataset_id, df):
     heading = "Gjennomsnittpris (kr) pr kvm for blokkleilighet"
     series = [{'heading': 'Gjennomsnittpris (kr) pr kvm for blokkleilighet', 'subheading': ''}]
 
     # To json : convert df to list of json objects
-    json = [{'x': """to_json(df)"""}]
-
+    json = common.transform_output.generate_output_list(df, 'c', ['value'])
     common.aws.write_to_intermediate(
             output_key=f"intermediate/green/{dataset_id}/version=1/edition=???/",
             heading=heading,
