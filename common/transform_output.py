@@ -58,19 +58,21 @@ def sub_district_time_series(district_df, sub_district, template, data_points):
 
 def df_to_template(geography, df, template, data_points, avg_row=False, total_row=False):
     if template.lower() == 'a':
-        return df_to_template_a(geography, df, data_points)
+        return df_to_template_a(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     elif template.lower() == 'c':
         return df_to_template_c(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     elif template.lower() == 'i':
-        return df_to_template_i(geography, df, data_points)
+        return df_to_template_i(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     else:
         raise Exception(f'Template {template} does not exist')
 
 
-def df_to_template_a(geography, df, data_points, link_to=False):
+def df_to_template_a(geography, df, data_points, avg_row=False, total_row=False, link_to=False):
     obj_a = {
         'linkTo': link_to,
         'geography': geography,
+        'avgRow': avg_row,
+        'totalRow': total_row,
         'values': []
     }
     series = {}
@@ -98,10 +100,12 @@ def df_to_template_c(geography, df, data_points, avg_row=False, total_row=False)
     return obj_c
 
 
-def df_to_template_i(geography, df, data_points):
+def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False):
     obj_i = {
         'geography': geography,
-        'values': []
+        'values': [],
+        'avgRow': avg_row,
+        'totalRow': total_row
     }
     series = {}
     for values in df.to_dict('r'):
@@ -123,11 +127,13 @@ def value_entry_a(values, data_point):
     if f'{data_point}_ratio' in values:
         return {
             'value': values[data_point],
-            'ratio': values[f'{data_point}_ratio']
+            'ratio': values[f'{data_point}_ratio'],
+            'date': values['date']
         }
     else:
         return {
-            'value': values[data_point]
+            'value': values[data_point],
+            'date': values['date']
         }
 
 
