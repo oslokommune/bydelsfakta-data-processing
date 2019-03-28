@@ -72,15 +72,20 @@ def generate(origin_by_age_df, livage_df, population_df):
     # Create the df with only subdistricts
     sub_districts = prepare(origin_by_age=origin_by_age_df, livage=livage_df, population_df=population_df)
 
-    # create districts
-    districts = sub_districts.copy().groupby(['district', 'date'])[value_labels].sum().reset_index()
+    aggregations = [
+        {'agg_func': 'sum',
+         'data_points': 'value_a'},
+        {'agg_func': 'sum',
+         'data_points': 'value_b'},
+        {'agg_func': 'sum',
+         'data_points': 'value_c'},
+        {'agg_func': 'sum',
+         'data_points': 'value_d'},
+        {'agg_func': 'sum',
+         'data_points': 'value'}
+    ]
 
-    # create oslo total
-    oslo = sub_districts.copy().groupby(['date'])[value_labels].sum().reset_index()
-    oslo['district'] = "00"
-
-    sub_districts = sub_districts.append(districts)
-    sub_districts = sub_districts.append(oslo)
+    common.aggregate_dfs.aggregate_from_subdistricts(sub_districts, aggregations)
 
     sub_districts = common.aggregate_dfs.add_ratios(sub_districts,
                                                     data_points=['value_a', 'value_b', 'value_c', 'value_d'],
