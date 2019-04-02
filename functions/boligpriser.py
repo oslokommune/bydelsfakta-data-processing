@@ -7,15 +7,13 @@ import common.transform_output
 def handler(event, context):
     """ Assuming we recieve a complete s3 key"""
     s3_key = event['keys']['boligpriser-urFqK']
-    bucket = event['bucket']
     start(s3_key)
     return "OK"
 
 
 def start(key):
     original = common.aws.read_from_s3(
-            s3_key=key,
-            value_column="kvmpris"
+            s3_key=key
     )
     original = common.transform.add_district_id(original, "Oslo-Bydelsnavn")
     original = original.drop(
