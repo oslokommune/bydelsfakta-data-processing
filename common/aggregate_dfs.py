@@ -250,7 +250,7 @@ def merge_dfs(df1, df2, how='inner', suffixes=['_1', '_2']):
         print('Suffixes={s}'.format(s=suffixes))
         raise ValueError('The length of suffixes is {length}, not 2 as expected.'.format(length=len(suffixes)))
 
-    df_merged = pd.merge(df1, df2, how=how, on=['date', 'district', 'delbydelid'], suffixes=['_1', '_2'])
+    df_merged = pd.merge(df1, df2, how=how, on=['date', 'district', 'delbydelid'], suffixes=suffixes)
 
     return df_merged
 
