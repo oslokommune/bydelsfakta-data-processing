@@ -20,23 +20,15 @@ test_df_latest = test_df[test_df['date'] == 2018]
 
 class Tester(unittest.TestCase):
 
-    def test_value_entry_c(self):
+    def test_value_entry(self):
         values_no_ratio = {'d1': 1.0, 'date': 2018}
         values_with_ratio = {'d1': 1.0, 'd1_ratio': 0.5, 'date': 2018}
 
-        self.assertDictEqual(transform.value_entry_c(values_no_ratio, 'd1'),
+        self.assertDictEqual(transform.value_entry(values_no_ratio, 'd1'),
                              {'value': 1.0, 'date': 2018})
-        self.assertDictEqual(transform.value_entry_c(values_with_ratio, 'd1'),
+        self.assertDictEqual(transform.value_entry(values_with_ratio, 'd1'),
                              {'value': 1.0, 'ratio': 0.5, 'date': 2018})
 
-    def test_value_entry_a(self):
-        values_no_ratio = {'d1': 1.0, 'date': 2018}
-        values_with_ratio = {'d1': 1.0, 'd1_ratio': 0.5, 'date': 2018}
-
-        self.assertDictEqual(transform.value_entry_a(values_no_ratio, 'd1'),
-                             {'value': 1.0, 'date': 2018})
-        self.assertDictEqual(transform.value_entry_a(values_with_ratio, 'd1'),
-                             {'value': 1.0, 'ratio': 0.5, 'date': 2018})
 
     def test_list_to_time_series(self):
         data_points = ['d1', 'd2', 'd3']
@@ -58,6 +50,30 @@ class Tester(unittest.TestCase):
                 {'value': 'd2_0101_2018', 'ratio': 'd2_0101_2018_ratio', 'date': 2018}]
         }
         self.assertDictEqual(output, expected)
+
+
+    def test_df_to_template_b(self):
+        geography = '0301010101'
+        input_df = test_df[test_df['delbydelid'] == geography]
+        data_points = ['d1']
+        output = transform.df_to_template_b(geography, input_df, data_points)
+        expected = {
+            'geography': '0301010101',
+            'avgRow': False,
+            'totalRow': False,
+            'values': [
+                {'value': 'd1_0101_2017', 'ratio': 'd1_0101_2017_ratio', 'date': 2017},
+                {'value': 'd1_0101_2018', 'ratio': 'd1_0101_2018_ratio', 'date': 2018}
+            ]
+        }
+        self.assertDictEqual(output, expected)
+
+    def test_df_to_template_b_error(self):
+        geography = '0301010101'
+        input_df = test_df[test_df['delbydelid'] == geography]
+        data_points = ['d1', 'd2']
+        with self.assertRaises(Exception):
+            transform.df_to_template_b(geography, input_df, data_points)    
 
     def test_df_to_template_c(self):
         geography = '0301010101'
