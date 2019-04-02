@@ -1,9 +1,14 @@
 import unittest
+import sys
+
+# sys.path.insert(0, r'..\common')  # Needed to import the module to be tested
+sys.path.insert(0, r'..')  # Needed to import the module to be tested
 
 import common.transform_output as transform
 import tests.transform_output_test_data as test_data
 import numpy
 import pandas as pd
+
 
 def empty_str_to_nan(s):
     if len(s) == 0:
@@ -11,12 +16,14 @@ def empty_str_to_nan(s):
     else:
         return s
 
+
 test_df = pd.read_csv(f'tests/transform_output_test_input.csv', sep=';', converters={
         'delbydelid': lambda x: empty_str_to_nan(str(x)),
         'district': lambda x: str(x)
     })
 
 test_df_latest = test_df[test_df['date'] == 2018]
+
 
 class Tester(unittest.TestCase):
 
@@ -81,8 +88,22 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
-
     def test_df_to_template_i(self):
+        geography = '0301010101'
+        input_df = test_df_latest[test_df_latest['delbydelid'] == geography]
+        data_points = ['d1', 'd2']
+        output = transform.df_to_template_i(geography, input_df, data_points)
+        expected = {
+            'geography': '0301010101',
+            'avgRow': False,
+            'totalRow': False,
+            'values': [
+                {'value': 'd1_0101_2018', 'ratio': 'd1_0101_2018_ratio', 'date': 2018},
+                {'value': 'd2_0101_2018', 'ratio': 'd2_0101_2018_ratio', 'date': 2018}]
+        }
+        self.assertDictEqual(output, expected)
+
+    def test_df_to_template_j(self):
         geography = '0301010101'
         input_df = test_df_latest[test_df_latest['delbydelid'] == geography]
         data_points = ['d1', 'd2']

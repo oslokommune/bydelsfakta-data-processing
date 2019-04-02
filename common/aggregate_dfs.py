@@ -150,6 +150,9 @@ def aggregate_from_subdistricts(df, aggregations):
         except KeyError:
             a['data_weights'] = None
 
+        if type(a['data_points']) is not str:
+            raise ValueError('data_points is not a string.')
+
         if a['agg_func'] == 'wmean' and a['data_weights'] is None:
             raise ValueError('agg_func is "wmean", but you have not specified data_weights.')
         if a['agg_func'] != 'wmean' and a['data_weights'] is not None:
