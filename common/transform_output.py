@@ -59,6 +59,8 @@ def sub_district_time_series(district_df, sub_district, template, data_points):
 def df_to_template(geography, df, template, data_points, avg_row=False, total_row=False):
     if template.lower() == 'a':
         return df_to_template_a(geography, df, data_points, avg_row=avg_row, total_row=total_row)
+    elif template.lower() == 'b':
+        return df_to_template_b(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     elif template.lower() == 'c':
         return df_to_template_c(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     elif template.lower() == 'i':
