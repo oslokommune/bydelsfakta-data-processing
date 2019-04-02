@@ -65,14 +65,7 @@ def handler(event, context):
 
     source = read_from_s3(s3_key=s3_key)
 
-#    labels_categories = [['Personer per rom - 0,5 - 0,9', '0.5-0.9']
-#                         ['Personer per rom - I alt', None],
-#                         ['Personer per rom - 2,0 og over', 'over2'],
-#                         ['Personer per rom - 1,0 - 1,9', '1.0-1.9']
-#                         ['Personer per rom - Under 0,5', 'under0.5']]
-
     value_labels = ['Personer per rom - 0,5 - 0,9',
-                    'Personer per rom - I alt',
                     'Personer per rom - 2,0 og over',
                     'Personer per rom - 1,0 - 1,9',
                     'Personer per rom - Under 0,5']
@@ -85,6 +78,8 @@ def handler(event, context):
     # Generate the aggregated datasets
     historic_agg = generate(*historic, value_labels)
     status_agg = generate(*status, value_labels)
+
+    #### add_ratios(df, data_points, ratio_of)
 
     # Make output
     output_data = {}
@@ -114,21 +109,20 @@ def handler(event, context):
     output_data['trangboddhet_over2_historisk'] = \
         common.transform_output.generate_output_list(historic_agg, 'b', ['Personer per rom - 2,0 og over'])
 
-    # import json
-    # print(json.dumps(output_data, indent=4))
-    # print(output_data.keys())
-
-    #import sys;
-    #sys.exit(1)
-
     # Write to intermediate, with timestamp as edition
     for output_data_name in output_data:
 
         timestamp = math.floor(time.time())
-        output_key = f'intermediate/green/innvandring_befolkning_histori-Sq5Se/version=1-B87VtKUW/edition={timestamp}/'  # <== TO BE WHAT?
+        target_folder = output_data_name[:30]
+        #output_key = f'intermediate/green/innvandring_befolkning_histori-Sq5Se/version=1-B87VtKUW/edition={timestamp}/'  # <== TO BE WHAT?
+        output_key = f'intermediate/green/{target_folder}-Sq5Se/version=1-B87VtKUW/edition={timestamp}/'  # <== TO BE WHAT?
 
         # Write back to s3
         write(output_data[output_data_name], output_key)
+
+    import json
+    with open(r'C:\CURRENT FILES\dump.json', 'wt', encoding='utf-8') as f:
+        json.dump(output_data, f, indent=4)
 
     output_keys = list(output_data.keys())
 
