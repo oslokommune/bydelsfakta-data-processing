@@ -57,7 +57,6 @@ class Tester(unittest.TestCase):
         input_df = test_df[test_df['delbydelid'] == geography]
         data_points = ['d1']
         output = transform.df_to_template_b(geography, input_df, data_points)
-        print(output)
         expected = {
             'geography': '0301010101',
             'avgRow': False,
@@ -68,6 +67,13 @@ class Tester(unittest.TestCase):
             ]
         }
         self.assertDictEqual(output, expected)
+
+    def test_df_to_template_b_error(self):
+        geography = '0301010101'
+        input_df = test_df[test_df['delbydelid'] == geography]
+        data_points = ['d1', 'd2']
+        with self.assertRaises(Exception):
+            transform.df_to_template_b(geography, input_df, data_points)    
 
     def test_df_to_template_c(self):
         geography = '0301010101'

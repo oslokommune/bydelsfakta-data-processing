@@ -84,6 +84,8 @@ def df_to_template_a(geography, df, data_points, avg_row=False, total_row=False,
 
 
 def df_to_template_b(geography, df, data_points, avg_row=False, total_row=False, link_to=False):
+    if len(data_points) > 1:
+        raise Exception('Template B only takes one datapoint')
     obj_a = {
         'geography': geography,
         'avgRow': avg_row,
@@ -91,9 +93,9 @@ def df_to_template_b(geography, df, data_points, avg_row=False, total_row=False,
         'values': []
     }
     value_list = []
+    data_point = data_points[0]
     for values in df.to_dict('r'):
-        for data_point in data_points:
-            value_list.append(value_entry(values, data_point))
+        value_list.append(value_entry(values, data_point))
     obj_a['values'] = value_list
     return obj_a
 
