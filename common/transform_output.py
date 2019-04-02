@@ -78,8 +78,25 @@ def df_to_template_a(geography, df, data_points, avg_row=False, total_row=False,
     series = {}
     for values in df.to_dict('r'):
         for data_point in data_points:
-            series[data_point] = value_entry_a(values, data_point)
+            series[data_point] = value_entry(values, data_point)
     [obj_a['values'].append(series[data_point]) for data_point in data_points]
+    return obj_a
+
+
+def df_to_template_b(geography, df, data_points, avg_row=False, total_row=False, link_to=False):
+    if len(data_points) > 1:
+        raise Exception('Template B only takes one datapoint')
+    obj_a = {
+        'geography': geography,
+        'avgRow': avg_row,
+        'totalRow': total_row,
+        'values': []
+    }
+    value_list = []
+    data_point = data_points[0]
+    for values in df.to_dict('r'):
+        value_list.append(value_entry(values, data_point))
+    obj_a['values'] = value_list
     return obj_a
 
 
@@ -92,7 +109,7 @@ def df_to_template_c(geography, df, data_points, avg_row=False, total_row=False)
     }
     time_series = list_to_time_series(data_points)
     for values in df.to_dict('r'):
-        [time_series[data_point].append(value_entry_c(values, data_point))
+        [time_series[data_point].append(value_entry(values, data_point))
          for data_point in data_points]
 
 
@@ -110,7 +127,7 @@ def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False)
     series = {}
     for values in df.to_dict('r'):
         for data_point in data_points:
-            series[data_point] = value_entry_a(values, data_point)
+            series[data_point] = value_entry(values, data_point)
 
     [obj_i['values'].append(series[data_point]) for data_point in data_points]
     return obj_i
@@ -123,21 +140,7 @@ def list_to_time_series(data_points):
     return d
 
 
-def value_entry_a(values, data_point):
-    if f'{data_point}_ratio' in values:
-        return {
-            'value': values[data_point],
-            'ratio': values[f'{data_point}_ratio'],
-            'date': values['date']
-        }
-    else:
-        return {
-            'value': values[data_point],
-            'date': values['date']
-        }
-
-
-def value_entry_c(values, data_point):
+def value_entry(values, data_point):
     if f'{data_point}_ratio' in values:
         return {
             'value': values[data_point],
