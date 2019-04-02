@@ -1,0 +1,9 @@
+delbydelid;Antall husholdninger;Barn i husholdningen;År;Bydel;Delbydel;Husholdningstype;district
+0301010101;1.0;YO;2008;Gamle Oslo;Lodalen;Aleneboende;01
+0301010101;1.0;YO;2009;Gamle Oslo;Lodalen;Aleneboende;01
+0301010101;1.0;YO;2008;Gamle Oslo;Lodalen;Par uten hjemmeboende barn;01
+0301010101;1.0;YO;2009;Gamle Oslo;Lodalen;Flerfamiliehusholdninger uten barn 0-17 år;01
+0301010101;1.0;YO;2009;Gamle Oslo;Lodalen;Par uten hjemmeboende barn;01
+0301010103;1.0;YO;2008;Gamle Oslo;Enerhaugen;Par med små barn;01
+0301010103;1.0;YO;2009;Gamle Oslo;Enerhaugen;Par med små barn;01
+0301010103;1.0;YO;2009;Gamle Oslo;Enerhaugen;Par med store barn;01
