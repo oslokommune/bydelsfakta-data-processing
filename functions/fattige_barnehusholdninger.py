@@ -44,8 +44,8 @@ def start(bucket, key):
                                                   template='a',
                                                   data_points=data_points)
 
-    #_write_to_intermediate(historic_dataset_id, historic_version_id, historic_edition_id, low_income_household_historic)
-    #_write_to_intermediate(status_dataset_id, status_version_id, status_edition_id, low_income_household_status)
+    _write_to_intermediate(historic_dataset_id, historic_version_id, historic_edition_id, low_income_household_historic)
+    _write_to_intermediate(status_dataset_id, status_version_id, status_edition_id, low_income_household_status)
 
 def generate_input_df(df, data_points):
     df['Geografi'] = df['Geografi'].apply(str.strip)
