@@ -8,6 +8,7 @@ import common.transform_output
 
 
 def read_from_s3(s3_key):
+
     # read from s3, renames `value_column` to value
     df = common.aws.read_from_s3(s3_key)
 
@@ -15,7 +16,7 @@ def read_from_s3(s3_key):
     df = df[df['delbydelid'].notnull()]
 
     # Add district number
-    df = common.transform.add_district_id(df)  # 'Bydel')  # Leave out the last arg to use sub_district,
+    df = common.transform.add_district_id(df)
     return df
 
 
@@ -28,6 +29,7 @@ def prepare(df):
 
 
 def population(df):
+
     df = df.groupby(['district', 'delbydelid', 'date'])['value'].sum()
     return df.reset_index()
 
@@ -40,10 +42,13 @@ def generate(df, value_labels):
 
     agg_df = common.aggregate_dfs.aggregate_from_subdistricts(df, aggregations)
 
+    agg_df = common.aggregate_dfs.add_ratios(agg_df, data_points=value_labels, ratio_of=value_labels)
+
     return agg_df
 
 
 def write(output_list, output_key):
+
     # Fix proper headings
     series = [
         {"heading": "!! Some Heading for this Series !! ", "subheading": ""},
@@ -59,8 +64,10 @@ def write(output_list, output_key):
 
 
 def handler(event, context):
+
     # These keys should be extracted from "event", but since we do not have the new pipeline yet
     # it needs to be hardcoded
+
     s3_key = r'raw/green/Husholdninger_etter_rom_per_pe-48LKF/version=1-oPutm8TS/edition=EDITION-3mQwN/Husholdninger_etter_rom_per_person(1.1.2015-1.1.2017-v01).csv'
 
     source = read_from_s3(s3_key=s3_key)
@@ -69,7 +76,6 @@ def handler(event, context):
                     'Personer per rom - 2,0 og over',
                     'Personer per rom - 1,0 - 1,9',
                     'Personer per rom - Under 0,5']
-#    value_labels = [lc[0] for lc in labels_categories]
 
     # Create historic and status data (at sub_district level)
     historic = common.transform.historic(source)
@@ -78,8 +84,6 @@ def handler(event, context):
     # Generate the aggregated datasets
     historic_agg = generate(*historic, value_labels)
     status_agg = generate(*status, value_labels)
-
-    #### add_ratios(df, data_points, ratio_of)
 
     # Make output
     output_data = {}
@@ -113,16 +117,24 @@ def handler(event, context):
     for output_data_name in output_data:
 
         timestamp = math.floor(time.time())
-        target_folder = output_data_name[:30]
-        #output_key = f'intermediate/green/innvandring_befolkning_histori-Sq5Se/version=1-B87VtKUW/edition={timestamp}/'  # <== TO BE WHAT?
-        output_key = f'intermediate/green/{target_folder}-Sq5Se/version=1-B87VtKUW/edition={timestamp}/'  # <== TO BE WHAT?
+
+        if output_data_name == 'trangboddhet_alle_historisk':
+            # These values are read manually from the data set overview.
+            # Will soon get them from a solution based on metadata.
+            dataset_ID = 'trangboddhet_alle_historisk-4DAEn'
+            ver_ID = '1-NpEWu8Kp'
+        else:
+            continue  # Just temporarily until the other dataset_IDs are found.
+
+        output_key = f'intermediate/green/{dataset_ID}/version={ver_ID}/edition={timestamp}/'
 
         # Write back to s3
         write(output_data[output_data_name], output_key)
 
-    import json
-    with open(r'C:\CURRENT FILES\dump.json', 'wt', encoding='utf-8') as f:
-        json.dump(output_data, f, indent=4)
+    # To be removed - temporary dump for provide the Frontend guys with the latest output.
+    #import json
+    #with open(r'C:\CURRENT FILES\dump.json', 'wt', encoding='utf-8') as f:
+    #    json.dump(output_data, f, indent=4)
 
     output_keys = list(output_data.keys())
 

@@ -191,14 +191,14 @@ def add_ratios(df, data_points, ratio_of):
 
     """
     This function adds a ratio column for all the data points specified.
-    The value in each of these data points will be devided by the sum of the fields in ratio_of
+    The value in each of these data points will be divided by the sum of the fields in ratio_of
 
     Normally it will be used after aggregate_from_subdistricts.
 
     Args:
         df (pd.DataFrame): A DataFrame containing the data.
         data_points (list): The column names of the columns to be used in the ratio calculation.
-        ratio_of (list): The sum of these data fields will be in the denominator when calculating the ratio (No: 'nevner')
+        ratio_of (list): The sum of these data fields will be in the denominator when calculating the ratio
 
     Returns:
         df_ratios (pd.DataFrame): The original DataFrame with additional columns for ratios.
