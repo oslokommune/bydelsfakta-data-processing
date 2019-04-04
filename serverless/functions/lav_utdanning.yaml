@@ -1,0 +1,3 @@
+handler: functions/lav_utdanning.handle
+timeout: 60
+layers: ${self:custom.layers}
