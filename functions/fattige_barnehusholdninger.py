@@ -10,12 +10,12 @@ os.environ['METADATA_API_URL'] = ''
 
 s3_bucket = 'ok-origo-dataplatform-dev'
 
-historic_dataset_id = ''
-historic_version_id = ''
-historic_edition_id = ''
-status_dataset_id = ''
-status_version_id = ''
-status_edition_id = ''
+historic_dataset_id = 'Fattige_barnehusholdninger_his-GoaU8'
+historic_version_id = '1-cp43chmn'
+historic_edition_id = 'EDITION-Xgfhy'
+status_dataset_id = 'Fattige_barnehusholdninger_sta-EmecB'
+status_version_id = '1-mYw6GSnH'
+status_edition_id = 'EDITION-yKMnS'
 
 pd.set_option('display.max_rows', 1000)
 
@@ -83,6 +83,6 @@ if __name__ == '__main__':
     handle(
             {"bucket": "ok-origo-dataplatform-dev",
              "keys": {
-                 "Husholdninger_med_barn-XdfNB": "raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/edition=EDITION-ivaYi/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"}
+                 "Fattige-barnehusholdninger-iFHCQ": "raw/green/Fattige-barnehusholdninger-iFHCQ/version=1-BmaNpQzh/edition=EDITION-PbaPQ/Fattige_barnehusholdninger(2014-2016-v01).csv"}
              }
             , {})
