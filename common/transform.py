@@ -20,7 +20,8 @@ def add_district_id(org, district_column = None):
     df = org.copy()
     df['district'] = df['delbydelid'].str.slice(4, 6)
     if district_column:
-        df.loc[df['district'].isnull(), 'district'] = df[df['district'].isnull()][district_column].apply(util.get_district_id)
+        df.loc[df['district'] == '', 'district'] = df[df['district'] == ''][district_column].apply(util.get_district_id)
+        df.loc[df['delbydelid'] == '', 'delbydelid'] = np.nan
         return df
     else:
         return df[df['district'].str.len() > 0]
