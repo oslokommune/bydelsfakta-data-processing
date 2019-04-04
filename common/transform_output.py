@@ -81,7 +81,7 @@ def df_to_template_a(geography, df, data_points, avg_row=False, total_row=False,
     for values in df.to_dict('r'):
         for data_point in data_points:
             series[data_point] = value_entry(values, data_point)
-    [obj_a['values'].append(series[data_point]) for data_point in data_points]
+    [obj_a['values'].append(series[data_point]) for data_point in data_points if series]
     return obj_a
 
 
