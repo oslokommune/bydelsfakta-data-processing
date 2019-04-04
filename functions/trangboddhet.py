@@ -13,10 +13,10 @@ def read_from_s3(s3_key):
     df = common.aws.read_from_s3(s3_key)
 
     # We use only sub districts
-    df = df[df['delbydelid'].notnull()]
+    # df = df[df['delbydelid'].notnull()]
 
     # Add district number
-    df = common.transform.add_district_id(df)
+    # df = common.transform.add_district_id(df)
     return df
 
 
@@ -63,14 +63,15 @@ def write(output_list, output_key):
     )
 
 
-def handler(event, context):
+def data_processing(df):
 
-    # These keys should be extracted from "event", but since we do not have the new pipeline yet
-    # it needs to be hardcoded
+    # This function is testable.
 
-    s3_key = r'raw/green/Husholdninger_etter_rom_per_pe-48LKF/version=1-oPutm8TS/edition=EDITION-3mQwN/Husholdninger_etter_rom_per_person(1.1.2015-1.1.2017-v01).csv'
+    # We use only sub districts
+    df = df[df['delbydelid'].notnull()]
 
-    source = read_from_s3(s3_key=s3_key)
+    # Add district number
+    df = common.transform.add_district_id(df)
 
     value_labels = ['Personer per rom - 0,5 - 0,9',
                     'Personer per rom - 2,0 og over',
@@ -78,12 +79,17 @@ def handler(event, context):
                     'Personer per rom - Under 0,5']
 
     # Create historic and status data (at sub_district level)
-    historic = common.transform.historic(source)
-    status = common.transform.status(source)
+    historic = common.transform.historic(df)
+    status = common.transform.status(df)
 
     # Generate the aggregated datasets
     historic_agg = generate(*historic, value_labels)
     status_agg = generate(*status, value_labels)
+
+    print('STATUS_AGG')
+    print(status_agg)
+    print('HISTORIC_AGG')
+    print(historic_agg)
 
     # Make output
     output_data = {}
@@ -112,6 +118,20 @@ def handler(event, context):
         common.transform_output.generate_output_list(status_agg, 'a', ['Personer per rom - 2,0 og over'])
     output_data['trangboddhet_over2_historisk'] = \
         common.transform_output.generate_output_list(historic_agg, 'b', ['Personer per rom - 2,0 og over'])
+
+    return output_data
+
+
+def handler(event, context):
+
+    # These keys should be extracted from "event", but since we do not have the new pipeline yet
+    # it needs to be hardcoded
+
+    s3_key = r'raw/green/Husholdninger_etter_rom_per_pe-48LKF/version=1-oPutm8TS/edition=EDITION-3mQwN/Husholdninger_etter_rom_per_person(1.1.2015-1.1.2017-v01).csv'
+
+    source = read_from_s3(s3_key=s3_key)
+
+    output_data = data_processing(source)
 
     # Write to intermediate, with timestamp as edition
     for output_data_name in output_data:
