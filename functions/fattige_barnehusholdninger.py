@@ -4,7 +4,11 @@ import pandas as pd
 
 import common.aws as common_aws
 import common.transform as transform
+import logging
 from common.transform_output import generate_output_list
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 os.environ['METADATA_API_URL'] = ''
 
@@ -23,6 +27,7 @@ def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
     s3_key = event['keys']['Fattige-barnehusholdninger-iFHCQ']
     bucket = event['bucket']
+    logger.info(f'Received s3 key: {s3_key}')
     start(bucket, s3_key)
     return "OK"
 
@@ -78,7 +83,7 @@ def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
     output_key = _output_key(dataset_id, version_id, edition_id)
     common_aws.write_to_intermediate(output_key, output_list, heading, series)
 
-start(None, None)
+
 if __name__ == '__main__':
     handle(
             {"bucket": "ok-origo-dataplatform-dev",
