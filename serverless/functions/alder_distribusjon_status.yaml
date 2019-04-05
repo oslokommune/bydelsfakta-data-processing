@@ -1,0 +1,3 @@
+handler: functions/alder_distribusjon_status.handler
+timeout: 60
+layers: ${self:custom.layers}
