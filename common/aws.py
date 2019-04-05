@@ -3,6 +3,7 @@ from datetime import date
 
 import boto3
 import pandas as pd
+import numpy as np
 
 s3_bucket = "ok-origo-dataplatform-dev"
 
@@ -28,7 +29,7 @@ def write_to_intermediate(output_key: str, output_list: list, heading: str, seri
         filename = "{}.json".format(output['district'])
         body = output
         body['meta'] = _metadata(heading=heading, series=series)
-        client.put_object(Body=json.dumps(body, ensure_ascii=False),
+        client.put_object(Body=json.dumps(body, ensure_ascii=False, default=default),
                           Bucket=s3_bucket,
                           Key=f"{output_key}{filename}")
 
@@ -43,3 +44,7 @@ def _metadata(heading: str,
         "series": series,
         "publishedDate": date.today().isoformat()
     }
+
+def default(o):
+    if isinstance(o, np.integer): return int(o)
+    raise TypeError

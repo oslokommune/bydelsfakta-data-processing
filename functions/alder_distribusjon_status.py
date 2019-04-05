@@ -95,10 +95,12 @@ def to_json(df, series):
 
     oslo = {'district': "00", 'data': []}
     for sub, subgroup in df[df['delbydelid'].isna()].groupby(['district', 'date']):
+        if sub[0] in ['16', '17', '99']:
+            continue
         data = [geo_to_json(subgroup, series, sub[1], sub[0], totalRow=(sub[0] == "00"))]
         oslo['data'].append(*data)
     list.append(oslo)
-    return list
+    return filter(lambda x: x['district'] not in ['16', '17', '99'], list)
 
 def geo_to_json(df, series, date, geography, avgRow = False, totalRow = False):
     values = df[series].to_dict('r')
@@ -112,9 +114,6 @@ def geo_to_json(df, series, date, geography, avgRow = False, totalRow = False):
 
 
 
-def default(o):
-    if isinstance(o, np.integer): return int(o)
-    raise TypeError
 
 def create_ds(df, dataset_id):
     heading = "Aldersdistribusjon fordelt på kjønn"
@@ -122,12 +121,12 @@ def create_ds(df, dataset_id):
 
     # To json : convert df to list of json objects
     jsonl = to_json(df, ['Alder', 'mann', 'kvinne', 'value', 'ratio'])
-    output_key = 'intermediate/green/alder_distribusjon_status/version=1/edition=1/'
-    # common.aws.write_to_intermediate(
-    #        output_key=output_key,
-    #        output_list=jsonl,
-    #        heading=heading,
-    #        series=series)
+    output_key = 'processed/green/Alder-distribusjon-status-TqWvs/version=1-2qgmA58u/edition=EDITION-gs3fR/'
+    common.aws.write_to_intermediate(
+           output_key=output_key,
+           output_list=jsonl,
+           heading=heading,
+           series=series)
     return output_key
 
 
