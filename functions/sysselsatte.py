@@ -6,7 +6,6 @@ import common.aws as common_aws
 import common.transform as transform
 import common.aggregate_dfs as aggregator
 from common.transform_output import generate_output_list
-import json
 
 os.environ['METADATA_API_URL'] = ''
 
@@ -108,7 +107,7 @@ def _output_key(dataset_id, version_id, edition_id):
 
 def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
     series = []
-    heading = "Personer mellom 30-59 år med lav utdanning"
+    heading = "Antall sysselsatte personer mellom 30-59 år"
     output_key = _output_key(dataset_id, version_id, edition_id)
     common_aws.write_to_intermediate(output_key, output_list, heading, series)
 
