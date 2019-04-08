@@ -44,12 +44,14 @@ def start(sysselsatte_key, befolkning_key):
     total = 'total'
 
     befolkning_df = befolkning_30_to_59(befolkning_raw)
-    befolkning_df = befolkning_df[befolkning_df['date'].between(2008, 2017)]
+    '''Value for date in "sysselsatte" was measured in 4th. quarter of 2017, while date for "befolkning" was measured 1.1.2018.'''
+    befolkning_df['date'] = befolkning_df['date'] - 1
+
     befolkning_df = transform.add_district_id(befolkning_df)
 
     sub_districts = befolkning_df['delbydelid'].unique()
 
-    sysselsatte_df = sysselsatte_raw[sysselsatte_raw['date'].between(2008, 2017)]
+    sysselsatte_df = sysselsatte_raw
     sysselsatte_df = sysselsatte_df[sysselsatte_df['delbydelid'].isin(sub_districts)]
     sysselsatte_df = sysselsatte_df[['delbydelid', 'date', data_point]]
     sysselsatte_df = transform.add_district_id(sysselsatte_df)
