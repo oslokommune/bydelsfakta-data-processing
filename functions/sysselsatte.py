@@ -12,12 +12,12 @@ os.environ['METADATA_API_URL'] = ''
 
 s3_bucket = 'ok-origo-dataplatform-dev'
 
-historic_dataset_id = 'Lav_utdanning_historisk-qBXzf'
-historic_version_id = '1-tt4pE7NE'
-historic_edition_id = 'EDITION-smQmD'
-status_dataset_id = 'Lav_utdanning_status-fYdyK'
-status_version_id = '1-FswVHo7C'
-status_edition_id = 'EDITION-H7XFn'
+historic_dataset_id = 'Sysselsatte_historisk-r8KeQ'
+historic_version_id = '1-wbekCGXQ'
+historic_edition_id = 'EDITION-yVKK8'
+status_dataset_id = 'Sysselsatte_status-3nUAC'
+status_version_id = '1-aeEECFzo'
+status_edition_id = 'EDITION-QzKgm'
 
 pd.set_option('display.max_rows', 1000)
 
