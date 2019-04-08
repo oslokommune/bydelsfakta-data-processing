@@ -86,11 +86,6 @@ def data_processing(df):
     historic_agg = generate(*historic, value_labels)
     status_agg = generate(*status, value_labels)
 
-    print('STATUS_AGG')
-    print(status_agg)
-    print('HISTORIC_AGG')
-    print(historic_agg)
-
     # Make output
     output_data = {}
 
@@ -152,8 +147,8 @@ def handler(event, context):
         write(output_data[output_data_name], output_key)
 
     # To be removed - temporary dump for provide the Frontend guys with the latest output.
-    #import json
-    #with open(r'C:\CURRENT FILES\dump.json', 'wt', encoding='utf-8') as f:
+    # import json
+    # with open(r'C:\CURRENT FILES\dump_real.json', 'wt', encoding='utf-8') as f:
     #    json.dump(output_data, f, indent=4)
 
     output_keys = list(output_data.keys())

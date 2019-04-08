@@ -73,15 +73,13 @@ df2_agg_total = pd.concat((df2_org, df2_agg_districts, df2_agg_Oslo), axis=0, so
 # 4) Years with missing data are handled correctly
 
 trangboddhet_data = {'date': [2016, 2016, 2016, 2016, 2016,
-                              2017, 2017, 2017, 2017, 2017,
-                              2018, np.nan],
+                              2017, 2017, 2017, 2017, 2017],
                      'delbydelid': ['0300010001', '0300010002', '0300020003', '0300020004', '0301999901',
-                                    '0300010001', '0300010002', '0300020003', '0300020004', '0301999901',
-                                    '0300010001', ''],
-                     'Personer per rom - Under 0,5':   [200, 100, 100, 100, 5, 220, 110, 110, 110, 5, 240, 1000],
-                     'Personer per rom - 0,5 - 0,9':   [100, 200, 100, 100, 5, 110, 220, 110, 110, 5, 120, 1000],
-                     'Personer per rom - 1,0 - 1,9':   [100, 100, 200, 100, 5, 110, 110, 220, 110, 5, 120, 1000],
-                     'Personer per rom - 2,0 og over': [100, 100, 100, 200, 5, 110, 110, 110, 220, 5, 120, 1000]}
+                                    '0300010001', '0300010002', '0300020003', '0300020004', '0301999901'],
+                     'Personer per rom - Under 0,5':   [200, 100, 100, 100, 5, 220, 110, 110, 110, 5],
+                     'Personer per rom - 0,5 - 0,9':   [100, 200, 100, 100, 5, 110, 220, 110, 110, 5],
+                     'Personer per rom - 1,0 - 1,9':   [100, 100, 200, 100, 5, 110, 110, 220, 110, 5],
+                     'Personer per rom - 2,0 og over': [100, 100, 100, 200, 5, 110, 110, 110, 220, 5]}
 df_trangboddhet_org = pd.DataFrame(trangboddhet_data)
 
 # DATA SET COLLECTION
@@ -100,5 +98,3 @@ if __name__ == '__main__':
         print('Data set: {k}'.format(k=name))
         print(data_sets[name])
         print('')
-
-    print(data_sets['df_trangboddhet_org'])
