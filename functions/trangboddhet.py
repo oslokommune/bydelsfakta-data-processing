@@ -12,11 +12,6 @@ def read_from_s3(s3_key):
     # read from s3, renames `value_column` to value
     df = common.aws.read_from_s3(s3_key)
 
-    # We use only sub districts
-    # df = df[df['delbydelid'].notnull()]
-
-    # Add district number
-    # df = common.transform.add_district_id(df)
     return df
 
 
@@ -145,11 +140,6 @@ def handler(event, context):
 
         # Write back to s3
         write(output_data[output_data_name], output_key)
-
-    # To be removed - temporary dump for provide the Frontend guys with the latest output.
-    # import json
-    # with open(r'C:\CURRENT FILES\dump_real.json', 'wt', encoding='utf-8') as f:
-    #    json.dump(output_data, f, indent=4)
 
     output_keys = list(output_data.keys())
 

@@ -15,11 +15,11 @@ class Tester(unittest.TestCase):
 
         output_data = trangboddhet.data_processing(df_source)
 
-        # import json
-        # with open(r'C:\CURRENT FILES\dump_test.json', 'wt', encoding='utf-8') as f:
-        #    json.dump(output_data, f, indent=4)
-
-        self.assertTrue(True)
+        # Run a test on each type of template (depending on original to be perfect).
+        self.assertEqual(output_data['trangboddhet_alle_status'][0]['data'][0]['values'][0]['value'], 555)
+        self.assertEqual(output_data['trangboddhet_alle_historisk'][0]['data'][0]['values'][0][0]['value'], 505)
+        self.assertEqual(output_data['trangboddhet_under0.5_status'][0]['data'][0]['values'][0]['value'], 555)
+        self.assertEqual(output_data['trangboddhet_under0.5_historisk'][0]['data'][0]['values'][0]['value'], 505)
 
 
 if __name__ == '__main__':

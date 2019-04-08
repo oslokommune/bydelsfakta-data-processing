@@ -36,7 +36,6 @@ class Tester(unittest.TestCase):
         self.assertDictEqual(transform.value_entry(values_with_ratio, 'd1'),
                              {'value': 1.0, 'ratio': 0.5, 'date': 2018})
 
-
     def test_list_to_time_series(self):
         data_points = ['d1', 'd2', 'd3']
         self.assertDictEqual(transform.list_to_time_series(data_points),
@@ -57,7 +56,6 @@ class Tester(unittest.TestCase):
                 {'value': 'd2_0101_2018', 'ratio': 'd2_0101_2018_ratio', 'date': 2018}]
         }
         self.assertDictEqual(output, expected)
-
 
     def test_df_to_template_b(self):
         geography = '0301010101'
@@ -185,7 +183,6 @@ class Tester(unittest.TestCase):
         output = transform.district_time_series_list(test_df, district, template, data_points)
         expected = test_data.district_01_time_series_list
         self.assertListEqual(output, expected)
-
 
     def test_generate_output_list(self):
         template = 'c'

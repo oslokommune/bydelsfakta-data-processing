@@ -69,8 +69,6 @@ df2_agg_total = pd.concat((df2_org, df2_agg_districts, df2_agg_Oslo), axis=0, so
 # to make it as easy as possible to check:
 # 1) Make sure sub districts gets correctly aggregated to districts
 # 2) Districts gets aggregated to Oslo total
-# 3) Odd (sub)districts get handled correctly. (301999901)
-# 4) Years with missing data are handled correctly
 
 trangboddhet_data = {'date': [2016, 2016, 2016, 2016, 2016,
                               2017, 2017, 2017, 2017, 2017],
