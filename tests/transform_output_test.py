@@ -1,9 +1,4 @@
 import unittest
-import sys
-
-# sys.path.insert(0, r'..\common')  # Needed to import the module to be tested
-sys.path.insert(0, r"..")  # Needed to import the module to be tested
-
 import common.transform_output as transform
 import tests.transform_output_test_data as test_data
 import numpy
