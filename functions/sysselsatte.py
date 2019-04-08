@@ -72,21 +72,6 @@ def start(sysselsatte_key, befolkning_key):
     _write_to_intermediate(status_dataset_id, status_version_id, status_edition_id, sysselsatte_status)
 
 
-def generate_input_df(df):
-    df = pivot_table(df, 'Høyeste fullførte utdanning', 'Antall personer')
-    with_district = transform.add_district_id(df)
-
-    value_cols = ['Videregående skolenivå', 'Universitets- og høgskolenivå, kort',
-                  'Universitets- og høgskolenivå, lang',
-                  'Ingen utdanning/Uoppgitt utdanning', 'Grunnskole']
-    df_aggregated = aggregator.aggregate_from_subdistricts(with_district, _aggregations(value_cols))
-
-    data_point = 'sysselsatte'
-    df_aggregated[data_point] = df_aggregated['Ingen utdanning/Uoppgitt utdanning'] + df_aggregated['Grunnskole']
-
-    input_df = aggregator.add_ratios(df_aggregated, [data_point], value_cols)
-    return input_df
-
 def string_with_whitepace_to_int(s):
     return int(s.replace(' ', ''))
 
