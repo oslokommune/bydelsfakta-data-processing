@@ -32,3 +32,4 @@ custom:
   pythonRequirements:
     dockerizePip: non-linux
     layer: true
+    usePoetry: false

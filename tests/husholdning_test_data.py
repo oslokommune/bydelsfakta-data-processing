@@ -1,5 +1,3 @@
-from numpy import nan
-
 with_data_points_expected = [
     {
         'delbydelid': '0301010101',
