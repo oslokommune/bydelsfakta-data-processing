@@ -1,11 +1,6 @@
-import sys
-import pandas as pd
-import numpy as np
 import unittest
-import datasets_for_testing
-sys.path.insert(0, r'..\common')  # Needed to import the module to be tested
-import aggregate_dfs
-import datasets_for_testing
+from tests import datasets_for_testing
+from common import aggregate_dfs
 
 # Local copies of the test data in datasets_for_testing
 df_org = datasets_for_testing.data_sets['df2_org'].copy()
