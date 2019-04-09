@@ -19,6 +19,7 @@ generate_output_list:
         If the dataframe also contains ratio columns('data_point_ration'), these should not be in the data_points parameter list
 """
 
+
 def generate_output_list(df, template, data_points):
     district_list = [x for x in df['district'].unique() if x not in ['00', '16', '17', '99']]
     output_list = []
@@ -33,6 +34,7 @@ def generate_output_list(df, template, data_points):
     output_list.append({'district': '00', 'template': template, 'data': oslo_total})
 
     return output_list
+
 
 def district_time_series_list(df, district, template, data_points):
     time_series = [district_time_series(df, '00', template, data_points, total_row=True),
@@ -65,11 +67,14 @@ def df_to_template(geography, df, template, data_points, avg_row=False, total_ro
         return df_to_template_c(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     elif template.lower() == 'i':
         return df_to_template_i(geography, df, data_points, avg_row=avg_row, total_row=total_row)
+    elif template.lower() == 'j':
+        return df_to_template_j(geography, df, data_points, avg_row=avg_row, total_row=total_row)
     else:
         raise Exception(f'Template {template} does not exist')
 
 
 def df_to_template_a(geography, df, data_points, avg_row=False, total_row=False, link_to=False):
+
     obj_a = {
         'linkTo': link_to,
         'geography': geography,
@@ -103,6 +108,7 @@ def df_to_template_b(geography, df, data_points, avg_row=False, total_row=False,
 
 
 def df_to_template_c(geography, df, data_points, avg_row=False, total_row=False):
+
     obj_c = {
         'geography': geography,
         'values': [],
@@ -114,12 +120,12 @@ def df_to_template_c(geography, df, data_points, avg_row=False, total_row=False)
         [time_series[data_point].append(value_entry(values, data_point))
          for data_point in data_points]
 
-
     [obj_c['values'].append(time_series[data_point]) for data_point in data_points]
     return obj_c
 
 
 def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False):
+
     obj_i = {
         'geography': geography,
         'values': [],
@@ -133,6 +139,29 @@ def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False)
 
     [obj_i['values'].append(series[data_point]) for data_point in data_points]
     return obj_i
+
+
+def df_to_template_j(geography, df, data_points, avg_row=False, total_row=False):
+
+    obj_j = {
+        'geography': geography,
+        'values': [],
+        'avgRow': avg_row,
+        'totalRow': total_row
+    }
+
+    data_row = df.to_dict('records')[0]  # df has only one row - the status for a geography
+    values = []
+    for data_point in data_points:
+        single_value = {'value': data_row[data_point]}
+        ratio_field = f'{data_point}_ratio'
+        if ratio_field in data_row.keys():
+            single_value['ratio'] = data_row[ratio_field]
+        values.append(single_value)
+
+    obj_j['values'] = values
+
+    return obj_j
 
 
 def list_to_time_series(data_points):

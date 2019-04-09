@@ -1,6 +1,9 @@
 import pandas as pd
 import numpy as np
 
+pd.set_option('display.max_columns', 500)
+pd.set_option('display.width', 1000)
+
 # DATASET 1 - ORIGINAL
 SUB_DISTRICT = ['0000010001',
                 '0000010001',
@@ -61,13 +64,30 @@ df2_agg_Oslo = pd.DataFrame({'date': [2017, 2018],
 # df2_agg_total - All the rows in union
 df2_agg_total = pd.concat((df2_org, df2_agg_districts, df2_agg_Oslo), axis=0, sort=True)
 
+# TRANGBODDHET
+# The test data set is made to be as small as possible and the data intuitively understandable,
+# to make it as easy as possible to check:
+# 1) Make sure sub districts gets correctly aggregated to districts
+# 2) Districts gets aggregated to Oslo total
+
+trangboddhet_data = {'date': [2016, 2016, 2016, 2016, 2016,
+                              2017, 2017, 2017, 2017, 2017],
+                     'delbydelid': ['0300010001', '0300010002', '0300020003', '0300020004', '0301999901',
+                                    '0300010001', '0300010002', '0300020003', '0300020004', '0301999901'],
+                     'Personer per rom - Under 0,5':   [200, 100, 100, 100, 5, 220, 110, 110, 110, 5],
+                     'Personer per rom - 0,5 - 0,9':   [100, 200, 100, 100, 5, 110, 220, 110, 110, 5],
+                     'Personer per rom - 1,0 - 1,9':   [100, 100, 200, 100, 5, 110, 110, 220, 110, 5],
+                     'Personer per rom - 2,0 og over': [100, 100, 100, 200, 5, 110, 110, 110, 220, 5]}
+df_trangboddhet_org = pd.DataFrame(trangboddhet_data)
+
 # DATA SET COLLECTION
 data_sets = {'df1': df1,
              'df1_agg_sum': df1_agg_sum,
              'df2_org': df2_org,
              'df2_agg_districts': df2_agg_districts,
              'df2_agg_Oslo': df2_agg_Oslo,
-             'df2_agg_total': df2_agg_total}
+             'df2_agg_total': df2_agg_total,
+             'df_trangboddhet_org': df_trangboddhet_org}
 
 if __name__ == '__main__':
 

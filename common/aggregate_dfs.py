@@ -150,6 +150,9 @@ def aggregate_from_subdistricts(df, aggregations):
         except KeyError:
             a['data_weights'] = None
 
+        if type(a['data_points']) is not str:
+            raise ValueError('data_points is not a string.')
+
         if a['agg_func'] == 'wmean' and a['data_weights'] is None:
             raise ValueError('agg_func is "wmean", but you have not specified data_weights.')
         if a['agg_func'] != 'wmean' and a['data_weights'] is not None:
@@ -188,14 +191,14 @@ def add_ratios(df, data_points, ratio_of):
 
     """
     This function adds a ratio column for all the data points specified.
-    The value in each of these data points will be devided by the sum of the fields in ratio_of
+    The value in each of these data points will be divided by the sum of the fields in ratio_of
 
     Normally it will be used after aggregate_from_subdistricts.
 
     Args:
         df (pd.DataFrame): A DataFrame containing the data.
         data_points (list): The column names of the columns to be used in the ratio calculation.
-        ratio_of (list): The sum of these data fields will be in the denominator when calculating the ratio (No: 'nevner')
+        ratio_of (list): The sum of these data fields will be in the denominator when calculating the ratio
 
     Returns:
         df_ratios (pd.DataFrame): The original DataFrame with additional columns for ratios.
