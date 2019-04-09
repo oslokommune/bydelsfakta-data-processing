@@ -43,10 +43,8 @@ def start(bucket, key):
     with_district = transform.add_district_id(household_raw.copy())
 
     with_data_points = with_household_data_points(with_district)
-    with_data_points = with_data_points.groupby(['delbydelid', 'date', 'district']).sum().reset_index()
 
-    input_df = aggregate.aggregate_from_subdistricts(with_data_points, _aggregations(data_points))
-    input_df = aggregate.add_ratios(input_df, data_points, ratio_of=data_points)
+    input_df = aggregate_to_input_format(with_data_points, data_points)
 
     household_total_historic = generate_output_list(*transform.historic(input_df),
                                                     template='c',
@@ -67,6 +65,12 @@ def _aggregations(data_points):
     return \
         [{'data_points': data_point, 'agg_func': 'sum'} for data_point in data_points]
 
+def aggregate_to_input_format(df, data_points):
+    aggregations = _aggregations(data_points)
+    input_df = aggregate.aggregate_from_subdistricts(df, aggregations)
+    input_df = aggregate.add_ratios(input_df, data_points, data_points)
+    return input_df
+
 
 def with_household_data_points(household_raw):
     household_raw['household_data_point'] = household_raw['Husholdningstype'].apply(household_data_point)
@@ -75,7 +79,7 @@ def with_household_data_points(household_raw):
                                  household_raw.pivot(columns='household_data_point',values='Antall husholdninger')),
                                 axis=1)
 
-    return with_data_points
+    return with_data_points.groupby(['delbydelid', 'date', 'district']).sum().reset_index()
 
 
 def household_data_point(household_type):
@@ -126,3 +130,4 @@ if __name__ == '__main__':
                  "Husholdninger_med_barn-XdfNB": "raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/edition=EDITION-ivaYi/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"}
              }
             , {})
+
