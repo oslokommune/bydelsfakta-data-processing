@@ -80,8 +80,6 @@ def data_processing(df):
     historic_agg = generate(*historic, value_labels)
     status_agg = generate(*status, value_labels)
 
-    print(historic_agg)
-
     # Make output
     output_data = {}
 
