@@ -1,0 +1,3 @@
+handler: functions/innvanding_under16.handler
+timeout: 60
+layers: ${self:custom.layers}
