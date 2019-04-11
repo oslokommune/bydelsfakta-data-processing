@@ -80,6 +80,17 @@ trangboddhet_data = {'date': [2016, 2016, 2016, 2016, 2016,
                      'Personer per rom - 2,0 og over': [100, 100, 100, 200, 5, 110, 110, 110, 220, 5]}
 df_trangboddhet_org = pd.DataFrame(trangboddhet_data)
 
+# IKKE FULLFØRT VGS
+ikke_fullfort_VGS_data = {'date': [2016, 2016, 2016, 2016, 2016,
+                                   2017, 2017, 2017, 2017, 2017],
+                          'delbydelid': ['0300010001', '0300010002', '0300020003', '0300020004', '0301999901',
+                                         '0300010001', '0300010002', '0300020003', '0300020004', '0301999901'],
+                          'Antall personer, fullført i løpet av 5 år': [400, 300, 200, 100, 10,
+                                                                        440, 330, 220, 110, 11],
+                          'Antall personer, ikke fullført i løpet av 5 år': [100, 100, 100, 100, 10,
+                                                                             110, 110, 110, 110, 11]}
+df_ikke_fullfort_VGS_data = pd.DataFrame(ikke_fullfort_VGS_data)
+
 # DATA SET COLLECTION
 data_sets = {'df1': df1,
              'df1_agg_sum': df1_agg_sum,
@@ -87,7 +98,8 @@ data_sets = {'df1': df1,
              'df2_agg_districts': df2_agg_districts,
              'df2_agg_Oslo': df2_agg_Oslo,
              'df2_agg_total': df2_agg_total,
-             'df_trangboddhet_org': df_trangboddhet_org}
+             'df_trangboddhet_org': df_trangboddhet_org,
+             'df_ikke_vgs': df_ikke_fullfort_VGS_data}
 
 if __name__ == '__main__':
 
