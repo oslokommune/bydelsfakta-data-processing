@@ -43,11 +43,10 @@ def write(output_list, output_key):
 
     # Writes to AWS through boto (requires saml login)
 
+    heading = 'Personer som ikke har fullført vgs'
+
     # Fix proper headings
-    series = [
-        {"heading": "!! Some Heading for this Series !! ", "subheading": ""},
-    ]
-    heading = "Some Heading"
+    series = []
 
     common.aws.write_to_intermediate(
             output_key=output_key,
@@ -84,9 +83,11 @@ def data_processing(df):
     output_data = {}
 
     output_data['levekar_vgs_status'] = \
-        common.transform_output.generate_output_list(status_agg, 'a', ['Antall personer, ikke fullført i løpet av 5 år_ratio'])
+        common.transform_output.generate_output_list(status_agg, 'a',
+                                                     ['Antall personer, ikke fullført i løpet av 5 år'])
     output_data['levekar_vgs_historisk'] = \
-        common.transform_output.generate_output_list(historic_agg, 'b', ['Antall personer, ikke fullført i løpet av 5 år_ratio'])
+        common.transform_output.generate_output_list(historic_agg, 'b',
+                                                     ['Antall personer, ikke fullført i løpet av 5 år'])
 
     return output_data
 

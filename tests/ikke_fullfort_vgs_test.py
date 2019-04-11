@@ -9,7 +9,7 @@ import tests.datasets_for_testing as test_data
 
 class Tester(unittest.TestCase):
 
-    def test_trangboddhet(self):
+    def test_ikke_fullfort_vgs_test(self):
 
         df_source = test_data.data_sets['df_ikke_vgs']
 
