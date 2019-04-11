@@ -1,0 +1,24 @@
+version: 2
+jobs:
+    build:
+        working_directory: ~/repo
+        docker:
+            - image: circleci/python:3.7
+        steps:
+            - checkout
+            - restore_cache:
+                keys:
+                    - v1-tox-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+            - run:
+                name: install tox
+                command: |
+                    pip install --user tox
+            - run:
+                name: run tox
+                command: |
+                    ~/.local/bin/tox
+            - save_cache:
+                paths:
+                    - ./tox
+                key: v1-tox-{{ checksum "requirements.txt" }}-{{ checksum "tox.ini" }}
+
