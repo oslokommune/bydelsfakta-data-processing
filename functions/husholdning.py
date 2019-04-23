@@ -1,14 +1,11 @@
 import os
 
 import pandas as pd
-import numpy as np
 
 import common.aws as common_aws
 import common.aggregate_dfs as aggregate
 import common.transform as transform
 from common.transform_output import generate_output_list
-
-import json
 
 os.environ["METADATA_API_URL"] = ""
 

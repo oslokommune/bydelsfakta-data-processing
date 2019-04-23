@@ -1,5 +1,3 @@
-import json
-
 import numpy as np
 import pandas as pd
 
@@ -8,8 +6,6 @@ import common.aws
 import common.transform
 import common.transform_output
 import common.util
-
-import pyperclip
 
 
 def handler(event, context):

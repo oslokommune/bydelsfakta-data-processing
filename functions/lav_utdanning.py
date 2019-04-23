@@ -6,7 +6,6 @@ import common.aws as common_aws
 import common.transform as transform
 import common.aggregate_dfs as aggregator
 from common.transform_output import generate_output_list
-import json
 
 os.environ["METADATA_API_URL"] = ""
 

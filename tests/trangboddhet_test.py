@@ -1,8 +1,4 @@
 import unittest
-import sys
-
-sys.path.insert(0, r"..")  # Needed to import the module to be tested
-
 import functions.trangboddhet as trangboddhet
 import tests.datasets_for_testing as test_data
 
