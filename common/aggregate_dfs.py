@@ -1,5 +1,4 @@
 import sys
-import os
 import pandas as pd
 import numpy as np
 
@@ -198,7 +197,7 @@ def aggregate_from_subdistricts(df, aggregations):
     for a in aggregations:
 
         try:
-            dummy = a["data_weights"]
+            _ = a["data_weights"]
         except KeyError:
             a["data_weights"] = None
 
