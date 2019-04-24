@@ -1,5 +1,5 @@
 _districts_id = {
-    "01": 'Bydel Gamle Oslo',
+    "01": "Bydel Gamle Oslo",
     "02": "Bydel Grünerløkka",
     "03": "Bydel Sagene",
     "04": "Bydel St. Hanshaugen",
@@ -16,7 +16,7 @@ _districts_id = {
     "15": "Byel Søndre Nordstrand",
     "16": "Sentrum",
     "17": "Marka",
-    "99": "Uten registrert adresse"
+    "99": "Uten registrert adresse",
 }
 
 _districts_name = {
@@ -40,12 +40,17 @@ _districts_name = {
     "Sentrum": "16",
     "Marka": "17",
     "Uten registrert adresse": "99",
-    "Oslo i alt": "00"
+    "Oslo i alt": "00",
 }
 
 
 def get_district_id(name):
-    if not name.startswith("Bydel ") and name not in ['Marka', 'Sentrum', 'Oslo i alt', 'Uten registrert adresse']:
+    if not name.startswith("Bydel ") and name not in [
+        "Marka",
+        "Sentrum",
+        "Oslo i alt",
+        "Uten registrert adresse",
+    ]:
         name = f"Bydel {name}"
     return _districts_name[name]
 
