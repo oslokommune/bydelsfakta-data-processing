@@ -43,6 +43,54 @@ def _check_data_consistency(df):
     print(count_sub_districts)
 
 
+def _check_city_level_totals(df_with_city_level, aggregations):
+
+    """
+    This function checks if numbers to be sum-aggregated from sub district thorough districts to Oslo total (typically
+    number of inhabitants or households) have the total numbers at all levels, during the same years.
+    This does not only check the aggregation function, but also inconsistencies in the incoming data after renaming
+    districts.
+
+    Args:
+        df_with_city_level (pd.DataFrame): The input DataFrame (with city_level column).
+        aggregations (list of dicts): Defining the aggregations, details in the function aggregate_from_subdistricts.
+
+    Returns:
+        df (pd.DataFrame): The input DataFrame (without city_level column).
+
+    Raises:
+        ValueError: If the summed numbers at sub district, district and Oslo total do not match (in the same years).
+    """
+
+    sum_fields = [
+        agg["data_points"] for agg in aggregations if agg["agg_func"] == "sum"
+    ]
+
+    if len(sum_fields) > 0:
+        df_agg = (
+            df_with_city_level[["date", "city_level", *sum_fields]]
+            .groupby(["date", "city_level"], as_index=False)
+            .sum()
+        )
+
+        for year in list(df_agg["date"].unique()):
+
+            df_agg_year = df_agg[df_agg["date"] == year]
+
+            for sum_field in sum_fields:
+                col_content = list(df_agg_year[sum_field])
+                if not all([x == col_content[0] for x in col_content]):
+                    print(df_agg_year)
+                    raise ValueError(
+                        f"The totals are not equal for all city levels during {year}, "
+                        f'see the column "{sum_field}".'
+                    )
+
+    df_without_city_level = df_with_city_level.drop("city_level", axis=1)
+
+    return df_without_city_level
+
+
 def _wmean(df, aggregation, groupby):
 
     """
@@ -177,6 +225,7 @@ def aggregate_from_subdistricts(df, aggregations):
         df["delbydelid"].notnull()
     ].copy()  # Remove pre-existing aggregations in the DataFrame
     df_agg = df_no_agg.copy()  # Then start to add aggregations to this DataFrame
+    df_agg["city_level"] = "subdistrict"
     all_districts = list(
         df["district"].unique()
     )  # This does not include Oslo total as a district.
@@ -186,6 +235,7 @@ def aggregate_from_subdistricts(df, aggregations):
 
         district_agg = _aggregate_district(df_no_agg, district, aggregations)
         district_agg["delbydelid"] = np.nan
+        district_agg["city_level"] = "district"
 
         # Concatenate aggregation to main DataFrame
         df_agg = pd.concat((df_agg, district_agg), axis=0, sort=False).reset_index(
@@ -197,7 +247,11 @@ def aggregate_from_subdistricts(df, aggregations):
     oslo_agg = _aggregate_district(df_no_agg, "00", aggregations)
     oslo_agg["delbydelid"] = np.nan
     oslo_agg["district"] = "00"
+    oslo_agg["city_level"] = "oslo_total"
     df_agg = pd.concat((df_agg, oslo_agg), axis=0, sort=False).reset_index(drop=True)
+
+    # Verify that the aggregated sums are equal at sub district, district and Oslo total levels
+    df_agg = _check_city_level_totals(df_agg, aggregations)
 
     return df_agg
 
