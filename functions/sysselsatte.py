@@ -22,7 +22,7 @@ pd.set_option('display.max_rows', 1000)
 
 
 def handle(event, context):
-    """ Assuming we recieve a complete s3 key"""
+    # Assuming we recieve a complete s3 key
     sysselsatte_key = event['keys']['Sysselsatte-SYiFy']
     befolkning_key = event['keys']['Befolkningen_etter_bydel_delby-J7khG']
     start(sysselsatte_key, befolkning_key)
@@ -43,7 +43,7 @@ def start(sysselsatte_key, befolkning_key):
     total = 'total'
 
     befolkning_df = befolkning_30_to_59(befolkning_raw)
-    '''Value for date in "sysselsatte" was measured in 4th. quarter of 2017, while date for "befolkning" was measured 1.1.2018.'''
+    # Value for date in "sysselsatte" was measured in 4th. quarter of 2017, while date for "befolkning" was measured 1.1.2018.
     befolkning_df['date'] = befolkning_df['date'] - 1
 
     befolkning_df = transform.add_district_id(befolkning_df)
