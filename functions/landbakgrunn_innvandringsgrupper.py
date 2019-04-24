@@ -52,7 +52,7 @@ def start(landbakgrunn_key, befolkning_key):
 
     output_list_historic = generate_output_list(input_df, data_points, top_n=1, template_fun=generate_geo_obj_historic)
 
-    input_df_status = input_df[input_df['date'] == 2018]
+    input_df_status = input_df[input_df['date'] == input_df['date'].max()]
     output_list_status = generate_output_list(input_df_status, data_points, top_n=10, template_fun=generate_geo_obj_status)
 
     _write_to_intermediate(historic_dataset_id, historic_version_id, historic_edition_id, output_list_historic)
@@ -147,7 +147,7 @@ def get_top_n_district(df, n):
     top_n = {}
     for district in df['district'].unique():
         district_df = df[df['district'] == district]
-        district_df = district_df[district_df['date'] == 2018]
+        district_df = district_df[district_df['date'] == district_df['date'].max()]
         district_df = district_df.nlargest(n, 'total')
         top_n[district] = district_df['Landbakgrunn'].tolist()
     return top_n
