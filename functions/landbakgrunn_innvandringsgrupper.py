@@ -40,8 +40,10 @@ def start(landbakgrunn_key, befolkning_key):
     befolkning_raw = common_aws.read_from_s3(s3_key=befolkning_key, date_column="År")
 
     befolkning_df = generate_population_df(befolkning_raw)
+    # Ignoring Marka and Sentrum
+    ignore_districts = ["16", "17"]
     befolkning_district_df = generate_district_population_df(
-        befolkning_df, ignore_districts=["16", "17"]
+        befolkning_df, ignore_districts=ignore_districts
     )
 
     landbakgrunn_df = process_country_df(landbakgrunn_raw)
@@ -103,7 +105,7 @@ def generate_geo_obj_status(df, geography, data_points):
 
 
 def generate_geo_obj_historic(df, geography, data_points):
-    series = list_to_time_series(data_points)
+    series = {data_point: [] for data_point in data_points}
     for value in df.to_dict("r"):
         for data_point in data_points:
             series[data_point].append(
@@ -113,16 +115,8 @@ def generate_geo_obj_historic(df, geography, data_points):
                     "ratio": value[f"{data_point}_ratio"],
                 }
             )
-    values = []
-    [values.append(series[data_point]) for data_point in data_points]
+    values = [series[data_point] for data_point in data_points if series]
     return {"geography": geography, "values": values}
-
-
-def list_to_time_series(data_points):
-    d = {}
-    for data_point in data_points:
-        d[data_point] = []
-    return d
 
 
 def process_country_df(df):
