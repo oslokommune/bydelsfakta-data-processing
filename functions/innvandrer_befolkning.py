@@ -84,7 +84,7 @@ def by_liveage(liveage):
     return short_liveage.drop(columns=["Botid"]), long_liveage.drop(columns=["Botid"])
 
 
-def generate(origin_by_age_df, livage_df, population_df):
+def generate(template, origin_by_age_df, livage_df, population_df):
     # list of labels containing values
     value_labels = ["value_a", "value_b", "value_c", "value_d", "value"]
 
@@ -100,17 +100,16 @@ def generate(origin_by_age_df, livage_df, population_df):
         {"agg_func": "sum", "data_points": "value_d"},
         {"agg_func": "sum", "data_points": "value"},
     ]
+    result = common.aggregate_dfs.aggregate_from_subdistricts(sub_districts, aggregations)
 
-    common.aggregate_dfs.aggregate_from_subdistricts(sub_districts, aggregations)
-
-    sub_districts = common.aggregate_dfs.add_ratios(
-        sub_districts,
+    result = common.aggregate_dfs.add_ratios(
+            result,
         data_points=["value_a", "value_b", "value_c", "value_d"],
         ratio_of=["value"],
     )
 
     output_list = common.transform_output.generate_output_list(
-        sub_districts, "c", value_labels
+            result, template, value_labels
     )
 
     return output_list
@@ -147,8 +146,9 @@ def handler(event, context):
     historic = common.transform.historic(*source)
     status = common.transform.status(*source)
 
-    historic = generate(*historic)
-    status = generate(*status)
+
+    historic = generate("c", *historic)
+    status = generate("c", *status)
 
     historic_output_key = f"processed/green/innvandring-befolking-historisk/version=1-HZ5VQ89E/edition=EDITION-Hj734/"
 
