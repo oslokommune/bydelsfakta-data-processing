@@ -9,8 +9,8 @@ import common.transform_output
 
 def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
     # read from s3
-    origin_by_age = common.aws.read_from_s3(
-        origin_by_age_key, value_column="Antall personer"
+    origin_by_age = common.aws.read_from_s3(origin_by_age_key).rename(
+        columns={"Antall personer": "value"}
     )
     # We only want to keep sub-districts in this case
     origin_by_age = origin_by_age[origin_by_age["delbydelid"].notnull()]
@@ -18,12 +18,12 @@ def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
     origin_by_age = common.transform.add_district_id(origin_by_age, "Bydel")
 
     # repeat for each input ds
-    livage = common.aws.read_from_s3(botid_key, value_column="antall")
+    livage = common.aws.read_from_s3(botid_key).rename(columns={"antall": "value"})
     livage = livage[livage["delbydelid"].notnull()]
     livage = common.transform.add_district_id(livage, "Bydel")
 
-    population_df = common.aws.read_from_s3(
-        befolkning_key, value_column="Antall personer"
+    population_df = common.aws.read_from_s3(befolkning_key).rename(
+        columns={"Antall personer": "value"}
     )
     population_df = population_df[population_df["delbydelid"].notnull()]
     population_df = common.transform.add_district_id(population_df, "Bydel")
@@ -150,16 +150,12 @@ def handler(event, context):
     historic = generate(*historic)
     status = generate(*status)
 
-    timestamp = math.floor(time.time())
-    historic_output_key = f"intermediate/green/innvandring_befolkning_histori-Sq5Se/version=1-B87VtKUW/edition={timestamp}/"
+    historic_output_key = f"processed/green/innvandring-befolking-historisk/version=1-HZ5VQ89E/edition=EDITION-Hj734/"
 
     # Write back to s3
     write(historic, historic_output_key)
 
-    timestamp = math.floor(time.time())
-    status_output_key = (
-        f"intermediate/green/STATUSID/version=1-B87VtKUW/edition={timestamp}/"
-    )
+    status_output_key = f"processed/green/innvandring-befolking-status/version=1-97THFj7Q/edition=EDITION-lm3Ed/"
 
     # Write back to s3
     write(status, status_output_key)
