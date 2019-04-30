@@ -16,3 +16,11 @@ clean_rendered:
 
 .PHONY: render
 render: clean_rendered render_functions
+
+.PHONY: format
+format:
+	python3 -m black functions/ tests/
+
+.PHONY: test
+test:
+	python3 -m tox
