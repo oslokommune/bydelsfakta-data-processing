@@ -1,4 +1,5 @@
 import unittest
+import pandas as pd
 from tests import datasets_for_testing
 from common import aggregate_dfs
 
@@ -150,6 +151,14 @@ class Tester(unittest.TestCase):
         self.assertListEqual(
             [2 / 3 for i in range(len(df))], list(df["double_mean_income_ratio"])
         )
+
+    def test_duplication_found(self):
+
+        df = df_org.copy()
+        df = pd.concat((df, df.iloc[0:1, :]), axis=0).reset_index(drop=True)
+
+        with self.assertRaises(ValueError):
+            aggregate_dfs._check_non_duplication(df)
 
 
 if __name__ == "__main__":

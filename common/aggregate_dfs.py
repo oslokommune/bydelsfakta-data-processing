@@ -43,6 +43,39 @@ def _check_data_consistency(df):
     print(count_sub_districts)
 
 
+def _check_non_duplication(df):
+
+    """
+    This functions checks if there are duplicated combinations or "district", "delbydelid" and "date".
+    If this is the case, an Exception is raised.
+
+    Args:
+        df (pd.dataFrame): The DataFrame to be tested.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If there are duplicated combinations of "district", "delbydelid" and "date".
+    """
+
+    CHECK_FOR_THESE = {"district", "delbydelid", "date"}
+    check_for_these = list(CHECK_FOR_THESE.intersection(set(df.columns)))
+
+    if len(check_for_these) == 0:
+        return None
+
+    duplicated_rows = df.duplicated(subset=check_for_these, keep=False)
+
+    if duplicated_rows.any():
+        print(df[duplicated_rows].sort_values(by=check_for_these))
+        raise ValueError(
+            'One or more rows have duplicated combinations of "district", "delbydelid" and "date".'
+        )
+
+    return None
+
+
 def _check_city_level_totals(df_with_city_level, aggregations):
 
     """
@@ -212,6 +245,8 @@ def aggregate_from_subdistricts(df, aggregations):
             raise ValueError(
                 'agg_func is not "wmean", but you have specified data_weights.'
             )
+
+    _check_non_duplication(df)
 
     exp_data_points = [a["data_points"] for a in aggregations]
     exp_data_weights = [
