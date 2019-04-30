@@ -1,6 +1,3 @@
-import math
-import time
-
 import common.aggregate_dfs
 import common.aws
 import common.transform
@@ -9,8 +6,8 @@ import common.transform_output
 
 def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
     # read from s3
-    origin_by_age = common.aws.read_from_s3(
-        origin_by_age_key, value_column="Antall personer"
+    origin_by_age = common.aws.read_from_s3(origin_by_age_key).rename(
+        columns={"Antall personer": "value"}
     )
     # We only want to keep sub-districts in this case
     origin_by_age = origin_by_age[origin_by_age["delbydelid"].notnull()]
@@ -18,12 +15,12 @@ def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
     origin_by_age = common.transform.add_district_id(origin_by_age, "Bydel")
 
     # repeat for each input ds
-    livage = common.aws.read_from_s3(botid_key, value_column="antall")
+    livage = common.aws.read_from_s3(botid_key).rename(columns={"antall": "value"})
     livage = livage[livage["delbydelid"].notnull()]
     livage = common.transform.add_district_id(livage, "Bydel")
 
-    population_df = common.aws.read_from_s3(
-        befolkning_key, value_column="Antall personer"
+    population_df = common.aws.read_from_s3(befolkning_key).rename(
+        columns={"Antall personer": "value"}
     )
     population_df = population_df[population_df["delbydelid"].notnull()]
     population_df = common.transform.add_district_id(population_df, "Bydel")
@@ -84,9 +81,7 @@ def by_liveage(liveage):
     return short_liveage.drop(columns=["Botid"]), long_liveage.drop(columns=["Botid"])
 
 
-def generate(origin_by_age_df, livage_df, population_df):
-    # list of labels containing values
-    value_labels = ["value_a", "value_b", "value_c", "value_d", "value"]
+def generate(template, origin_by_age_df, livage_df, population_df):
 
     # Create the df with only subdistricts
     sub_districts = prepare(
@@ -100,17 +95,21 @@ def generate(origin_by_age_df, livage_df, population_df):
         {"agg_func": "sum", "data_points": "value_d"},
         {"agg_func": "sum", "data_points": "value"},
     ]
+    result = common.aggregate_dfs.aggregate_from_subdistricts(
+        sub_districts, aggregations
+    )
 
-    common.aggregate_dfs.aggregate_from_subdistricts(sub_districts, aggregations)
-
-    sub_districts = common.aggregate_dfs.add_ratios(
-        sub_districts,
+    result = common.aggregate_dfs.add_ratios(
+        result,
         data_points=["value_a", "value_b", "value_c", "value_d"],
         ratio_of=["value"],
     )
+    result = result.drop(columns=["value"])
 
+    # list of labels containing values
+    value_labels = ["value_a", "value_b", "value_c", "value_d"]
     output_list = common.transform_output.generate_output_list(
-        sub_districts, "c", value_labels
+        result, template, value_labels
     )
 
     return output_list
@@ -147,19 +146,15 @@ def handler(event, context):
     historic = common.transform.historic(*source)
     status = common.transform.status(*source)
 
-    historic = generate(*historic)
-    status = generate(*status)
+    historic = generate("c", *historic)
+    status = generate("a", *status)
 
-    timestamp = math.floor(time.time())
-    historic_output_key = f"intermediate/green/innvandring_befolkning_histori-Sq5Se/version=1-B87VtKUW/edition={timestamp}/"
+    historic_output_key = f"processed/green/innvandring-befolking-historisk/version=1-HZ5VQ89E/edition=EDITION-Hj734/"
 
     # Write back to s3
     write(historic, historic_output_key)
 
-    timestamp = math.floor(time.time())
-    status_output_key = (
-        f"intermediate/green/STATUSID/version=1-B87VtKUW/edition={timestamp}/"
-    )
+    status_output_key = f"processed/green/innvandring-befolking-status/version=1-97THFj7Q/edition=EDITION-lm3Ed/"
 
     # Write back to s3
     write(status, status_output_key)
