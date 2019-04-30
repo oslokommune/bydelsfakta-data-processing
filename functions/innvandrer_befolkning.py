@@ -85,8 +85,7 @@ def by_liveage(liveage):
 
 
 def generate(template, origin_by_age_df, livage_df, population_df):
-    # list of labels containing values
-    value_labels = ["value_a", "value_b", "value_c", "value_d", "value"]
+
 
     # Create the df with only subdistricts
     sub_districts = prepare(
@@ -107,7 +106,10 @@ def generate(template, origin_by_age_df, livage_df, population_df):
         data_points=["value_a", "value_b", "value_c", "value_d"],
         ratio_of=["value"],
     )
+    result = result.drop(columns=['value'])
 
+    # list of labels containing values
+    value_labels = ["value_a", "value_b", "value_c", "value_d"]
     output_list = common.transform_output.generate_output_list(
             result, template, value_labels
     )
@@ -148,7 +150,7 @@ def handler(event, context):
 
 
     historic = generate("c", *historic)
-    status = generate("c", *status)
+    status = generate("a", *status)
 
     historic_output_key = f"processed/green/innvandring-befolking-historisk/version=1-HZ5VQ89E/edition=EDITION-Hj734/"
 
