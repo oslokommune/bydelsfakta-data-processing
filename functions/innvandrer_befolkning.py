@@ -86,7 +86,6 @@ def by_liveage(liveage):
 
 def generate(template, origin_by_age_df, livage_df, population_df):
 
-
     # Create the df with only subdistricts
     sub_districts = prepare(
         origin_by_age=origin_by_age_df, livage=livage_df, population_df=population_df
@@ -99,19 +98,21 @@ def generate(template, origin_by_age_df, livage_df, population_df):
         {"agg_func": "sum", "data_points": "value_d"},
         {"agg_func": "sum", "data_points": "value"},
     ]
-    result = common.aggregate_dfs.aggregate_from_subdistricts(sub_districts, aggregations)
+    result = common.aggregate_dfs.aggregate_from_subdistricts(
+        sub_districts, aggregations
+    )
 
     result = common.aggregate_dfs.add_ratios(
-            result,
+        result,
         data_points=["value_a", "value_b", "value_c", "value_d"],
         ratio_of=["value"],
     )
-    result = result.drop(columns=['value'])
+    result = result.drop(columns=["value"])
 
     # list of labels containing values
     value_labels = ["value_a", "value_b", "value_c", "value_d"]
     output_list = common.transform_output.generate_output_list(
-            result, template, value_labels
+        result, template, value_labels
     )
 
     return output_list
@@ -147,7 +148,6 @@ def handler(event, context):
 
     historic = common.transform.historic(*source)
     status = common.transform.status(*source)
-
 
     historic = generate("c", *historic)
     status = generate("a", *status)
