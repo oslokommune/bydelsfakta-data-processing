@@ -63,17 +63,17 @@ def _check_non_duplication(df):
     check_for_these = list(CHECK_FOR_THESE.intersection(set(df.columns)))
 
     if len(check_for_these) == 0:
-        return None
+        return
 
     duplicated_rows = df.duplicated(subset=check_for_these, keep=False)
 
     if duplicated_rows.any():
-        print(df[duplicated_rows].sort_values(by=check_for_these))
+        print(df[duplicated_rows].sort_values(by=check_for_these).head())
         raise ValueError(
             'One or more rows have duplicated combinations of "district", "delbydelid" and "date".'
         )
 
-    return None
+    return
 
 
 def _check_city_level_totals(df_with_city_level, aggregations):
