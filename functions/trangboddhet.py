@@ -148,43 +148,43 @@ def handler(event, context):
     set_IDs = {
         "trangboddhet-alle-status": {
             "ver_ID": "1-uozVNtqz",
-            "edition": "EDITION-mTj2B",
+            "edition": "EDITION-NhDso",
         },
         "trangboddhet-alle-historisk": {
             "ver_ID": "1-eHuFrskK",
-            "edition": "EDITION-uVTzV",
+            "edition": "EDITION-ukGfK",
         },
         "trangboddhet-under-0-5-status": {
             "ver_ID": "1-SiFGuLvX",
-            "edition": "EDITION-rYqwt",
+            "edition": "EDITION-hv76W",
         },
         "trangboddhet-under-0-5-historisk": {
             "ver_ID": "1-QymhyHjz",
-            "edition": "EDITION-vwmZF",
+            "edition": "EDITION-Brjio",
         },
         "trangboddhet-0-5-0-9-status": {
             "ver_ID": "1-ksEYDMnT",
-            "edition": "EDITION-PRdCL",
+            "edition": "EDITION-S2Lcs",
         },
         "trangboddhet-0-5-0-9-historisk": {
             "ver_ID": "1-aFiHVUW4",
-            "edition": "EDITION-FDYrc",
+            "edition": "EDITION-WNAes",
         },
         "trangboddhet-1-0-1-9-status": {
             "ver_ID": "1-kuU9GsfB",
-            "edition": "EDITION-vJzai",
+            "edition": "EDITION-MHzJr",
         },
         "trangboddhet-1-0-1-9-historisk": {
             "ver_ID": "1-4z6WVuiv",
-            "edition": "EDITION-ESREs",
+            "edition": "EDITION-9rUHD",
         },
         "trangboddhet-over-2-status": {
             "ver_ID": "1-nmNo2hv3",
-            "edition": "EDITION-WKCYj",
+            "edition": "EDITION-aAJPT",
         },
         "trangboddhet-over-2-historisk": {
             "ver_ID": "1-qbmHy82x",
-            "edition": "EDITION-xwtsv",
+            "edition": "EDITION-ew29J",
         },
     }
 
