@@ -157,8 +157,10 @@ class Tester(unittest.TestCase):
         df = df_org.copy()
         df = pd.concat((df, df.iloc[0:1, :]), axis=0).reset_index(drop=True)
 
-        with self.assertRaises(ValueError):
-            aggregate_dfs._check_non_duplication(df)
+        for col in ["date", "district", "delbydelid"]:
+            with self.assertRaises(ValueError):
+                aggregate_dfs._check_non_duplication(df)
+                df = df.drop(col, axis=1)
 
 
 if __name__ == "__main__":
