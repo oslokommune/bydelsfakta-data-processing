@@ -1,6 +1,6 @@
-import sys
 import pandas as pd
 import numpy as np
+from tests import datasets_for_testing
 
 pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 1000)
@@ -68,9 +68,9 @@ def _check_non_duplication(df):
     duplicated_rows = df.duplicated(subset=check_for_these, keep=False)
 
     if duplicated_rows.any():
-        print(df[duplicated_rows].sort_values(by=check_for_these).head())
+        df_dump = str(df[duplicated_rows].sort_values(by=check_for_these).head())
         raise ValueError(
-            'One or more rows have duplicated combinations of "district", "delbydelid" and "date".'
+            f"""One or more rows have duplicated combinations of 'district', 'delbydelid' and 'date'.\n{df_dump}"""
         )
 
     return
@@ -376,11 +376,9 @@ if __name__ == "__main__":
 
     # This section is present to demonstrate functionality.
 
-    sys.path.insert(0, r"..\tests")  # Needed to import the module to be tested
-    import datasets_for_testing
+    df = datasets_for_testing.data_sets["df1"]
 
-    df = datasets_for_testing.df1
-
+    print("Before aggregation:")
     print(df)
 
     AGGS = [
@@ -391,9 +389,9 @@ if __name__ == "__main__":
 
     df = aggregate_from_subdistricts(df, AGGS)
 
-    print("Aggreated:")
+    print("\nAfter aggregation:")
     print(df)
 
     print(
-        "If we need to do two aggregations of the same column - do twice and merge the resulting tables."
+        "\nIf we need to do two aggregations of the same column - do twice and merge the resulting tables."
     )
