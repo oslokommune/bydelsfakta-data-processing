@@ -8,7 +8,14 @@ class Tester(unittest.TestCase):
 
         df_source = test_data.data_sets["df_trangboddhet_org"]
 
-        output_data = trangboddhet.data_processing(df_source)
+        value_labels = [
+            "Personer per rom - Under 0,5",
+            "Personer per rom - 0,5 - 0,9",
+            "Personer per rom - 1,0 - 1,9",
+            "Personer per rom - 2,0 og over",
+        ]
+
+        output_data = trangboddhet.data_processing(df_source, value_labels)
 
         # Run a test on each type of template (depending on original to be perfect).
         self.assertEqual(

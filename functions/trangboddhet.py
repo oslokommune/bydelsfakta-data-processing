@@ -41,18 +41,18 @@ def generate(df, value_labels):
     return agg_df
 
 
-def write(output_list, output_key):
+def write(output_list, output_key, value_labels, heading):
 
     # Fix proper headings
-    series = [{"heading": "!! Some Heading for this Series !! ", "subheading": ""}]
-    heading = "Some Heading"
+    series = [{"heading": vl, "subheading": ""} for vl in value_labels]
+    heading = heading
 
     common.aws.write_to_intermediate(
         output_key=output_key, output_list=output_list, heading=heading, series=series
     )
 
 
-def data_processing(df):
+def data_processing(df, value_labels):
 
     # This function is testable.
 
@@ -61,13 +61,6 @@ def data_processing(df):
 
     # Add district number
     df = common.transform.add_district_id(df)
-
-    value_labels = [
-        "Personer per rom - 0,5 - 0,9",
-        "Personer per rom - 2,0 og over",
-        "Personer per rom - 1,0 - 1,9",
-        "Personer per rom - Under 0,5",
-    ]
 
     # Create historic and status data (at sub_district level)
     historic = common.transform.historic(df)
@@ -143,7 +136,14 @@ def handler(event, context):
 
     source = read_from_s3(s3_key=s3_key)
 
-    output_data = data_processing(source)
+    value_labels = [
+        "Personer per rom - Under 0,5",
+        "Personer per rom - 0,5 - 0,9",
+        "Personer per rom - 1,0 - 1,9",
+        "Personer per rom - 2,0 og over",
+    ]
+
+    output_data = data_processing(source, value_labels)
 
     set_IDs = {
         "trangboddhet-alle-status": {
@@ -152,7 +152,7 @@ def handler(event, context):
         },
         "trangboddhet-alle-historisk": {
             "ver_ID": "1-eHuFrskK",
-            "edition": "EDITION-ukGfK",
+            "edition": "EDITION-wQ8pk",
         },
         "trangboddhet-under-0-5-status": {
             "ver_ID": "1-SiFGuLvX",
@@ -190,20 +190,21 @@ def handler(event, context):
 
     assert sorted(list(set_IDs.keys())) == sorted(list(output_data.keys()))
 
-    # Write to intermediate, with timestamp as edition
+    # Write to processed at S3
     for output_data_name in output_data.keys():
 
         ver_ID = set_IDs[output_data_name]["ver_ID"]
         edition = set_IDs[output_data_name]["edition"]
 
         output_key = (
-            f"intermediate/green/{output_data_name}/version={ver_ID}/edition={edition}/"
+            f"processed/green/{output_data_name}/version={ver_ID}/edition={edition}/"
         )
 
-        # Write back to s3
-        write(output_data[output_data_name], output_key)
+        write(output_data[output_data_name], output_key, value_labels, output_data_name)
 
-    output_keys = list(output_data.keys())
+    output_keys = list(
+        output_data.keys()
+    )  # Note - this currently returns the titles, not the keys.
 
     return output_keys
 
