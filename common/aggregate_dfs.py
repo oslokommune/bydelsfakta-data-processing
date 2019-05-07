@@ -1,6 +1,6 @@
-import sys
 import pandas as pd
 import numpy as np
+from tests import datasets_for_testing
 
 pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 1000)
@@ -41,6 +41,39 @@ def _check_data_consistency(df):
 
     print(count_dates)
     print(count_sub_districts)
+
+
+def _check_non_duplication(df):
+
+    """
+    This functions checks if there are duplicated combinations or "district", "delbydelid" and "date".
+    If this is the case, an Exception is raised.
+
+    Args:
+        df (pd.dataFrame): The DataFrame to be tested.
+
+    Returns:
+        None
+
+    Raises:
+        ValueError: If there are duplicated combinations of "district", "delbydelid" and "date".
+    """
+
+    CHECK_FOR_THESE = {"district", "delbydelid", "date"}
+    check_for_these = list(CHECK_FOR_THESE.intersection(set(df.columns)))
+
+    if len(check_for_these) == 0:
+        return
+
+    duplicated_rows = df.duplicated(subset=check_for_these, keep=False)
+
+    if duplicated_rows.any():
+        df_dump = str(df[duplicated_rows].sort_values(by=check_for_these).head())
+        raise ValueError(
+            f"""One or more rows have duplicated combinations of 'district', 'delbydelid' and 'date'.\n{df_dump}"""
+        )
+
+    return
 
 
 def _check_city_level_totals(df_with_city_level, aggregations):
@@ -213,6 +246,8 @@ def aggregate_from_subdistricts(df, aggregations):
                 'agg_func is not "wmean", but you have specified data_weights.'
             )
 
+    _check_non_duplication(df)
+
     exp_data_points = [a["data_points"] for a in aggregations]
     exp_data_weights = [
         a["data_weights"] for a in aggregations if a["data_weights"] is not None
@@ -341,11 +376,9 @@ if __name__ == "__main__":
 
     # This section is present to demonstrate functionality.
 
-    sys.path.insert(0, r"..\tests")  # Needed to import the module to be tested
-    import datasets_for_testing
+    df = datasets_for_testing.data_sets["df1"]
 
-    df = datasets_for_testing.df1
-
+    print("Before aggregation:")
     print(df)
 
     AGGS = [
@@ -356,9 +389,9 @@ if __name__ == "__main__":
 
     df = aggregate_from_subdistricts(df, AGGS)
 
-    print("Aggreated:")
+    print("\nAfter aggregation:")
     print(df)
 
     print(
-        "If we need to do two aggregations of the same column - do twice and merge the resulting tables."
+        "\nIf we need to do two aggregations of the same column - do twice and merge the resulting tables."
     )
