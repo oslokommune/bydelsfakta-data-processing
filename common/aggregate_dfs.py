@@ -155,7 +155,11 @@ def _one_aggregation(df, aggregation, groupby):
     if aggregation["agg_func"] == "wmean":
         one_agg = _wmean(df, aggregation, groupby)
     else:
-        one_agg = df.groupby(by=groupby, as_index=False).agg(aggregation["agg_func"])
+        one_agg = df.groupby(by=groupby, as_index=False).agg(
+            aggregation["agg_func"],
+            *aggregation.get("args", []),
+            **aggregation.get("kwargs", {}),
+        )
         one_agg = one_agg[[*groupby, aggregation["data_points"]]]
 
     return one_agg
@@ -202,6 +206,7 @@ def aggregate_from_subdistricts(df, aggregations):
 
     The argument aggregations should be given as a list of dictionarys. All dictionaries have to include the agg_func
     and data_points keys. When agg_func=='wmean', a the weights corresponding to the data points have to be provided.
+    Optionally args and kwargs can be provided, which will be passed on to agg_func when called.
 
     aggregations = [{'agg_func': 'sum',
                      'data_points': 'inhabitants'},
