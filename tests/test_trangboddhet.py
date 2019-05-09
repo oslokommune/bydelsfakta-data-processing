@@ -8,27 +8,34 @@ class Tester(unittest.TestCase):
 
         df_source = test_data.data_sets["df_trangboddhet_org"]
 
-        output_data = trangboddhet.data_processing(df_source)
+        value_labels = [
+            "Personer per rom - Under 0,5",
+            "Personer per rom - 0,5 - 0,9",
+            "Personer per rom - 1,0 - 1,9",
+            "Personer per rom - 2,0 og over",
+        ]
+
+        output_data = trangboddhet.data_processing(df_source, value_labels)
 
         # Run a test on each type of template (depending on original to be perfect).
         self.assertEqual(
-            output_data["trangboddhet_alle_status"][0]["data"][0]["values"][0]["value"],
+            output_data["trangboddhet-alle-status"][0]["data"][0]["values"][0]["value"],
             555,
         )
         self.assertEqual(
-            output_data["trangboddhet_alle_historisk"][0]["data"][0]["values"][0][0][
+            output_data["trangboddhet-alle-historisk"][0]["data"][0]["values"][0][0][
                 "value"
             ],
             505,
         )
         self.assertEqual(
-            output_data["trangboddhet_under0.5_status"][0]["data"][0]["values"][0][
+            output_data["trangboddhet-under-0-5-status"][0]["data"][0]["values"][0][
                 "value"
             ],
             555,
         )
         self.assertEqual(
-            output_data["trangboddhet_under0.5_historisk"][0]["data"][0]["values"][0][
+            output_data["trangboddhet-under-0-5-historisk"][0]["data"][0]["values"][0][
                 "value"
             ],
             505,

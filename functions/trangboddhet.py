@@ -1,6 +1,3 @@
-import math
-import time
-
 import common.aggregate_dfs
 import common.aws
 import common.transform
@@ -44,18 +41,18 @@ def generate(df, value_labels):
     return agg_df
 
 
-def write(output_list, output_key):
+def write(output_list, output_key, value_labels, heading):
 
     # Fix proper headings
-    series = [{"heading": "!! Some Heading for this Series !! ", "subheading": ""}]
-    heading = "Some Heading"
+    series = [{"heading": vl, "subheading": ""} for vl in value_labels]
+    heading = heading
 
     common.aws.write_to_intermediate(
         output_key=output_key, output_list=output_list, heading=heading, series=series
     )
 
 
-def data_processing(df):
+def data_processing(df, value_labels):
 
     # This function is testable.
 
@@ -64,13 +61,6 @@ def data_processing(df):
 
     # Add district number
     df = common.transform.add_district_id(df)
-
-    value_labels = [
-        "Personer per rom - 0,5 - 0,9",
-        "Personer per rom - 2,0 og over",
-        "Personer per rom - 1,0 - 1,9",
-        "Personer per rom - Under 0,5",
-    ]
 
     # Create historic and status data (at sub_district level)
     historic = common.transform.historic(df)
@@ -84,52 +74,52 @@ def data_processing(df):
     output_data = {}
 
     output_data[
-        "trangboddhet_alle_status"
+        "trangboddhet-alle-status"
     ] = common.transform_output.generate_output_list(status_agg, "j", value_labels)
     output_data[
-        "trangboddhet_alle_historisk"
+        "trangboddhet-alle-historisk"
     ] = common.transform_output.generate_output_list(historic_agg, "c", value_labels)
 
     output_data[
-        "trangboddhet_under0.5_status"
+        "trangboddhet-under-0-5-status"
     ] = common.transform_output.generate_output_list(
         status_agg, "a", ["Personer per rom - Under 0,5"]
     )
     output_data[
-        "trangboddhet_under0.5_historisk"
+        "trangboddhet-under-0-5-historisk"
     ] = common.transform_output.generate_output_list(
         historic_agg, "b", ["Personer per rom - Under 0,5"]
     )
 
     output_data[
-        "trangboddhet_0.5-0.9_status"
+        "trangboddhet-0-5-0-9-status"
     ] = common.transform_output.generate_output_list(
         status_agg, "a", ["Personer per rom - 0,5 - 0,9"]
     )
     output_data[
-        "trangboddhet_0.5-0.9_historisk"
+        "trangboddhet-0-5-0-9-historisk"
     ] = common.transform_output.generate_output_list(
         historic_agg, "b", ["Personer per rom - 0,5 - 0,9"]
     )
 
     output_data[
-        "trangboddhet_1.0-1.9_status"
+        "trangboddhet-1-0-1-9-status"
     ] = common.transform_output.generate_output_list(
         status_agg, "a", ["Personer per rom - 1,0 - 1,9"]
     )
     output_data[
-        "trangboddhet_1.0-1.9_historisk"
+        "trangboddhet-1-0-1-9-historisk"
     ] = common.transform_output.generate_output_list(
         historic_agg, "b", ["Personer per rom - 1,0 - 1,9"]
     )
 
     output_data[
-        "trangboddhet_over2_status"
+        "trangboddhet-over-2-status"
     ] = common.transform_output.generate_output_list(
         status_agg, "a", ["Personer per rom - 2,0 og over"]
     )
     output_data[
-        "trangboddhet_over2_historisk"
+        "trangboddhet-over-2-historisk"
     ] = common.transform_output.generate_output_list(
         historic_agg, "b", ["Personer per rom - 2,0 og over"]
     )
@@ -146,29 +136,75 @@ def handler(event, context):
 
     source = read_from_s3(s3_key=s3_key)
 
-    output_data = data_processing(source)
+    value_labels = [
+        "Personer per rom - Under 0,5",
+        "Personer per rom - 0,5 - 0,9",
+        "Personer per rom - 1,0 - 1,9",
+        "Personer per rom - 2,0 og over",
+    ]
 
-    # Write to intermediate, with timestamp as edition
-    for output_data_name in output_data:
+    output_data = data_processing(source, value_labels)
 
-        timestamp = math.floor(time.time())
+    set_IDs = {
+        "trangboddhet-alle-status": {
+            "ver_ID": "1-uozVNtqz",
+            "edition": "EDITION-NhDso",
+        },
+        "trangboddhet-alle-historisk": {
+            "ver_ID": "1-eHuFrskK",
+            "edition": "EDITION-wQ8pk",
+        },
+        "trangboddhet-under-0-5-status": {
+            "ver_ID": "1-SiFGuLvX",
+            "edition": "EDITION-hv76W",
+        },
+        "trangboddhet-under-0-5-historisk": {
+            "ver_ID": "1-QymhyHjz",
+            "edition": "EDITION-Brjio",
+        },
+        "trangboddhet-0-5-0-9-status": {
+            "ver_ID": "1-ksEYDMnT",
+            "edition": "EDITION-S2Lcs",
+        },
+        "trangboddhet-0-5-0-9-historisk": {
+            "ver_ID": "1-aFiHVUW4",
+            "edition": "EDITION-WNAes",
+        },
+        "trangboddhet-1-0-1-9-status": {
+            "ver_ID": "1-kuU9GsfB",
+            "edition": "EDITION-MHzJr",
+        },
+        "trangboddhet-1-0-1-9-historisk": {
+            "ver_ID": "1-4z6WVuiv",
+            "edition": "EDITION-9rUHD",
+        },
+        "trangboddhet-over-2-status": {
+            "ver_ID": "1-nmNo2hv3",
+            "edition": "EDITION-aAJPT",
+        },
+        "trangboddhet-over-2-historisk": {
+            "ver_ID": "1-qbmHy82x",
+            "edition": "EDITION-ew29J",
+        },
+    }
 
-        if output_data_name == "trangboddhet_alle_historisk":
-            # These values are read manually from the data set overview.
-            # Will soon get them from a solution based on metadata.
-            dataset_ID = "trangboddhet_alle_historisk-4DAEn"
-            ver_ID = "1-NpEWu8Kp"
-        else:
-            continue  # Just temporarily until the other dataset_IDs are found.
+    assert sorted(list(set_IDs.keys())) == sorted(list(output_data.keys()))
+
+    # Write to processed at S3
+    for output_data_name in output_data.keys():
+
+        ver_ID = set_IDs[output_data_name]["ver_ID"]
+        edition = set_IDs[output_data_name]["edition"]
 
         output_key = (
-            f"intermediate/green/{dataset_ID}/version={ver_ID}/edition={timestamp}/"
+            f"processed/green/{output_data_name}/version={ver_ID}/edition={edition}/"
         )
 
-        # Write back to s3
-        write(output_data[output_data_name], output_key)
+        write(output_data[output_data_name], output_key, value_labels, output_data_name)
 
-    output_keys = list(output_data.keys())
+    output_keys = list(
+        output_data.keys()
+    )  # Note - this currently returns the titles, not the keys.
 
     return output_keys
 
