@@ -19,6 +19,18 @@ POPULATION_HISTORIC_CHANGE = {
     "edition_id": "EDITION-22Yvk",
 }
 
+POPULATION_KEYNUMBERS = {
+    "heading": "Nøkkeltall om befolkningen",
+    "series": [
+        {"heading": "Folkemengde", "subheading": "(totalt)"},
+        {"heading": "Utvikling siste år", "subheading": False},
+        {"heading": "Utvikling siste 10 år", "subheading": False},
+    ],
+    "dataset_id": "nokkeltall-om-befolkningen",
+    "version_id": "1-GyjmRYDW",
+    "edition_id": "EDITION-FRthh",
+}
+
 
 class Folkemengde(object):
     _df = None
@@ -68,12 +80,18 @@ class Folkemengde(object):
 def calculate_change(df):
     indexed = df.set_index(["district", "delbydelid", "date"])
     grouped = indexed.groupby(level="delbydelid")
-    change_value = grouped.diff().rename(columns={"value": "change"}).reset_index()
-    return merge_dfs(df, change_value)
+    change = grouped.diff().rename(columns={"value": "change"}).reset_index()
+    change_10y = (
+        grouped.diff(periods=10).rename(columns={"value": "change_10y"}).reset_index()
+    )
+
+    merge_df = merge_dfs(df, change)
+    return merge_dfs(merge_df, change_10y)
 
 
 def calculate_change_ratio(df):
     df["change_ratio"] = df["change"] / df["value"].shift(1)
+    df["change_10y_ratio"] = df["change_10y"] / df["value"].shift(10)
     return df
 
 
@@ -84,6 +102,7 @@ def calculate(df):
         [
             {"agg_func": "sum", "data_points": "value"},
             {"agg_func": sum_nans, "data_points": "change"},
+            {"agg_func": sum_nans, "data_points": "change_10y"},
         ],
     )
     df = calculate_change_ratio(df)
@@ -128,6 +147,9 @@ def handler(event, context):
         template="b",
         data_points=["change"],
     )
+    population_key_numbers = generate_output_list(
+        df, template="g", data_points=["value", "change", "change_10y", "value"]
+    )
 
     write_to_intermediate(
         _output_key(POPULATION_HISTORIC), population, POPULATION_HISTORIC["heading"], []
@@ -137,6 +159,12 @@ def handler(event, context):
         population_change,
         POPULATION_HISTORIC_CHANGE["heading"],
         [],
+    )
+    write_to_intermediate(
+        _output_key(POPULATION_KEYNUMBERS),
+        population_key_numbers,
+        POPULATION_KEYNUMBERS["heading"],
+        POPULATION_KEYNUMBERS["series"],
     )
 
 
