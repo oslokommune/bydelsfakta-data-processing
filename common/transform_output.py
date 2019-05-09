@@ -190,8 +190,9 @@ def df_to_template_j(geography, df, data_points, avg_row=False, total_row=False)
         0
     ]  # df has only one row - the status for a geography
     values = []
+
     for data_point in data_points:
-        single_value = {"value": data_row[data_point]}
+        single_value = {"date": data_row["date"], "value": data_row[data_point]}
         ratio_field = f"{data_point}_ratio"
         if ratio_field in data_row.keys():
             single_value["ratio"] = data_row[ratio_field]
