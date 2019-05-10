@@ -84,6 +84,9 @@ def _check_city_level_totals(df_with_city_level, aggregations):
     This does not only check the aggregation function, but also inconsistencies in the incoming data after renaming
     districts.
 
+    Note that the function will only works for data fields with the type int64 (the Pandas integer default).
+    It is recommended to keep any "number of ..." data fields as this type and avoid casting as float.
+
     Args:
         df_with_city_level (pd.DataFrame): The input DataFrame (with city_level column).
         aggregations (list of dicts): Defining the aggregations, details in the function aggregate_from_subdistricts.
@@ -96,7 +99,10 @@ def _check_city_level_totals(df_with_city_level, aggregations):
     """
 
     sum_fields = [
-        agg["data_points"] for agg in aggregations if agg["agg_func"] == "sum"
+        agg["data_points"]
+        for agg in aggregations
+        if (agg["agg_func"] == "sum")
+        and (df_with_city_level[agg["data_points"]].dtype == "int64")
     ]
 
     if len(sum_fields) > 0:
