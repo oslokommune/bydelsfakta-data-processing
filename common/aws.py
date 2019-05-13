@@ -33,7 +33,7 @@ def write_to_intermediate(
         body = output
         body["meta"] = _metadata(heading=heading, series=series)
         client.put_object(
-            Body=json.dumps(body, ensure_ascii=False, default=default),
+            Body=json.dumps(body, ensure_ascii=False, allow_nan=False, default=default),
             Bucket=s3_bucket,
             Key=f"{output_key}{filename}",
         )
