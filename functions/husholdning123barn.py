@@ -1,6 +1,7 @@
 import os
 
 import pandas as pd
+import numpy as np
 
 import common.aws as common_aws
 import common.aggregate_dfs as aggregate_dfs
@@ -36,17 +37,13 @@ def start(bucket, key):
 
     household_raw = common_aws.read_from_s3(s3_key=key)  # , date_column="År")
 
-    print("REMEMBER - THIS IS NOT THE FINAL VERSION!")
-    print("SECURE NON FLOAT IN NUMBER OF HUSHOLDNINGER!")
-
-    m = {
-        "1 barn i HH": "Barn 1",
-        "2 barn i HH": "Barn 2",
-        "3 barn i HH": "Barn 3+",
-        "4 barn eller mer": "Barn 3+",
-    }
-
     household_df = household_raw.copy()
+    household_df["Antall husholdninger"] = household_df["Antall husholdninger"].str.replace(" ", "").astype(int)
+
+    # df2018 = household_df[household_df["date"] == 2018].copy()
+    # print(df2018.shape)  # 2787 rows, matches Excel
+    # print(df2018.sum(axis=0))  # TOotal sum 340444, does not match Excels sum 179908
+
     # TEMP! Rename "Delbydel" --> "district" <== This needs to be done for husholdning.py as well.
     household_df = household_df.rename(columns={"Delbydel": "district"})
     household_df = transform.add_district_id(household_df.copy())
@@ -56,12 +53,22 @@ def start(bucket, key):
             "district",
             "date",
             "Barn i husholdningen",
-            "Antall husholdninger",
+            "Antall husholdninger"
         ]
     ]
+
+    m = {
+        "Ingen barn i HH": "Barn 0",
+        "1 barn i HH": "Barn 1",
+        "2 barn i HH": "Barn 2",
+        "3 barn i HH": "Barn 3+",
+        "4 barn eller mer": "Barn 3+"
+    }
     household_df["Barnekategori"] = (
-        household_df["Barn i husholdningen"].map(m).fillna("Andre")
+        household_df["Barn i husholdningen"].map(m).fillna(np.nan)
     )
+    if household_df["Barnekategori"].isnull().any():
+        raise ValueError("Unmapped category found in the column Husholdningstype. See dict 'm'.")
     household_df = household_df.drop("Barn i husholdningen", axis=1)
 
     # Reshape from group data by rows to group data by col
@@ -76,28 +83,25 @@ def start(bucket, key):
     ).reset_index(drop=False)
 
     AGGS = [
-        {"agg_func": "sum", "data_points": "Andre"},
+        {"agg_func": "sum", "data_points": "Barn 0"},
         {"agg_func": "sum", "data_points": "Barn 1"},
         {"agg_func": "sum", "data_points": "Barn 2"},
         {"agg_func": "sum", "data_points": "Barn 3+"},
     ]
 
-    print(
-        "Here it fails because of unmatching sums - at least with current data set (May 9th)! Await new data!"
-    )
-
     household_agg = aggregate_dfs.aggregate_from_subdistricts(household_df, AGGS)
-
+    sum_these = [d["data_points"] for d in AGGS]
+    household_agg["Totalt"] = household_agg[sum_these].sum(axis=1)
     household_agg = aggregate_dfs.add_ratios(
         household_agg,
-        data_points=["Andre", "Barn 1", "Barn 2", "Barn 3+"],
-        ratio_of=["Andre", "Barn 1", "Barn 2", "Barn 3+"],
+        data_points=sum_these,
+        ratio_of=["Totalt"],
     )
 
     print(household_agg)
+    print("Ok - stemmer så langt.")
 
     import sys
-
     sys.exit(1)
 
     # data_points = ["single_adult", "no_children", "with_children"]
@@ -187,6 +191,7 @@ def _output_key(dataset_id, version_id, edition_id):
 
 
 def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
+
     series = [
         {"heading": "Husholdninger med 1 barn", "subheading": ""},
         {"heading": "Husholdninger med 2 barn", "subheading": ""},
@@ -198,11 +203,12 @@ def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
 
 
 if __name__ == "__main__":
+
     handle(
         {
             "bucket": "ok-origo-dataplatform-dev",
             "keys": {
-                "Husholdninger_med_barn-XdfNB": "raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/edition=EDITION-ivaYi/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"
+                "Husholdninger_med_barn-XdfNB": "raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/1557487278/Husholdninger_med_barn(1.1.2008-1.1.2018-v02).csv"
             },
         },
         {},
