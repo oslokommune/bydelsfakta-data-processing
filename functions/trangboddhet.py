@@ -77,7 +77,7 @@ def data_processing(df, value_labels):
         "trangboddhet-alle-status"
     ] = common.transform_output.generate_output_list(status_agg, "j", value_labels)
     output_data[
-        "trangboddhet-alle-historisk"
+        "trangboddhet_alle_historisk-4DAEn"
     ] = common.transform_output.generate_output_list(historic_agg, "c", value_labels)
 
     output_data[
@@ -150,9 +150,9 @@ def handler(event, context):
             "ver_ID": "1-uozVNtqz",
             "edition": "EDITION-NhDso",
         },
-        "trangboddhet-alle-historisk": {
-            "ver_ID": "1-eHuFrskK",
-            "edition": "EDITION-wQ8pk",
+        "trangboddhet_alle_historisk-4DAEn": {
+            "ver_ID": "1-NpEWu8Kp",
+            "edition": "EDITION-ukGfK",
         },
         "trangboddhet-under-0-5-status": {
             "ver_ID": "1-SiFGuLvX",
