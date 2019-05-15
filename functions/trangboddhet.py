@@ -145,12 +145,6 @@ def handler(event, context):
 
     output_data = data_processing(source, value_labels)
 
-    # OLD
-    # "trangboddhet-alle-historisk": {
-    #    "ver_ID": "1-eHuFrskK",
-    #    "edition": "EDITION-wQ8pk",
-    # },
-
     set_IDs = {
         "trangboddhet-alle-status": {
             "ver_ID": "1-uozVNtqz",
