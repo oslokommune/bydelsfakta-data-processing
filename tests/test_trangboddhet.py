@@ -17,11 +17,20 @@ class Tester(unittest.TestCase):
 
         output_data = trangboddhet.data_processing(df_source, value_labels)
 
-        # Run a test on each type of template (depending on original to be perfect).
+        # TO BE DONE:
+        # The below tests has some bad hard coding which will have to be updated when the meta data handling
+        # is updated.
 
         self.assertEqual(
             output_data["trangboddhet-alle-status"][0]["data"][0]["values"][0]["value"],
             555,
+        )
+
+        self.assertEqual(
+            output_data["trangboddhet_alle_historisk-4DAEn"][0]["data"][0]["values"][0][
+                0
+            ]["value"],
+            505,
         )
 
         self.assertEqual(
