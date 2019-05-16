@@ -37,9 +37,15 @@ def start(bucket, key):
 
     with_district = transform.add_district_id(household_raw.copy())
 
+    print(with_district)
+
     with_data_points = with_household_data_points(with_district)
 
+    print(with_data_points)
+
     input_df = aggregate_to_input_format(with_data_points, data_points)
+
+    print(input_df)
 
     household_total_historic = generate_output_list(
         *transform.historic(input_df), template="c", data_points=data_points
