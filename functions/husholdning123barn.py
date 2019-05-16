@@ -1,10 +1,11 @@
 import os
+import sys  # TEMP FOR DEBUG
 
 import pandas as pd
 import numpy as np
 
 import common.aws as common_aws
-import common.aggregate_dfs as aggregate_dfs
+import common.aggregate_dfs as aggregate
 import common.transform as transform
 from common.transform_output import generate_output_list
 
@@ -12,16 +13,31 @@ os.environ["METADATA_API_URL"] = ""
 
 s3_bucket = "ok-origo-dataplatform-dev"
 
-historic_dataset_id = "Husholdning-totalt-historisk-NZrxf"
-historic_version_id = "1-Xh69qF9c"
-historic_edition_id = "EDITION-gvinX"
-status_dataset_id = "Husholdning-totalt-status-FzFf5"
-status_version_id = "1-wgHdAJWY"
-status_edition_id = "EDITION-nibxq"
-matrix_dataset_id = "Husholdning-totalt-matrise-e9w4m"
-matrix_version_id = "1-8fZLJ6dC"
-matrix_edition_id = "EDITION-756ZB"
+datasets = [{"dataset_title": "Husholdninger med 1 barn",
+             "dataset_id": "husholdning_1-barn_status",
+             "version_id": "",
+             "edition_id": "",
+             "data_point": "Barn 1"},
+            {"dataset_title": "Husholdninger med 2 barn",
+             "dataset_id": "husholdning_2-barn_status",
+             "version_id": "",
+             "edition_id": "",
+             "data_point": "Barn 2"},
+            {"dataset_title": "Husholdninger med 3+ barn",
+             "dataset_id": "husholdning_3-barn_status",
+             "version_id": "",
+             "edition_id": "",
+             "data_point": "Barn 3+"}]
 
+#historic_dataset_id = "Husholdning-totalt-historisk-NZrxf"
+#historic_version_id = "1-Xh69qF9c"
+#historic_edition_id = "EDITION-gvinX"
+#status_dataset_id = "Husholdning-totalt-status-FzFf5"
+#status_version_id = "1-wgHdAJWY"
+#status_edition_id = "EDITION-nibxq"
+#matrix_dataset_id = "Husholdning-totalt-matrise-e9w4m"
+#matrix_version_id = "1-8fZLJ6dC"
+#matrix_edition_id = "EDITION-756ZB"
 
 def handle(event, context):
 
@@ -35,14 +51,10 @@ def handle(event, context):
 
 def start(bucket, key):
 
-    household_raw = common_aws.read_from_s3(s3_key=key)  # , date_column="År")
+    household_raw = common_aws.read_from_s3(s3_key=key)
 
     household_df = household_raw.copy()
     household_df["Antall husholdninger"] = household_df["Antall husholdninger"].str.replace(" ", "").astype(int)
-
-    # df2018 = household_df[household_df["date"] == 2018].copy()
-    # print(df2018.shape)  # 2787 rows, matches Excel
-    # print(df2018.sum(axis=0))  # TOotal sum 340444, does not match Excels sum 179908
 
     # TEMP! Rename "Delbydel" --> "district" <== This needs to be done for husholdning.py as well.
     household_df = household_df.rename(columns={"Delbydel": "district"})
@@ -82,51 +94,40 @@ def start(bucket, key):
         fill_value=0,
     ).reset_index(drop=False)
 
-    AGGS = [
-        {"agg_func": "sum", "data_points": "Barn 0"},
-        {"agg_func": "sum", "data_points": "Barn 1"},
-        {"agg_func": "sum", "data_points": "Barn 2"},
-        {"agg_func": "sum", "data_points": "Barn 3+"},
-    ]
+    df_status = transform.status(household_df)[0]
+    df_agg = aggregate_to_input_format(df_status, ["Barn 0", "Barn 1", "Barn 2", "Barn 3+"])
 
-    household_agg = aggregate_dfs.aggregate_from_subdistricts(household_df, AGGS)
-    sum_these = [d["data_points"] for d in AGGS]
-    household_agg["Totalt"] = household_agg[sum_these].sum(axis=1)
-    household_agg = aggregate_dfs.add_ratios(
-        household_agg,
-        data_points=sum_these,
-        ratio_of=["Totalt"],
-    )
+    for dataset in datasets:
 
-    print(household_agg)
-    print("Ok - stemmer så langt.")
+        print(dataset["dataset_id"])
 
-    import sys
-    sys.exit(1)
+        #print(generate_output_list(df_agg, template="a", data_points=[dataset["data_point"]]))
 
-    # data_points = ["single_adult", "no_children", "with_children"]
+        dataset["data"] = generate_output_list(df_agg, template="a", data_points=[dataset["data_point"]])
 
-    input_df = aggregate_to_input_format(with_data_points, data_points)
+        # TO BE REMOVED!
+        debug = False
+        if debug:
+            from pprint import pprint
+            with open(r"C:\CURRENT FILES\dump.txt", "wt", encoding="utf-8") as f:
+                pprint(dataset["data"], stream=f)
+                print("\n", file=f)
+                sys.exit(1)
 
-    household_total_status = generate_output_list(
-        *transform.status(input_df), template="a", data_points=data_points
-    )
 
-    _write_to_intermediate(
-        historic_dataset_id,
-        historic_version_id,
-        historic_edition_id,
-        household_total_historic,
-    )
-    _write_to_intermediate(
-        status_dataset_id, status_version_id, status_edition_id, household_total_status
-    )
-    _write_to_intermediate(
-        matrix_dataset_id, matrix_version_id, matrix_edition_id, household_total_matrix
-    )
-
+        print("2019-May-16 13:00: Need to fill in {data_sets} - awaiting pipeline readiness!")
+        sys.exit(1)
+        ####
+        _write_to_intermediate(dataset["dataset_id"],
+                               dataset["version_id"],
+                               dataset["edition_id"],
+                               dataset["data"],
+                               series_heading=dataset["dataset_title"])
 
 def _aggregations(data_points):
+
+    """Return a list of aggreation dicts (given that 'sum' should be used). To be used when later doing the aggreations."""
+
     return [
         {"data_points": data_point, "agg_func": "sum"} for data_point in data_points
     ]
@@ -190,12 +191,10 @@ def _output_key(dataset_id, version_id, edition_id):
     return f"processed/green/{dataset_id}/version={version_id}/edition={edition_id}/"
 
 
-def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
+def _write_to_intermediate(dataset_id, version_id, edition_id, output_list, series_heading):
 
     series = [
-        {"heading": "Husholdninger med 1 barn", "subheading": ""},
-        {"heading": "Husholdninger med 2 barn", "subheading": ""},
-        {"heading": "Husholdninger med 3+ barn", "subheading": ""},
+        {"heading": series_heading, "subheading": ""},
     ]
     heading = "Husholdninger"
     output_key = _output_key(dataset_id, version_id, edition_id)
