@@ -55,7 +55,7 @@ def start(landbakgrunn_key, befolkning_key):
     input_df = aggregator.add_ratios(input_df, data_points, ratio_of=["population"])
 
     output_list_historic = generate_output_list(
-        input_df, data_points, top_n=1, template_fun=generate_geo_obj_historic
+        input_df, data_points, top_n=10, template_fun=generate_geo_obj_historic
     )
 
     input_df_status = input_df[input_df["date"] == input_df["date"].max()]
@@ -63,13 +63,13 @@ def start(landbakgrunn_key, befolkning_key):
         input_df_status, data_points, top_n=10, template_fun=generate_geo_obj_status
     )
 
-    _write_to_intermediate(
+    _write_to_processed(
         historic_dataset_id,
         historic_version_id,
         historic_edition_id,
         output_list_historic,
     )
-    _write_to_intermediate(
+    _write_to_processed(
         status_dataset_id, status_version_id, status_edition_id, output_list_status
     )
 
@@ -99,8 +99,7 @@ def generate_geo_obj_status(df, geography, data_points):
                 "value": value[data_point],
                 "ratio": value[f"{data_point}_ratio"],
             }
-    values = []
-    [values.append(series[data_point]) for data_point in data_points if series]
+    values = [series[data_point] for data_point in data_points if series]
     return {"geography": geography, "values": values}
 
 
@@ -193,7 +192,7 @@ def _output_key(dataset_id, version_id, edition_id):
     return f"processed/green/{dataset_id}/version={version_id}/edition={edition_id}/"
 
 
-def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
+def _write_to_processed(dataset_id, version_id, edition_id, output_list):
     series = [
         {"heading": "Innvandrer", "subheading": ""},
         {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
