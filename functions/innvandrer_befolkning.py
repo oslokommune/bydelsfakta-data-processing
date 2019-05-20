@@ -117,11 +117,10 @@ def generate(template, origin_by_age_df, livage_df, population_df):
 
 def write(output_list, output_key):
     series = [
-        {"heading": "Norskfødt med en utenlandskfødt forelder", "subheading": ""},
-        {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
-        {"heading": "Innvandrer, kort botid (<=5 år)", "subheading": ""},
-        {"heading": "Innvandrer, lang botid (>5 år)", "subheading": ""},
-        {"heading": "Befolkning", "subheading": ""},
+        {"heading": "Norskfødt", "subheading": "med en utenlandskfødt forelder"},
+        {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
+        {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
+        {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
     ]
     heading = "Innvandring befolkning"
 
