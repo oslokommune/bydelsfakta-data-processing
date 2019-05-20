@@ -65,7 +65,9 @@ class Tester(unittest.TestCase):
         geography_name = "Subdistrict"
         input_df = test_df_latest[test_df_latest["delbydelid"] == geography_id]
         data_points = ["d1", "d2"]
-        output = transform.df_to_template_a(geography_id, input_df, data_points, geography_name=geography_name)
+        output = transform.df_to_template_a(
+            geography_id, input_df, data_points, geography_name=geography_name
+        )
         self.assertEqual(output["id"], geography_id)
         self.assertEqual(output["geography"], geography_name)
 
@@ -208,7 +210,11 @@ class Tester(unittest.TestCase):
         template = "c"
         data_points = ["d1", "d2"]
         output = transform.sub_district_time_series(
-            test_df, sub_district_id, template, data_points, sub_district_name=sub_district_name
+            test_df,
+            sub_district_id,
+            template,
+            data_points,
+            sub_district_name=sub_district_name,
         )
         self.assertEqual(output["id"], sub_district_id)
         self.assertEqual(output["geography"], sub_district_name)
