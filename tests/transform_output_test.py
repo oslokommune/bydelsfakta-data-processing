@@ -60,6 +60,15 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
+    def test_df_to_template_a_with_geography_name(self):
+        geography_id = "0301010101"
+        geography_name = "Subdistrict"
+        input_df = test_df_latest[test_df_latest["delbydelid"] == geography_id]
+        data_points = ["d1", "d2"]
+        output = transform.df_to_template_a(geography_id, input_df, data_points, geography_name=geography_name)
+        self.assertEqual(output["id"], geography_id)
+        self.assertEqual(output["geography"], geography_name)
+
     def test_df_to_template_b(self):
         geography = "0301010101"
         input_df = test_df[test_df["delbydelid"] == geography]
@@ -193,6 +202,17 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
+    def test_sub_district_time_series(self):
+        sub_district_id = "0301010101"
+        sub_district_name = "Subdistrict"
+        template = "c"
+        data_points = ["d1", "d2"]
+        output = transform.sub_district_time_series(
+            test_df, sub_district_id, template, data_points, sub_district_name=sub_district_name
+        )
+        self.assertEqual(output["id"], sub_district_id)
+        self.assertEqual(output["geography"], sub_district_name)
+
     def test_district_time_series(self):
         district = "01"
         template = "c"
@@ -217,6 +237,17 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
+    def test_district_time_series_with_geography_name(self):
+        district_id = "01"
+        district_name = "District"
+        template = "c"
+        data_points = ["d1", "d2"]
+        output = transform.district_time_series(
+            test_df, district_id, template, data_points, district_name=district_name
+        )
+        self.assertEqual(output["id"], district_id)
+        self.assertEqual(output["geography"], district_name)
+
     def test_district_time_series_list(self):
         district = "01"
         template = "a"
@@ -226,6 +257,20 @@ class Tester(unittest.TestCase):
         )
         expected = test_data.district_01_time_series_list
         self.assertListEqual(output, expected)
+
+    def test_district_time_series_list_with_geography_name(self):
+        district_id = "01"
+        district_name = "01"
+        template = "a"
+        data_points = ["d1", "d2"]
+        output = transform.district_time_series_list(
+            test_df, district_id, template, data_points, district_name=district_name
+        )
+        expected = test_data.district_01_time_series_list
+        self.assertEqual(output[0]["id"], "00")
+        self.assertEqual(output[0]["geography"], "Oslo i alt")
+        self.assertEqual(output[1]["id"], district_id)
+        self.assertEqual(output[1]["geography"], district_name)
 
     def test_generate_output_list(self):
         template = "c"
