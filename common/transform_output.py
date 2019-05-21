@@ -240,16 +240,19 @@ def df_to_template_a(
 
 
 def df_to_template_b(
-    geography, df, data_points, avg_row=False, total_row=False, link_to=False
+    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False, link_to=False
 ):
     if len(data_points) > 1:
         raise Exception("Template B only takes one datapoint")
     obj_b = {
-        "geography": geography,
+        "geography": geography_name or geography_id,
         "avgRow": avg_row,
         "totalRow": total_row,
         "values": [],
     }
+    if geography_name:
+        obj_b["id"] = geography_id
+
     value_list = []
     data_point = data_points[0]
     for values in df.to_dict("r"):
@@ -282,14 +285,17 @@ def df_to_template_c(
     return obj_c
 
 
-def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False):
+def df_to_template_i(geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False):
 
     obj_i = {
-        "geography": geography,
+        "geography": geography_name or geography_id,
         "values": [],
         "avgRow": avg_row,
         "totalRow": total_row,
     }
+    if geography_name:
+        obj_i["id"] = geography_id
+
     series = {}
     for values in df.to_dict("r"):
         for data_point in data_points:
@@ -299,14 +305,16 @@ def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False)
     return obj_i
 
 
-def df_to_template_j(geography, df, data_points, avg_row=False, total_row=False):
+def df_to_template_j(geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False):
 
     obj_j = {
-        "geography": geography,
+        "geography": geography_name or geography_id,
         "values": [],
         "avgRow": avg_row,
         "totalRow": total_row,
     }
+    if geography_name:
+        obj_j["id"] = geography_id
 
     data_row = df.to_dict("records")[
         0

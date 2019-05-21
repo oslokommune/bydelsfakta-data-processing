@@ -87,6 +87,15 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
+    def test_df_to_template_b_with_geography_name(self):
+        geography_id = "0301010101"
+        geography_name = "Subdistrict"
+        input_df = test_df[test_df["delbydelid"] == geography_id]
+        data_points = ["d1"]
+        output = transform.df_to_template_b(geography_id, input_df, data_points, geography_name=geography_name)
+        self.assertEqual(output["id"], geography_id)
+        self.assertEqual(output["geography"], geography_name)
+
     def test_df_to_template_b_error(self):
         geography = "0301010101"
         input_df = test_df[test_df["delbydelid"] == geography]
@@ -132,6 +141,15 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
+    def test_df_to_template_c_with_geography_name(self):
+        geography_id = "0301010101"
+        geography_name = "Subdistrict"
+        input_df = test_df[test_df["delbydelid"] == geography_id]
+        data_points = ["d1", "d2"]
+        output = transform.df_to_template_c(geography_id, input_df, data_points, geography_name=geography_name)
+        self.assertEqual(output["id"], geography_id)
+        self.assertEqual(output["geography"], geography_name)
+
     def test_df_to_template_i(self):
         geography = "0301010101"
         input_df = test_df_latest[test_df_latest["delbydelid"] == geography]
@@ -148,6 +166,15 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
+    def test_df_to_template_i(self):
+        geography_id = "0301010101"
+        geography_name = "Subdistrict"
+        input_df = test_df_latest[test_df_latest["delbydelid"] == geography_id]
+        data_points = ["d1", "d2"]
+        output = transform.df_to_template_i(geography_id, input_df, data_points, geography_name=geography_name)
+        self.assertEqual(output["id"], geography_id)
+        self.assertEqual(output["geography"], geography_name)
+
     def test_df_to_template_j(self):
         geography = "0301010101"
         input_df = test_df_latest[test_df_latest["delbydelid"] == geography]
@@ -163,6 +190,15 @@ class Tester(unittest.TestCase):
             ],
         }
         self.assertDictEqual(output, expected)
+
+    def test_df_to_template_j_with_geography_name(self):
+        geography_id = "0301010101"
+        geography_name = "0301010101"
+        input_df = test_df_latest[test_df_latest["delbydelid"] == geography_id]
+        data_points = ["d1", "d2"]
+        output = transform.df_to_template_i(geography_id, input_df, data_points, geography_name=geography_name)
+        self.assertEqual(output["id"], geography_id)
+        self.assertEqual(output["geography"], geography_name)
 
     def test_sub_district_time_series(self):
         sub_district = "0301010101"
