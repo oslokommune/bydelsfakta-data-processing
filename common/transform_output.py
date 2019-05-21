@@ -144,10 +144,9 @@ def district_time_series(
 ):
     district_df = df[df["district"] == district_id]
     district_df = district_df[district_df["delbydelid"].isnull()]
-    return df_to_template(
+    return template_fun(template)(
         district_id,
         district_df,
-        template,
         data_points,
         geography_name=district_name,
         avg_row=avg_row,
@@ -159,45 +158,24 @@ def sub_district_time_series(
     district_df, sub_district_id, template, data_points, sub_district_name=None
 ):
     sub_district_df = district_df[district_df["delbydelid"] == sub_district_id]
-    return df_to_template(
-        sub_district_id,
-        sub_district_df,
-        template,
-        data_points,
-        geography_name=sub_district_name,
+    return template_fun(template)(
+        sub_district_id, sub_district_df, data_points, geography_name=sub_district_name
     )
 
 
-def df_to_template(
-    geography_id,
-    df,
-    template,
-    data_points,
-    geography_name=None,
-    avg_row=False,
-    total_row=False,
-):
+def template_fun(template):
     if template.lower() == "a":
-        template_fun = df_to_template_a
+        return df_to_template_a
     elif template.lower() == "b":
-        template_fun = df_to_template_b
+        return df_to_template_b
     elif template.lower() == "c":
-        template_fun = df_to_template_c
+        return df_to_template_c
     elif template.lower() == "i":
-        template_fun = df_to_template_i
+        return df_to_template_i
     elif template.lower() == "j":
-        template_fun = df_to_template_j
+        return df_to_template_j
     else:
         raise Exception(f"Template {template} does not exist")
-
-    return template_fun(
-        geography_id,
-        df,
-        data_points,
-        geography_name=geography_name,
-        avg_row=avg_row,
-        total_row=total_row,
-    )
 
 
 def df_to_template_a(
