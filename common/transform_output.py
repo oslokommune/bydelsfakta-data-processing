@@ -178,37 +178,26 @@ def df_to_template(
     total_row=False,
 ):
     if template.lower() == "a":
-        return df_to_template_a(
-            geography_id,
-            df,
-            data_points,
-            geography_name=geography_name,
-            avg_row=avg_row,
-            total_row=total_row,
-        )
+        template_fun = df_to_template_a
     elif template.lower() == "b":
-        return df_to_template_b(
-            geography_id, df, data_points, avg_row=avg_row, total_row=total_row
-        )
+        template_fun = df_to_template_b
     elif template.lower() == "c":
-        return df_to_template_c(
-            geography_id,
-            df,
-            data_points,
-            geography_name=geography_name,
-            avg_row=avg_row,
-            total_row=total_row,
-        )
+        template_fun = df_to_template_c
     elif template.lower() == "i":
-        return df_to_template_i(
-            geography_id, df, data_points, avg_row=avg_row, total_row=total_row
-        )
+        template_fun = df_to_template_i
     elif template.lower() == "j":
-        return df_to_template_j(
-            geography_id, df, data_points, avg_row=avg_row, total_row=total_row
-        )
+        template_fun = df_to_template_j
     else:
         raise Exception(f"Template {template} does not exist")
+
+    return template_fun(
+        geography_id,
+        df,
+        data_points,
+        geography_name=geography_name,
+        avg_row=avg_row,
+        total_row=total_row,
+    )
 
 
 def df_to_template_a(
