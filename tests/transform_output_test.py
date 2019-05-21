@@ -170,7 +170,7 @@ class Tester(unittest.TestCase):
         }
         self.assertDictEqual(output, expected)
 
-    def test_df_to_template_i(self):
+    def test_df_to_template_i_with_geography_name(self):
         geography_id = "0301010101"
         geography_name = "Subdistrict"
         input_df = test_df_latest[test_df_latest["delbydelid"] == geography_id]
