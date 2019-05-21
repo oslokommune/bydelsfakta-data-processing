@@ -144,7 +144,7 @@ def district_time_series(
 ):
     district_df = df[df["district"] == district_id]
     district_df = district_df[district_df["delbydelid"].isnull()]
-    return template_fun(template)(
+    return template_funs[template.lower()](
         district_id,
         district_df,
         data_points,
@@ -158,24 +158,9 @@ def sub_district_time_series(
     district_df, sub_district_id, template, data_points, sub_district_name=None
 ):
     sub_district_df = district_df[district_df["delbydelid"] == sub_district_id]
-    return template_fun(template)(
+    return template_funs[template.lower()](
         sub_district_id, sub_district_df, data_points, geography_name=sub_district_name
     )
-
-
-def template_fun(template):
-    if template.lower() == "a":
-        return df_to_template_a
-    elif template.lower() == "b":
-        return df_to_template_b
-    elif template.lower() == "c":
-        return df_to_template_c
-    elif template.lower() == "i":
-        return df_to_template_i
-    elif template.lower() == "j":
-        return df_to_template_j
-    else:
-        raise Exception(f"Template {template} does not exist")
 
 
 def df_to_template_a(
@@ -308,6 +293,15 @@ def df_to_template_j(
     obj_j["values"] = values
 
     return obj_j
+
+
+template_funs = {
+    "a": df_to_template_a,
+    "b": df_to_template_b,
+    "c": df_to_template_c,
+    "i": df_to_template_i,
+    "j": df_to_template_j,
+}
 
 
 def list_to_time_series(data_points):
