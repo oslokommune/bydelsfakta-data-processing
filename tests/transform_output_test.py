@@ -92,7 +92,9 @@ class Tester(unittest.TestCase):
         geography_name = "Subdistrict"
         input_df = test_df[test_df["delbydelid"] == geography_id]
         data_points = ["d1"]
-        output = transform.df_to_template_b(geography_id, input_df, data_points, geography_name=geography_name)
+        output = transform.df_to_template_b(
+            geography_id, input_df, data_points, geography_name=geography_name
+        )
         self.assertEqual(output["id"], geography_id)
         self.assertEqual(output["geography"], geography_name)
 
@@ -146,7 +148,9 @@ class Tester(unittest.TestCase):
         geography_name = "Subdistrict"
         input_df = test_df[test_df["delbydelid"] == geography_id]
         data_points = ["d1", "d2"]
-        output = transform.df_to_template_c(geography_id, input_df, data_points, geography_name=geography_name)
+        output = transform.df_to_template_c(
+            geography_id, input_df, data_points, geography_name=geography_name
+        )
         self.assertEqual(output["id"], geography_id)
         self.assertEqual(output["geography"], geography_name)
 
@@ -171,7 +175,9 @@ class Tester(unittest.TestCase):
         geography_name = "Subdistrict"
         input_df = test_df_latest[test_df_latest["delbydelid"] == geography_id]
         data_points = ["d1", "d2"]
-        output = transform.df_to_template_i(geography_id, input_df, data_points, geography_name=geography_name)
+        output = transform.df_to_template_i(
+            geography_id, input_df, data_points, geography_name=geography_name
+        )
         self.assertEqual(output["id"], geography_id)
         self.assertEqual(output["geography"], geography_name)
 
@@ -196,7 +202,9 @@ class Tester(unittest.TestCase):
         geography_name = "0301010101"
         input_df = test_df_latest[test_df_latest["delbydelid"] == geography_id]
         data_points = ["d1", "d2"]
-        output = transform.df_to_template_i(geography_id, input_df, data_points, geography_name=geography_name)
+        output = transform.df_to_template_i(
+            geography_id, input_df, data_points, geography_name=geography_name
+        )
         self.assertEqual(output["id"], geography_id)
         self.assertEqual(output["geography"], geography_name)
 

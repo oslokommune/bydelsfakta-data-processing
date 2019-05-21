@@ -240,7 +240,13 @@ def df_to_template_a(
 
 
 def df_to_template_b(
-    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False, link_to=False
+    geography_id,
+    df,
+    data_points,
+    geography_name=None,
+    avg_row=False,
+    total_row=False,
+    link_to=False,
 ):
     if len(data_points) > 1:
         raise Exception("Template B only takes one datapoint")
@@ -285,7 +291,9 @@ def df_to_template_c(
     return obj_c
 
 
-def df_to_template_i(geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False):
+def df_to_template_i(
+    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False
+):
 
     obj_i = {
         "geography": geography_name or geography_id,
@@ -305,7 +313,9 @@ def df_to_template_i(geography_id, df, data_points, geography_name=None, avg_row
     return obj_i
 
 
-def df_to_template_j(geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False):
+def df_to_template_j(
+    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False
+):
 
     obj_j = {
         "geography": geography_name or geography_id,
