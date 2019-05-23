@@ -1,80 +1,51 @@
 import numpy as np
+from pprint import pprint
+from enum import Enum
 from common.aws import read_from_s3, write_to_intermediate
 from common.transform import add_district_id
 from common.aggregate_dfs import aggregate_from_subdistricts, merge_dfs
 from common.transform_output import generate_output_list
 
 
-POPULATION_HISTORIC = {
-    "heading": "Folkemengde utvikling historisk",
-    "dataset_id": "folkemengde-utvikling-historisk",
-    "version_id": "1-eft8iuhY",
-    "edition_id": "EDITION-eoFpU",
-}
+class DatasetType(Enum):
+    HISTORIC = "historic"
+    HISTORIC_CHANGE = "historic_change"
+    KEYNUMBERS = "keynumbers"
 
-POPULATION_HISTORIC_CHANGE = {
-    "heading": "Folkemengde utvikling historisk prosent",
-    "dataset_id": "folkemengde-utvikling-historisk-prosent",
-    "version_id": "1-nDiEAbgc",
-    "edition_id": "EDITION-22Yvk",
-}
 
-POPULATION_KEYNUMBERS = {
-    "heading": "Nøkkeltall om befolkningen",
-    "series": [
-        {"heading": "Folkemengde", "subheading": "(totalt)"},
-        {"heading": "Utvikling siste år", "subheading": False},
-        {"heading": "Utvikling siste 10 år", "subheading": False},
-    ],
-    "dataset_id": "nokkeltall-om-befolkningen",
-    "version_id": "1-GyjmRYDW",
-    "edition_id": "EDITION-FRthh",
+METADATA = {
+    DatasetType.HISTORIC: {"heading": "Folkemengde utvikling historisk", "series": []},
+    DatasetType.HISTORIC_CHANGE: {
+        "heading": "Folkemengde utvikling historisk prosent",
+        "series": [],
+    },
+    DatasetType.KEYNUMBERS: {
+        "heading": "Nøkkeltall om befolkningen",
+        "series": [
+            {"heading": "Folkemengde", "subheading": "(totalt)"},
+            {"heading": "Utvikling siste år", "subheading": False},
+            {"heading": "Utvikling siste 10 år", "subheading": False},
+        ],
+    },
 }
 
 
-class Folkemengde(object):
-    _df = None
+def read_population_data(key):
+    df = read_from_s3(key)
+    df["delbydelid"].fillna("0301999999", inplace=True)
+    df = add_district_id(df)
+    df = df.rename(
+        columns={
+            "Antall personer": "value",
+            # "Delbydel": "delbydel_id",
+            # "district": "bydel_id",
+        }
+    )
+    return df
 
-    def __init__(self, df):
-        self._df = df
 
-    @classmethod
-    def from_s3(
-        cls,
-        key="raw/green/Befolkningen_etter_bydel_delby-J7khG/version=1-HFe342Fu/edition=EDITION-MHjs3/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2018-v01).csv",
-    ):
-        df = read_from_s3(key)
-        df["delbydelid"].fillna("0301999999", inplace=True)
-        df = add_district_id(df)
-
-        df = df.rename(
-            columns={
-                "Antall personer": "value",
-                # "Delbydel": "delbydel_id",
-                # "district": "bydel_id",
-            }
-        )
-
-        return cls(df)
-
-    def filter_districts(self, districts=["16", "17"]):
-        # TODO: Districts mappings for readability
-        df = self._df.copy()
-        df = df[~df["district"].isin(districts)]
-        return Folkemengde(df)
-
-    def filter_age(self, minimum, maximum):
-        df = self._df.copy()
-        df = df[(df["Alder"] >= minimum) & (df["Alder"] < maximum)]
-        return Folkemengde(df)
-
-    def to_sum(self):
-        df = (
-            self._df.groupby(["district", "delbydelid", "date"])["value"]
-            .sum()
-            .reset_index()
-        )
-        return df
+def population_sum(df):
+    return df.groupby(["district", "delbydelid", "date"])["value"].sum().reset_index()
 
 
 def calculate_change(df):
@@ -92,20 +63,6 @@ def calculate_change(df):
 def calculate_change_ratio(df):
     df["change_ratio"] = df["change"] / df["value"].shift(1)
     df["change_10y_ratio"] = df["change_10y"] / df["value"].shift(10)
-    return df
-
-
-def calculate(df):
-    df = calculate_change(df)
-    df = aggregate_from_subdistricts(
-        df,
-        [
-            {"agg_func": "sum", "data_points": "value"},
-            {"agg_func": sum_nans, "data_points": "change"},
-            {"agg_func": sum_nans, "data_points": "change_10y"},
-        ],
-    )
-    df = calculate_change_ratio(df)
     return df
 
 
@@ -135,50 +92,53 @@ def sum_nans(df):
         raise ValueError("Mix of NaN and values")
 
 
-def handler(event, context):
-    df = Folkemengde.from_s3(
-        key=event["keys"]["Befolkningen_etter_bydel_delby-J7khG"]
-    ).to_sum()
-    df = calculate(df)
-
-    population = generate_output_list(df, template="b", data_points=["value"])
-    population_change = generate_output_list(
-        df.dropna(axis=0, how="any", subset=["change", "change_ratio"]),
-        template="b",
-        data_points=["change"],
+def calculate(*, key, dataset_type):
+    df = read_population_data(key)
+    df = population_sum(df)
+    df = calculate_change(df)
+    df = aggregate_from_subdistricts(
+        df,
+        [
+            {"agg_func": "sum", "data_points": "value"},
+            {"agg_func": sum_nans, "data_points": "change"},
+            {"agg_func": sum_nans, "data_points": "change_10y"},
+        ],
     )
-    population_key_numbers = generate_output_list(
-        df, template="g", data_points=["value", "change", "change_10y", "value"]
-    )
+    df = calculate_change_ratio(df)
 
+    if dataset_type is DatasetType.HISTORIC:
+        return generate_output_list(df, template="b", data_points=["value"])
+    if dataset_type is DatasetType.HISTORIC_CHANGE:
+        return generate_output_list(
+            df.dropna(axis=0, how="any", subset=["change", "change_ratio"]),
+            template="b",
+            data_points=["change"],
+        )
+    if dataset_type is DatasetType.KEYNUMBERS:
+        return generate_output_list(
+            df, template="g", data_points=["value", "change", "change_10y", "value"]
+        )
+
+
+def handle(event, context):
+    dataset_type = DatasetType(event["config"]["type"])
+    metadata = METADATA[dataset_type]
+
+    jsonl = calculate(
+        key=event["input"]["Befolkningen_etter_bydel_delby-J7khG"],
+        dataset_type=dataset_type,
+    )
     write_to_intermediate(
-        _output_key(POPULATION_HISTORIC), population, POPULATION_HISTORIC["heading"], []
+        output_key=event["output"],
+        heading=metadata["heading"],
+        series=metadata["series"],
+        output_list=jsonl,
     )
-    write_to_intermediate(
-        _output_key(POPULATION_HISTORIC_CHANGE),
-        population_change,
-        POPULATION_HISTORIC_CHANGE["heading"],
-        [],
-    )
-    write_to_intermediate(
-        _output_key(POPULATION_KEYNUMBERS),
-        population_key_numbers,
-        POPULATION_KEYNUMBERS["heading"],
-        POPULATION_KEYNUMBERS["series"],
-    )
-
-
-def _output_key(dataset):
-    return f"processed/green/{dataset['dataset_id']}/version={dataset['version_id']}/edition={dataset['edition_id']}/"
 
 
 if __name__ == "__main__":
-    handler(
-        {
-            "bucket": "ok-origo-dataplatform-dev",
-            "keys": {
-                "Befolkningen_etter_bydel_delby-J7khG": "raw/green/Befolkningen_etter_bydel_delby-J7khG/version=1-HFe342Fu/edition=EDITION-MHjs3/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2018-v01).csv"
-            },
-        },
-        None,
+    data = calculate(
+        key="raw/green/Befolkningen_etter_bydel_delby-J7khG/version=1-HFe342Fu/edition=EDITION-MHjs3/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2018-v01).csv",
+        dataset_type=DatasetType.KEYNUMBERS,
     )
+    pprint(data)
