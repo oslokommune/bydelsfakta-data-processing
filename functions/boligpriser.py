@@ -14,7 +14,9 @@ def handler(event, context):
 
 
 def start(key, output_key, type_of_ds):
-    df = common.aws.read_from_s3(s3_key=key, date_column="aar", dtype={"bydel_id": object, "delbydel_id": object})
+    df = common.aws.read_from_s3(
+        s3_key=key, date_column="aar", dtype={"bydel_id": object, "delbydel_id": object}
+    )
     df = df.rename(
         columns={
             "kvmpris": "value",
@@ -22,9 +24,7 @@ def start(key, output_key, type_of_ds):
             "delbydel_id": "delbydelid",
         }
     )
-    df = df.drop(
-        columns=["antall_omsatte_blokkleiligheter"]
-    )
+    df = df.drop(columns=["antall_omsatte_blokkleiligheter"])
     df = df[df.value.notnull()]
     df["district"].fillna("00", inplace=True)
 
@@ -45,10 +45,7 @@ def create_ds(output_key, template, df):
     # To json : convert df to list of json objects
     jsonl = common.transform_output.generate_output_list(df, template, ["value"])
     common.aws.write_to_intermediate(
-        output_key=output_key,
-        heading=heading,
-        series=series,
-        output_list=jsonl,
+        output_key=output_key, heading=heading, series=series, output_list=jsonl
     )
     return
 
@@ -60,9 +57,7 @@ if __name__ == "__main__":
                 "boligpriser-blokkleiligheter": "raw/green/boligpriser-blokkleiligheter/version=1/edition=20190520T114926/Boligpriser(2004-2017-v01).csv"
             },
             "output": "intermediate/green/boligpriser-blokkleiligheter-status/version=1/edition=20190520T114926/",
-            "config": {
-                "type": "status"
-            }
+            "config": {"type": "status"},
         },
         {},
     )
