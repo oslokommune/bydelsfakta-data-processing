@@ -137,9 +137,9 @@ def _output_key(dataset_id, version_id, edition_id):
 
 def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
     series = [
-        {"heading": "Antall aleneboende", "subheading": ""},
-        {"heading": "Antall øvrige husholdninger uten barn", "subheading": ""},
-        {"heading": "Antall husholdninger med barn", "subheading": ""},
+        {"heading": "Aleneboende", "subheading": ""},
+        {"heading": "Øvrige husholdninger uten barn", "subheading": ""},
+        {"heading": "Husholdninger med barn", "subheading": ""},
     ]
     heading = "Husholdninger"
     output_key = _output_key(dataset_id, version_id, edition_id)
