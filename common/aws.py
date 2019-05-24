@@ -29,7 +29,7 @@ def write_to_intermediate(
     client = boto3.client("s3")
 
     for output in output_list:
-        filename = "{}.json".format(output["district"])
+        filename = "{}.json".format(output.get("id") or output["district"])
         body = output
         body["meta"] = _metadata(heading=heading, series=series)
         client.put_object(
