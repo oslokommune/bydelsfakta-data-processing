@@ -27,36 +27,20 @@ def start(bucket, key_eierform, key_household):
     #eierform_raw = common_aws.read_from_s3(s3_key=key_eierform, date_column="År")
     #household_raw = common_aws.read_from_s3(s3_key=key_household, date_column="År")
 
-    eierform_raw = pd.read_csv("../Eieform(2015-2017-v01).csv", sep=";", dtype={"delbydelid": object}).rename(columns={"År": "date", "Leier alle": "rent", " Borettlslag-andel alle": "share", "Selveier alle": "owner"})
-    household_raw = pd.read_csv("../Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv", sep=";", dtype={"delbydelid": object}).rename(columns={"År": "date"})
+    eierform_raw = pd.read_csv("../Eieform(2015-2017-v01).csv", sep=";", dtype={"delbydelid": object}).rename(columns={"År": "date", "leier_alle": "leier", "borettslag_andel_alle": "andel", "selveier_alle": "selveier"})
 
-    eierform_raw = eierform_raw.drop(['Borettlslag-andel uten studenter', 'Selveier uten studenter', 'Leier uten studenter'], axis=1)
+    eierform_raw = eierform_raw.drop(['borettslag_andel_uten_studenter', 'selveier_uten_studenter', 'leier_uten_studenter'], axis=1)
 
-    household_raw = household_raw[household_raw['date'] >= 2015]
-    
-    print(household_raw)
-
-    data_points_eierform = ["Leier alle", " Borettlslag-andel alle", "Selveier alle"]
-    data_points_households = ["all_households"]
 
     with_district_eierform = transform.add_district_id(eierform_raw.copy())
-    with_district_household = transform.add_district_id(household_raw.copy())
 
-    with_data_points_households = with_household_data_points(with_district_household)
-    with_data_points_eierform = with_district_eierform.groupby(["delbydelid", "date", "district"]).agg(lambda x: x).reset_index()
+    with_data_points_eierform = with_district_eierform.groupby(["delbydel_id", "date", "district"]).agg(lambda x: x).reset_index()
 
-    print(with_data_points_households)
+    print(with_data_points_eierform)
 
-    #input_df_eierform = aggregate_to_input_format(with_district_eierform, data_points_eierform)
-    input_df_household = aggregate_to_input_format(with_data_points_households, data_points_households)
+    #input_new_df =aggregate_to_input_format(new_df, data_points_households)
 
-    new_df = aggregate.merge_dfs(with_data_points_eierform, input_df_household)
-
-    print(new_df)
-
-    input_new_df =aggregate_to_input_format(new_df, data_points_households)
-
-    print(input_new_df)
+    #print(input_new_df)
 
     #eierform_historic = generate_output_list(*transform.historic(with_data_points), template="c", data_points=data_points)
 
