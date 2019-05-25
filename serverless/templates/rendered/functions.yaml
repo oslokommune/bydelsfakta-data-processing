@@ -1,7 +1,0 @@
-aldersbefolkning_bydel: ${file(serverless/functions/aldersbefolkning_bydel.yaml)}
-boligpriser: ${file(serverless/functions/boligpriser.yaml)}
-husholdning: ${file(serverless/functions/husholdning.yaml)}
-innvanding_under16: ${file(serverless/functions/innvanding_under16.yaml)}
-lav_utdanning: ${file(serverless/functions/lav_utdanning.yaml)}
-fattige_barnehusholdninger: ${file(serverless/functions/fattige_barnehusholdninger.yaml)}
-sysselsatte: ${file(serverless/functions/sysselsatte.yaml)}
