@@ -40,9 +40,6 @@ def start(key, output):
     status = transform.status(df)
     historic = transform.historic(df)
 
-    print(status)
-    print(historic)
-
     create_ds(output["status"], "a", *status)
     create_ds(output["historic"], "c", *historic)
 
