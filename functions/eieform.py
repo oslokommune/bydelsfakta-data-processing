@@ -18,16 +18,24 @@ def handle(event, context):
 
 def start(key, output):
     df = common_aws.read_from_s3(s3_key=key, date_column="aar", dtype={"bydel_id": object, "delbydel_id": object})\
-        .rename(columns={"aar": "date", "leier_alle": "leier", "borettslag_andel_alle": "andel", "selveier_alle": "selveier", "bydel_id": "district", "delbydel_id": "delbydelid"})\
+        .rename(columns=
+                         {
+                             "aar": "date",
+                             "leier_alle": "leier",
+                             "borettslag_andel_alle": "andel",
+                             "selveier_alle": "selveier",
+                             "bydel_id": "district",
+                             "delbydel_id": "delbydelid"
+                         })\
         .drop(['borettslag_andel_uten_studenter', 'selveier_uten_studenter', 'leier_uten_studenter'], axis=1)
 
     df = df.drop(df[df["district"] == "10000"].index)
     df = df.drop(df[df["district"] == "15000"].index)
     df = df.drop(df[df["district"] == "20000"].index)
 
-    df["leier_ratio"] = df["leier"].apply(lambda x: x / 100)
-    df["andel_ratio"] = df["andel"].apply(lambda x: x / 100)
-    df["selveier_ratio"] = df["selveier"].apply(lambda x: x / 100)
+    df["leier_ratio"] = df["leier"].div(100).round(2)
+    df["andel_ratio"] = df["andel"].div(100).round(2)
+    df["selveier_ratio"] = df["selveier"].div(100).round(2)
 
     status = transform.status(df)
     historic = transform.historic(df)
@@ -49,7 +57,6 @@ def create_ds(output_key, template, df):
 
     jsonl = generate_output_list(df, template, ["selveier", "andel", "leier"])
     common_aws.write_to_intermediate(output_key=output_key, heading=heading, series=series, output_list=jsonl)
-
 
 
 if __name__ == "__main__":
