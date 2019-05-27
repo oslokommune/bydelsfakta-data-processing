@@ -1,5 +1,5 @@
 """
-Purpose for this function is utility for datasets that needs to be enriched 
+Purpose for this function is utility for datasets that needs to be enriched
 with the total populations in districts and subdistricts
 
 input dataframe must have columns: date', 'delbydel_id', 'delbydel_navn', 'bydel_id', 'bydel_navn', 'kjønn' and '0' to 'n'
