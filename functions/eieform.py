@@ -11,12 +11,13 @@ s3_bucket = "ok-origo-dataplatform-dev"
 
 def handle(event, context):
     s3_key = event["input"]["eierform"]
-    output = event["output"]
-    start(s3_key, output)
+    output_key = event["output"]
+    type_of_ds = event["config"]["type"]
+    start(s3_key, output_key, type_of_ds)
     return "OK"
 
 
-def start(key, output):
+def start(key, output_key, type_of_ds):
     df = common_aws.read_from_s3(s3_key=key, date_column="aar", dtype={"bydel_id": object, "delbydel_id": object})\
         .rename(columns=
                          {
@@ -39,8 +40,10 @@ def start(key, output):
     status = transform.status(df)
     historic = transform.historic(df)
 
-    create_ds(output["status"], "a", *status)
-    create_ds(output["historic"], "c", *historic)
+    if type_of_ds == "historisk":
+        create_ds(output_key, "c", *historic)
+    elif type_of_ds == "status":
+        create_ds(output_key, "a", *status)
 
 
 def create_ds(output_key, template, df):
@@ -58,14 +61,11 @@ def create_ds(output_key, template, df):
 if __name__ == "__main__":
     handle(
         {
-            "bucket": "ok-origo-dataplatform-dev",
             "input": {
                 "eierform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv",
             },
-            "output": {
-                "status": "intermediate/green/eieform-status/version=1/edition=20190524T114926/",
-                "historic": "intermediate/green/eieform_historic/version=1/edition=20190524T114926/"
-            }
+            "output": "intermediate/green/eieform-status/version=1/edition=20190524T114926/",
+            "config": {"type": "status"},
         },
         {}
     )
