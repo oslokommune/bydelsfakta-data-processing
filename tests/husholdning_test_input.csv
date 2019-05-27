@@ -1,9 +1,35 @@
-delbydelid;Antall husholdninger;Barn i husholdningen;År;Bydel;Delbydel;Husholdningstype;district
-0301010101;1.0;YO;2008;Gamle Oslo;Lodalen;Aleneboende;01
-0301010101;1.0;YO;2009;Gamle Oslo;Lodalen;Aleneboende;01
-0301010101;1.0;YO;2008;Gamle Oslo;Lodalen;Par uten hjemmeboende barn;01
-0301010101;1.0;YO;2009;Gamle Oslo;Lodalen;Flerfamiliehusholdninger uten barn 0-17 år;01
-0301010101;1.0;YO;2009;Gamle Oslo;Lodalen;Par uten hjemmeboende barn;01
-0301010103;1.0;YO;2008;Gamle Oslo;Enerhaugen;Par med små barn;01
-0301010103;1.0;YO;2009;Gamle Oslo;Enerhaugen;Par med små barn;01
-0301010103;1.0;YO;2009;Gamle Oslo;Enerhaugen;Par med store barn;01
+aar;delbydel_id;delbydel_navn;bydel_id;bydel_navn;personer_1;personer_2;personer_3;personer_4;personer_total
+2015;0101;Lodalen;01;Bydel Gamle Oslo;775;366;1792;2238;5171
+2015;0102;Grønland;01;Bydel Gamle Oslo;666;480;1463;2469;5078
+2015;0103;Enerhaugen;01;Bydel Gamle Oslo;844;441;1127;1594;4006
+2015;0104;Nedre Tøyen;01;Bydel Gamle Oslo;945;223;783;989;2940
+2015;0105;Kampen;01;Bydel Gamle Oslo;521;181;616;957;2275
+2015;0106;Vålerenga;01;Bydel Gamle Oslo;717;282;1002;1064;3065
+2015;0107;Helsfyr;01;Bydel Gamle Oslo;372;474;1752;2441;5039
+2015;0201;Grünerløkka vest;02;Bydel Grünerløkka;758;418;1774;1970;4920
+2015;0202;Grünerløkka øst;02;Bydel Grünerløkka;754;237;941;1260;3192
+2015;0203;Dælenenga;02;Bydel Grünerløkka;716;188;885;955;2744
+2015;0204;Rodeløkka;02;Bydel Grünerløkka;1097;369;1674;1965;5105
+2015;0205;Sinsen;02;Bydel Grünerløkka;1562;476;1646;1818;5502
+2015;0206;Sofienberg;02;Bydel Grünerløkka;1541;380;1707;2067;5695
+2015;0207;Hasle-Løren;02;Bydel Grünerløkka;224;606;2263;2359;5452
+2015;0301;Iladalen;03;Bydel Sagene;807;406;1844;2066;5123
+2015;0302;Sagene;03;Bydel Sagene;1020;276;1049;1238;3583
+2015;0303;Bjølsen;03;Bydel Sagene;1172;365;1650;1543;4730
+2016;0101;Lodalen;01;Bydel Gamle Oslo;280;468;2131;2608;5487
+2016;0102;Grønland;01;Bydel Gamle Oslo;255;510;1625;2771;5161
+2016;0103;Enerhaugen;01;Bydel Gamle Oslo;160;500;1394;1928;3982
+2016;0104;Nedre Tøyen;01;Bydel Gamle Oslo;78;357;1056;1391;2882
+2016;0105;Kampen;01;Bydel Gamle Oslo;161;229;716;1173;2279
+2016;0106;Vålerenga;01;Bydel Gamle Oslo;232;335;1160;1315;3042
+2016;0107;Helsfyr;01;Bydel Gamle Oslo;89;522;1879;2602;5092
+2016;0201;Grünerløkka vest;02;Bydel Grünerløkka;216;490;2002;2223;4931
+2016;0202;Grünerløkka øst;02;Bydel Grünerløkka;325;259;1158;1506;3248
+2016;0203;Dælenenga;02;Bydel Grünerløkka;147;250;1105;1272;2774
+2016;0204;Rodeløkka;02;Bydel Grünerløkka;298;503;2018;2383;5202
+2016;0205;Sinsen;02;Bydel Grünerløkka;179;665;2162;2553;5559
+2016;0206;Sofienberg;02;Bydel Grünerløkka;441;490;2203;2649;5783
+2016;0207;Hasle-Løren;02;Bydel Grünerløkka;185;676;2371;2427;5659
+2016;0301;Iladalen;03;Bydel Sagene;152;464;2111;2419;5146
+2016;0302;Sagene;03;Bydel Sagene;207;399;1387;1571;3564
+2016;0303;Bjølsen;03;Bydel Sagene;147;466;2205;1958;4776
