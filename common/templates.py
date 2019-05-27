@@ -28,7 +28,7 @@ class Template:
 
 
 class TemplateC(Template):
-    def __init__(self, ratios):
+    def __init__(self, ratios=False):
         self.ratios = ratios
 
     def _value(self, df, column_names, value_column, ratios):
@@ -49,7 +49,7 @@ class TemplateC(Template):
 
 
 class TemplateA(Template):
-    def __init__(self, ratios):
+    def __init__(self, ratios=False):
         self.ratios = ratios
 
     def _value(self, df, column_names, value_column, ratios):
