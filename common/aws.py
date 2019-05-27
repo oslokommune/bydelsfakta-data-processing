@@ -21,9 +21,7 @@ def read_from_s3(s3_key, date_column="aar", dtype=None):
     )
 
 
-def write_to_intermediate(
-    output_key: str, output_list: list
-):
+def write_to_intermediate(output_key: str, output_list: list):
     """
     :param output_key: should be an s3 key on the form `intermediate/green/{datasetid}/{version}/{edition}/`
     :param output_list: a list of dictionaries
