@@ -46,7 +46,7 @@ def _metadata(
         "scope": "bydel",
         "heading": heading,
         "help": help,
-        "values": series,
+        "series": series,
         "publishedDate": date.today().isoformat(),
     }
 
