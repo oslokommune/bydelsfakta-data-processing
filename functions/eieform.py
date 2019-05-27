@@ -29,7 +29,6 @@ def start(key, output):
                          })\
         .drop(['borettslag_andel_uten_studenter', 'selveier_uten_studenter', 'leier_uten_studenter'], axis=1)
 
-    df = df.drop(df[df["district"] == "10000"].index)
     df = df.drop(df[df["district"] == "15000"].index)
     df = df.drop(df[df["district"] == "20000"].index)
 
@@ -61,7 +60,7 @@ if __name__ == "__main__":
         {
             "bucket": "ok-origo-dataplatform-dev",
             "input": {
-                "eierform": "raw/green/eieform/version=1/edition=20190523T214834/Eieform(2015-2017-v01).csv",
+                "eierform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv",
             },
             "output": {
                 "status": "intermediate/green/eieform-status/version=1/edition=20190524T114926/",
