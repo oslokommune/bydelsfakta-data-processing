@@ -3,7 +3,8 @@ from dataclasses import dataclass, asdict
 
 import pandas
 
-from common.templates import *
+from common.aggregateV2 import ColumnNames
+from common.templates import Template
 
 
 @dataclass

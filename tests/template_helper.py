@@ -1,6 +1,7 @@
 import pandas as pd
 
-from common.output import *
+from common.aggregateV2 import ColumnNames
+from common.templates import Template
 
 column_names = ColumnNames()
 test_df = pd.read_csv(

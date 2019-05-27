@@ -2,8 +2,8 @@ import json
 from datetime import date
 
 import boto3
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 s3_bucket = "ok-origo-dataplatform-dev"
 

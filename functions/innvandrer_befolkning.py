@@ -3,7 +3,7 @@ import pandas as pd
 import common.aws
 import common.transform
 import common.transform_output
-from common.aggregateV2 import Aggregate, ColumnNames
+from common.aggregateV2 import Aggregate
 from common.output import Output, TemplateC, TemplateA, Metadata
 
 

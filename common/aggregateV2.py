@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-import numpy
 import pandas as pd
 
 

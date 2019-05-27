@@ -1,10 +1,17 @@
-from tests.template_helper import *
+from common.output import Output, Metadata, TemplateB
+from tests.template_helper import (
+    with_ratios,
+    without_ratios,
+    values_structure,
+    count_values,
+    test_df,
+    column_names,
+)
 
 template = TemplateB()
 
 
 def test_standards():
-    template = TemplateA()
     with_ratios(template)
     without_ratios(template)
     values_structure(template, value_type=dict)

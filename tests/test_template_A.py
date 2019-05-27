@@ -1,10 +1,18 @@
-from tests.template_helper import *
+from common.output import Output, Metadata
+from common.templates import TemplateA
+from tests.template_helper import (
+    with_ratios,
+    without_ratios,
+    values_structure,
+    count_values,
+    test_df_latest,
+    column_names,
+)
 
 template = TemplateA()
 
 
 def test_standards():
-    template = TemplateA()
     with_ratios(template)
     without_ratios(template)
     values_structure(template, value_type=dict)
@@ -12,7 +20,6 @@ def test_standards():
 
 
 def test_df_to_template_a_all():
-    geography_id = "0101"
     input_df = test_df_latest
     data_points = ["d1", "d2"]
     output = Output(

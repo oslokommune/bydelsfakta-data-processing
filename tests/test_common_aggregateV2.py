@@ -1,11 +1,9 @@
 import unittest
 
-import numpy
 import pandas as pd
 
 from common.aggregateV2 import ColumnNames, Aggregate
 from tests import datasets_for_testing
-from common import aggregate_dfs
 
 column_names = ColumnNames()
 

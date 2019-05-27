@@ -1,5 +1,3 @@
-import json
-
 import common.aws
 import common.transform
 import common.transform_output

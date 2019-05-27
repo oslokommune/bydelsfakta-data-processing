@@ -1,6 +1,4 @@
 import unittest
-import functions.ikke_fullfort_vgs as ikke_fullfort_vgs
-import tests.datasets_for_testing as test_data
 
 
 class Tester(unittest.TestCase):
