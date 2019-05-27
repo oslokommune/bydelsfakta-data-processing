@@ -6,6 +6,7 @@ import common.aws as common_aws
 import common.transform as transform
 import common.aggregate_dfs as aggregator
 import common.util as util
+import common.population_utils as population_utils
 
 os.environ["METADATA_API_URL"] = ""
 
@@ -46,7 +47,8 @@ def handle(event, context):
 
 
 def generate_input_df(landbakgrunn_raw, befolkning_raw, data_points):
-    befolkning_df = generate_population_df(befolkning_raw)
+
+    befolkning_df = population_utils.generate_population_df(befolkning_raw)
     # Ignoring Marka and Sentrum
     ignore_districts = ["16", "17"]
     befolkning_district_df = generate_district_population_df(
@@ -141,12 +143,12 @@ def process_country_df(df):
 
 def generate_district_population_df(population_df, ignore_districts=[]):
     population_df = transform.add_district_id(population_df)
-    population_df = population_df[~population_df["district"].isin(ignore_districts)]
+    population_df = population_df[~population_df["bydel_id"].isin(ignore_districts)]
     population_district_df = (
-        population_df.groupby(["district", "date"]).sum().reset_index()
+        population_df.groupby(["bydel_id", "date"]).sum().reset_index()
     )
     oslo_total_df = population_district_df.groupby("date").sum().reset_index()
-    oslo_total_df["district"] = "00"
+    oslo_total_df["bydel_id"] = "00"
     population_district_df = pd.concat(
         (population_district_df, oslo_total_df), sort=False, ignore_index=True
     )
