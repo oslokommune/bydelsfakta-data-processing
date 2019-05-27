@@ -21,9 +21,8 @@ Column names should probably be left as default ( see above )
 """
 @dataclass
 class Aggregate:
-    column_names: ColumnNames
     aggregate_config: dict
-
+    column_names: ColumnNames = ColumnNames()
 
     def aggregate(self, df):
         groupby_columns = [

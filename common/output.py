@@ -26,17 +26,17 @@ class Output:
     def generate_output(self) -> list:
         if self.df[self.values].isnull().values.any():
             raise Exception("Some values have nan or null")
-        # For each district create an output object
-        districts = [district_id for district_id in self.df[self.column_names.district_id].dropna().unique() if
-                     district_id not in ["16", "17", "99"]]
 
-        return [
-            self._generate_oslo_i_alt(district, asdict(self.metadata))
-            if district == "00"
-
-            else self._generate_district(district, asdict(self.metadata))
-            for district in districts
+        # For each district create an output object. Oslo i alt is special so we append it later
+        districts = [
+            district_id for district_id in self.df[self.column_names.district_id].dropna().unique()
+            if district_id not in ["16", "17", "99", "00"]
         ]
+
+        output_list = [self._generate_district(district, asdict(self.metadata)) for district in districts]
+        output_list.append(self._generate_oslo_i_alt("00", asdict(self.metadata)))
+
+        return output_list
 
     def _generate_district(self, district_id, metadata):
         df = self.df
@@ -46,14 +46,16 @@ class Output:
 
         district_name = district[self.column_names.district_name].dropna().unique()[0]  # Get the district name
 
-        oslo = df[df[self.column_names.district_id] == "00"] # Also get oslo i alt
+        oslo = df[df[self.column_names.district_id] == "00"]  # Also get oslo i alt
 
         data = [self._generate_data(district[district[self.column_names.sub_district_id] == sub_district],
                                     district_id=district_id,
                                     geography_id=sub_district,
-                                    name_column=self.column_names.sub_district_name) for sub_district in sub_districts] # Create a data object for each sub district
+                                    name_column=self.column_names.sub_district_name) for sub_district in
+                sub_districts]  # Create a data object for each sub district
 
-        data.append(self._generate_data(district[district[self.column_names.sub_district_id].isna()], # Create a data object for the district itself
+        data.append(self._generate_data(district[district[self.column_names.sub_district_id].isna()],
+                                        # Create a data object for the district itself
                                         district_id=district_id,
                                         geography_id=district_id,
                                         geography_name=district_name))
@@ -61,7 +63,7 @@ class Output:
         data.append(self._generate_data(oslo,
                                         district_id=district_id,
                                         geography_id="00",
-                                        geography_name=district_name)) # Create a data object for oslo i alt
+                                        geography_name=district_name))  # Create a data object for oslo i alt
 
         return {"district": district_id, "data": data, "meta": metadata}
 
@@ -87,7 +89,7 @@ class Output:
         if not geography_name:
             if len(df[name_column].unique()) > 1:
                 raise Exception("Multiple names for one geography id")
-            geography_name = df[name_column].unique()[0] # if no geo name is provided extrapolate from df
+            geography_name = df[name_column].unique()[0]  # if no geo name is provided extrapolate from df
 
         avgRow = False
         totalRow = False
@@ -98,7 +100,7 @@ class Output:
                 totalRow = True
                 geography_name = "Oslo i alt"
 
-            elif district_id != "00": # If we are creating Oslo i alt district, this should always be false
+            elif district_id != "00":  # If we are creating Oslo i alt district
                 avgRow = True
 
         # If we are creating oslo i alt, in any district
