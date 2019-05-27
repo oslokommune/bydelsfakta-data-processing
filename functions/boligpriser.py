@@ -2,7 +2,8 @@ import common.aws
 import common.transform
 import common.transform_output
 import common.util
-from common.output import Output, Metadata, TemplateA
+from common.output import Output, Metadata
+from common.templates import TemplateA
 
 
 def handler(event, context):

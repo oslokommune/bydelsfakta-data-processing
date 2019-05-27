@@ -4,7 +4,8 @@ import common.aws
 import common.transform
 import common.transform_output
 from common.aggregateV2 import Aggregate
-from common.output import Output, TemplateC, TemplateA, Metadata
+from common.output import Output, Metadata
+from common.templates import TemplateA, TemplateC
 
 
 def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
