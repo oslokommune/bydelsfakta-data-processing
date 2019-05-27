@@ -28,12 +28,11 @@ class Template:
 
 
 class TemplateC(Template):
-    def _value(self, df, column_names, **kwargs):
-        if 'value_column' not in kwargs:
-            raise Exception("Needs value column name")
+    def __init__(self, ratios):
+        self.ratios = ratios
 
-        value_column = kwargs['value_column']
-        if 'ratios' in kwargs and kwargs['ratios']:
+    def _value(self, df, column_names, value_column, ratios):
+        if ratios:
             value_collection = df.apply(
                     lambda row: value_with_ratio(date=row[column_names.date],
                                                  value=row[value_column],
@@ -45,16 +44,16 @@ class TemplateC(Template):
                     axis=1)
         return value_collection.tolist()
 
-    def values(self, df, series, column_names, ratios=False):
-        return [self._value(df, column_names=column_names,  value_column=s, ratios=ratios) for s in series]
+    def values(self, df, series, column_names):
+        return [self._value(df, column_names=column_names,  value_column=s, ratios=self.ratios) for s in series]
 
 
 class TemplateA(Template):
-    def _value(self, df, column_names, **kwargs):
-        if 'value_column' not in kwargs:
-            raise Exception("Needs value column name")
-        value_column = kwargs['value_column']
-        if 'ratios' in kwargs and kwargs['ratios']:
+    def __init__(self, ratios):
+        self.ratios = ratios
+
+    def _value(self, df, column_names, value_column, ratios):
+        if ratios:
             value_collection = df.apply(
                     lambda row: value_with_ratio(date=row[column_names.date],
                                                  value=row[value_column],
@@ -66,6 +65,6 @@ class TemplateA(Template):
                     axis=1)
         return value_collection.tolist()
 
-    def values(self, df, series, column_names, ratios=False):
-        list_of_lists = [self._value(df, column_names=column_names, value_column=s, ratios=ratios) for s in series]
-        return list(itertools.chain(*list_of_lists))
+    def values(self, df, series, column_names):
+        list_of_lists = [self._value(df, column_names=column_names, value_column=s, ratios=self.ratios) for s in series]
+        return list(itertools.chain(*list_of_lists)) # flatten list
