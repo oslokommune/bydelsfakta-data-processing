@@ -8,15 +8,6 @@ import common.population_utils as population_utils
 
 os.environ["METADATA_API_URL"] = ""
 
-s3_bucket = "ok-origo-dataplatform-dev"
-
-historic_dataset_id = "landbakgrunn-innvandringsgrupp-87zEq"
-historic_version_id = "1-JNRhrxaH"
-historic_edition_id = "EDITION-Zkwpy"
-status_dataset_id = "landbakgrunn-innvandringsgrupp-cLcKm"
-status_version_id = "1-jwbJpksw"
-status_edition_id = "EDITION-FbQet"
-
 pd.set_option("display.max_rows", 1000)
 
 
