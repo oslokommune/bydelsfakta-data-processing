@@ -1,4 +1,4 @@
-from common.output import Output, Metadata, TemplateB
+from common.output import Output, Metadata
 from tests.template_helper import (
     with_ratios,
     without_ratios,
