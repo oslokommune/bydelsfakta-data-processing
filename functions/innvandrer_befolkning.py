@@ -16,7 +16,7 @@ def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
 
     population_df = common.aws.read_from_s3(befolkning_key)
     population_df = population_df[population_df["delbydel_id"].notnull()]
-    population_total = population_df.loc[:, 'date': 'kjonn']
+    population_total = population_df.loc[:, "date":"kjonn"]
     population_total["total"] = population_df.loc[:, "0":].sum(axis=1)
 
     return origin_by_age, livage, population_total
@@ -28,32 +28,56 @@ def prepare(origin_by_age, livage, population_df):
     origin = by_parents(origin_by_age)
     livage = by_liveage(livage)
 
-    merge = pd.merge(origin, livage, on=['date', 'delbydel_id', 'delbydel_navn', 'bydel_id', 'bydel_navn'])
-    merge = pd.merge(merge, population_df, on=['date', 'delbydel_id', 'bydel_id'])
+    merge = pd.merge(
+        origin,
+        livage,
+        on=["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn"],
+    )
+    merge = pd.merge(merge, population_df, on=["date", "delbydel_id", "bydel_id"])
     return merge
 
 
 def population(df):
-    df = df.groupby(["date", "bydel_id", "delbydel_id"])['total'].sum()
+    df = df.groupby(["date", "bydel_id", "delbydel_id"])["total"].sum()
     return df.reset_index()
 
 
 def by_parents(df):
-    result = df.loc[:, "date":'bydel_navn']
-    result['two_parents'] = df.norskfodt_med_innvandrerforeldre
-    result['one_parent'] = df.norskfodt_med_en_utenlandskfodt_forelder
-    result = result.groupby(['date', 'delbydel_id', 'delbydel_navn', 'bydel_id', 'bydel_navn']).sum()
+    result = df.loc[:, "date":"bydel_navn"]
+    result["two_parents"] = df.norskfodt_med_innvandrerforeldre
+    result["one_parent"] = df.norskfodt_med_en_utenlandskfodt_forelder
+    result = result.groupby(
+        ["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn"]
+    ).sum()
     return result.reset_index()
 
 
 def by_liveage(liveage):
-    meta_columns = ['date', 'delbydel_id', 'delbydel_navn', 'bydel_id', 'bydel_navn']
-    liveage = liveage.groupby(['date', 'delbydel_id', 'delbydel_navn', 'bydel_id', 'bydel_navn', 'botid']).sum()
-    total = liveage[["asia_afrika_latin_amerika_og_ost_europa_utenfor_eu", "norge",
-                     "vest_europa_usa_canada_australia_og_new_zealand", "ost_europeiske_eu_land"]].sum(
-            axis=1).reset_index()
-    pivot = total.pivot_table(index=meta_columns, columns="botid", values=0).drop(columns="Øvrige befolkning")
-    pivot = pivot.rename(columns={'Innvandrer, kort botid (<=5 år)': "short", "Innvandrer, lang botid (>5 år)": "long"})
+    meta_columns = ["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn"]
+    liveage = liveage.groupby(
+        ["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn", "botid"]
+    ).sum()
+    total = (
+        liveage[
+            [
+                "asia_afrika_latin_amerika_og_ost_europa_utenfor_eu",
+                "norge",
+                "vest_europa_usa_canada_australia_og_new_zealand",
+                "ost_europeiske_eu_land",
+            ]
+        ]
+        .sum(axis=1)
+        .reset_index()
+    )
+    pivot = total.pivot_table(index=meta_columns, columns="botid", values=0).drop(
+        columns="Øvrige befolkning"
+    )
+    pivot = pivot.rename(
+        columns={
+            "Innvandrer, kort botid (<=5 år)": "short",
+            "Innvandrer, lang botid (>5 år)": "long",
+        }
+    )
 
     return pivot.reset_index()
 
@@ -61,7 +85,7 @@ def by_liveage(liveage):
 def generate(origin_by_age_df, livage_df, population_df):
     # Create the df with only subdistricts
     sub_districts = prepare(
-            origin_by_age=origin_by_age_df, livage=livage_df, population_df=population_df
+        origin_by_age=origin_by_age_df, livage=livage_df, population_df=population_df
     )
 
     aggregate_config = {
@@ -69,47 +93,46 @@ def generate(origin_by_age_df, livage_df, population_df):
         "two_parents": "sum",
         "short": "sum",
         "long": "sum",
-        "total": "sum"
+        "total": "sum",
     }
     agg_class = Aggregate(aggregate_config=aggregate_config)
 
     aggregated = agg_class.aggregate(sub_districts)
 
-    with_ratios = agg_class.add_ratios(aggregated, ["one_parent", "two_parents", "short", "long"], ["total"])
+    with_ratios = agg_class.add_ratios(
+        aggregated, ["one_parent", "two_parents", "short", "long"], ["total"]
+    )
     result = with_ratios.drop(columns=["total"])
     return result
 
 
 def write(output_list, output_key):
-    common.aws.write_to_intermediate(
-            output_key=output_key,
-            output_list=output_list
-    )
+    common.aws.write_to_intermediate(output_key=output_key, output_list=output_list)
 
 
 def handler(event, context):
-    befolkning_key = event['input']['befolkning-etter-kjonn-og-alder']
-    botid_not_western = event['input']['botid-ikke-vestlige']
-    origin_by_age_key = event['input']['innvandrer-befolkningen-0-15-ar']
-    print('# Handeling event #')
+    befolkning_key = event["input"]["befolkning-etter-kjonn-og-alder"]
+    botid_not_western = event["input"]["botid-ikke-vestlige"]
+    origin_by_age_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
+    print("# Handeling event #")
     print(event)
-    dataset_type = event['config']['type']
-    output_s3_key = event['output']
+    dataset_type = event["config"]["type"]
+    output_s3_key = event["output"]
 
     metadata = Metadata(
-            heading="Innvandring befolkning",
-            series=[
-                {"heading": "Norskfødt", "subheading": "med en utenlandskfødt forelder"},
-                {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
-                {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
-                {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
-            ]
+        heading="Innvandring befolkning",
+        series=[
+            {"heading": "Norskfødt", "subheading": "med en utenlandskfødt forelder"},
+            {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
+            {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
+            {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
+        ],
     )
 
     source = read_from_s3(
-            origin_by_age_key=origin_by_age_key,
-            botid_key=botid_not_western,
-            befolkning_key=befolkning_key,
+        origin_by_age_key=origin_by_age_key,
+        botid_key=botid_not_western,
+        befolkning_key=befolkning_key,
     )
 
     if dataset_type == "status":
@@ -119,10 +142,10 @@ def handler(event, context):
 
     generated = generate(*dataframe)
     output = Output(
-            values=["one_parent", "two_parents", "short", "long"],
-            df=generated,
-            template=TemplateA() if dataset_type == "status" else TemplateC(),
-            metadata=metadata
+        values=["one_parent", "two_parents", "short", "long"],
+        df=generated,
+        template=TemplateA() if dataset_type == "status" else TemplateC(),
+        metadata=metadata,
     ).generate_output()
 
     write(output, output_key=output_s3_key)
@@ -130,14 +153,15 @@ def handler(event, context):
 
 
 if __name__ == "__main__":
-    handler({
-        "input": {
-            "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190524T133230/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
-            "botid-ikke-vestlige": "raw/green/botid-ikke-vestlige/version=1/edition=20190524T094012/Botid_ikke_vestlige(1.1.2008-1.1.2019-v01).csv",
-            "innvandrer-befolkningen-0-15-ar": "raw/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190523T211529/Landbakgrunn_etter_alder(1.1.2008-1.1.2019-v01).csv"
+    handler(
+        {
+            "input": {
+                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190524T133230/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
+                "botid-ikke-vestlige": "raw/green/botid-ikke-vestlige/version=1/edition=20190524T094012/Botid_ikke_vestlige(1.1.2008-1.1.2019-v01).csv",
+                "innvandrer-befolkningen-0-15-ar": "raw/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190523T211529/Landbakgrunn_etter_alder(1.1.2008-1.1.2019-v01).csv",
+            },
+            "output": "intermediate/green/innvandrer-befolkningen-status/version=1/edition=20190525T143000/",
+            "config": {"type": "historisk"},
         },
-        "output": "intermediate/green/innvandrer-befolkningen-status/version=1/edition=20190525T143000/",
-        "config": {
-            "type": "historisk"
-        }
-    }, {})
+        {},
+    )
