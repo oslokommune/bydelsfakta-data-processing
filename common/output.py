@@ -34,7 +34,6 @@ class Output:
             for district_id in self.df[self.column_names.district_id].dropna().unique()
             if district_id not in ["16", "17", "99", "00"]
         ]
-        print(districts)
 
         output_list = [
             self._generate_district(district, asdict(self.metadata))
@@ -88,7 +87,12 @@ class Output:
             )
         )  # Create a data object for oslo i alt
 
-        return {"bydel_id": district_id, "data": data, "meta": metadata}
+        return {
+            "district": district_name,
+            "id": district_id,
+            "data": data,
+            "meta": metadata,
+        }
 
     def _generate_oslo_i_alt(self, district_id, metadata):
         df = self.df
@@ -106,13 +110,16 @@ class Output:
             if district not in ["16", "17", "99"]
         ]
         metadata = {**metadata, "scope": "oslo i alt"}
-        return {"bydel_id": district_id, "data": data, "meta": metadata}
+        return {
+            "district": "Oslo i alt",
+            "id": district_id,
+            "data": data,
+            "meta": metadata,
+        }
 
     def _generate_data(
         self, df, district_id, geography_id, name_column=None, geography_name=None
     ):
-        print(f"District: {district_id}")
-        print(f"Geography: {geography_id}")
         if not geography_name:
             if len(df[name_column].unique()) > 1:
                 raise Exception("Multiple names for one geography id")
