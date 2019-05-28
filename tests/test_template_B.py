@@ -59,7 +59,7 @@ def test_df_to_template_b_all():
         ],
     }
 
-    file_01_data = next(obj for obj in output if obj[column_names.district_id] == "01")[
+    file_01_data = next(obj for obj in output if obj['id'] == "01")[
         "data"
     ]
 

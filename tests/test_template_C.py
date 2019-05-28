@@ -80,7 +80,7 @@ def test_df_to_template_c():
         ],
     }
 
-    file_01_data = next(obj for obj in output if obj[column_names.district_id] == "01")[
+    file_01_data = next(obj for obj in output if obj['id'] == "01")[
         "data"
     ]
 
@@ -101,12 +101,12 @@ def test_output_list():
         values=data_points, df=input_df, metadata=Metadata("", []), template=template
     ).generate_output()
 
-    output = sorted(output, key=operator.itemgetter("bydel_id"))
+    output = sorted(output, key=operator.itemgetter("id"))
     output = list(
         map(lambda x: sorted(x["data"], key=operator.itemgetter("id")), output)
     )
 
-    expected = sorted(output_list, key=operator.itemgetter("bydel_id"))
+    expected = sorted(output_list, key=operator.itemgetter("id"))
     expected = list(
         map(lambda x: sorted(x["data"], key=operator.itemgetter("id")), expected)
     )
