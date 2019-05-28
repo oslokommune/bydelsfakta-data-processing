@@ -18,17 +18,31 @@ def handle(event, context):
 
 
 def start(key, output_key, type_of_ds):
-    df = common_aws.read_from_s3(s3_key=key, date_column="aar", dtype={"bydel_id": object, "delbydel_id": object})\
-        .rename(columns=
-                         {
-                             "aar": "date",
-                             "leier_alle": "leier",
-                             "borettslag_andel_alle": "andel",
-                             "selveier_alle": "selveier",
-                             "bydel_id": "district",
-                             "delbydel_id": "delbydelid"
-                         })\
-        .drop(['borettslag_andel_uten_studenter', 'selveier_uten_studenter', 'leier_uten_studenter'], axis=1)
+    df = (
+        common_aws.read_from_s3(
+            s3_key=key,
+            date_column="aar",
+            dtype={"bydel_id": object, "delbydel_id": object},
+        )
+        .rename(
+            columns={
+                "aar": "date",
+                "leier_alle": "leier",
+                "borettslag_andel_alle": "andel",
+                "selveier_alle": "selveier",
+                "bydel_id": "district",
+                "delbydel_id": "delbydelid",
+            }
+        )
+        .drop(
+            [
+                "borettslag_andel_uten_studenter",
+                "selveier_uten_studenter",
+                "leier_uten_studenter",
+            ],
+            axis=1,
+        )
+    )
 
     df = df.drop(df[df["district"] == "15000"].index)
     df = df.drop(df[df["district"] == "20000"].index)
@@ -55,17 +69,19 @@ def create_ds(output_key, template, df):
     ]
 
     jsonl = generate_output_list(df, template, ["selveier", "andel", "leier"])
-    common_aws.write_to_intermediate(output_key=output_key, heading=heading, series=series, output_list=jsonl)
+    common_aws.write_to_intermediate(
+        output_key=output_key, heading=heading, series=series, output_list=jsonl
+    )
 
 
 if __name__ == "__main__":
     handle(
         {
             "input": {
-                "eieform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv",
+                "eieform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv"
             },
             "output": "intermediate/green/eieform-status/version=1/edition=20190524T114926/",
             "config": {"type": "status"},
         },
-        {}
+        {},
     )
