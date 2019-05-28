@@ -7,6 +7,9 @@ from common.aggregateV2 import Aggregate
 import common.population_utils as population_utils
 import numpy as np
 
+from common.output import Output, Metadata
+from common.templates import TemplateA, TemplateB
+
 os.environ["METADATA_API_URL"] = ""
 
 pd.set_option("display.max_rows", 1000)
@@ -24,7 +27,8 @@ def handle(event, context):
 
     datapoint = 'antall_trangbodde'
     input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, datapoint)
-
+    import json
+    print(json.dumps(_historic(input_df, [datapoint])))
     return input_df
 
 
@@ -48,6 +52,19 @@ def generate_input_df(trangbodde_raw, population_raw, data_point):
     input_df = input_df[~input_df['bydel_id'].isin(['16','17','99'])]
 
     return input_df[['date', 'bydel_id', 'bydel_navn', 'delbydel_id', 'delbydel_navn', data_point, f'{data_point}_ratio']]
+
+
+
+def _historic(input_df, data_points):
+    metadata = Metadata(
+        heading='Levekår Trangbodde',
+        series=[{"heading": "Trangbodde", "subheading": ""}],
+    )
+    output = Output(
+        values = data_points, df=input_df, metadata=metadata, template=TemplateB()
+    ).generate_output()
+
+    return output
 
 
 def convert_stupid_district_id(possibly_stupid_id):
