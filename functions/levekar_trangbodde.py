@@ -14,9 +14,9 @@ os.environ["METADATA_API_URL"] = ""
 pd.set_option("display.max_rows", 1000)
 
 graph_metadata = Metadata(
-    heading='Levekår Trangbodde',
-    series=[{"heading": "Trangbodde", "subheading": ""}],
+    heading="Levekår Trangbodde", series=[{"heading": "Trangbodde", "subheading": ""}]
 )
+
 
 def handle(event, context):
     s3_key_trangbodde = event["input"]["trangbodde"]
@@ -25,22 +25,21 @@ def handle(event, context):
     type_of_ds = event["config"]["type"]
 
     trangbodde_raw = common_aws.read_from_s3(
-        s3_key=s3_key_trangbodde,
-        date_column="aar"
+        s3_key=s3_key_trangbodde, date_column="aar"
     )
     befolkning_raw = common_aws.read_from_s3(
-        s3_key=s3_key_befolkning,
-        date_column="aar")
+        s3_key=s3_key_befolkning, date_column="aar"
+    )
 
-    datapoint = 'antall_trangbodde'
+    datapoint = "antall_trangbodde"
 
     input_df = generate_input_df(trangbodde_raw, befolkning_raw, datapoint)
 
     output_list = []
-    if type_of_ds == 'historic':
+    if type_of_ds == "historic":
         output_list = output_historic(input_df, datapoint)
 
-    elif type_of_ds == 'status':
+    elif type_of_ds == "status":
         output_list = output_status(input_df, datapoint)
 
     if output_list:
@@ -53,44 +52,56 @@ def generate_input_df(trangbodde_raw, befolkning_raw, data_point):
 
     agg = {"population": "sum"}
     population_district_df = Aggregate(agg).aggregate(df=population_df)
-    trangbodde_raw['bydel_id'] = trangbodde_raw['bydel_id'].apply(convert_stupid_district_id)
+    trangbodde_raw["bydel_id"] = trangbodde_raw["bydel_id"].apply(
+        convert_stupid_district_id
+    )
 
     input_df = pd.merge(
-        trangbodde_raw, population_district_df, how="inner", on=["bydel_id", "date", "delbydel_id"]
-    ).rename(
-        columns={'bydel_navn_x': 'bydel_navn',
-                 'delbydel_navn_x': 'delbydel_navn'}
-    )
-    input_df[f'{data_point}_ratio'] = input_df['andel_som_bor_trangt']/100
-    input_df[data_point] = input_df['population']*input_df[f'{data_point}_ratio']
+        trangbodde_raw,
+        population_district_df,
+        how="inner",
+        on=["bydel_id", "date", "delbydel_id"],
+    ).rename(columns={"bydel_navn_x": "bydel_navn", "delbydel_navn_x": "delbydel_navn"})
+    input_df[f"{data_point}_ratio"] = input_df["andel_som_bor_trangt"] / 100
+    input_df[data_point] = input_df["population"] * input_df[f"{data_point}_ratio"]
 
     # Exclude Marka, Sentrum and Uten registrert adresse
-    input_df = input_df[~input_df['bydel_id'].isin(['16','17','99'])]
+    input_df = input_df[~input_df["bydel_id"].isin(["16", "17", "99"])]
 
-    return input_df[['date', 'bydel_id', 'bydel_navn', 'delbydel_id', 'delbydel_navn', data_point, f'{data_point}_ratio']]
-
+    return input_df[
+        [
+            "date",
+            "bydel_id",
+            "bydel_navn",
+            "delbydel_id",
+            "delbydel_navn",
+            data_point,
+            f"{data_point}_ratio",
+        ]
+    ]
 
 
 def output_historic(input_df, data_points, output_key):
     [input_df] = transform.historic(input_df)
     output = Output(
-        values = data_points, df=input_df, metadata=graph_metadata, template=TemplateB()
+        values=data_points, df=input_df, metadata=graph_metadata, template=TemplateB()
     ).generate_output()
 
     return output
 
+
 def output_status(input_df, data_points, output_key):
     [input_df] = transform.status(input_df)
     output = Output(
-        values = data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
+        values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
 
     return output
 
 
 def convert_stupid_district_id(possibly_stupid_id):
-    if possibly_stupid_id == '10000':
-        return '00'
+    if possibly_stupid_id == "10000":
+        return "00"
     else:
         return possibly_stupid_id
 
@@ -111,10 +122,10 @@ if __name__ == "__main__":
         {
             "input": {
                 "trangbodde": "raw/green/trangbodde/version=1/edition=20190524T112022/Trangbodde(1.1.2015-1.1.2017-v01).csv",
-                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
+                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
             },
             "output": "s3/key/or/prefix",
-            "config": {"type": "historic"}
+            "config": {"type": "historic"},
         },
-        None
+        None,
     )
