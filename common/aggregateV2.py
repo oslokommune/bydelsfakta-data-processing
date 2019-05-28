@@ -45,7 +45,6 @@ class Aggregate:
         return [self.column_names.date] + extra_groupby_columns
 
     def aggregate(self, df, extra_groupby_columns=None):
-        print(df)
         if not extra_groupby_columns:
             extra_groupby_columns = []
 
