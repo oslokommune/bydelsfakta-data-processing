@@ -11,8 +11,18 @@ def historic(*dfs, date="date"):
 
 
 def status(*dfs, date="date"):
-    uniques = [df[date].max() for df in dfs]
-    maxDate = reduce(lambda a, b: max(a, b), uniques)
+    years = None
+    for df in dfs:
+        year_set = set(df[date])
+        if not years:
+            years = year_set
+        else:
+            years = years.intersection(year_set)
+
+    if len(years) == 0:
+        raise ValueError("No overlapping years in dataframes")
+
+    maxDate = max(years)
     return [df[df[date] == maxDate] for df in dfs]
 
 
