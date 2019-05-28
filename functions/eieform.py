@@ -10,7 +10,7 @@ s3_bucket = "ok-origo-dataplatform-dev"
 
 
 def handle(event, context):
-    s3_key = event["input"]["eierform"]
+    s3_key = event["input"]["eieform"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
     start(s3_key, output_key, type_of_ds)
@@ -47,11 +47,11 @@ def start(key, output_key, type_of_ds):
 
 
 def create_ds(output_key, template, df):
-    heading = "Eieform"
+    heading = "Husholdninger fordelt etter eie-/leieforhold"
     series = [
-        {"heading": "Borettslag med andelseiere", "subheading": ""},
-        {"heading": "Selveiere", "subheading": ""},
-        {"heading": "Leiere", "subheading": ""},
+        {"heading": "Andels-/aksjeeier", "subheading": ""},
+        {"heading": "Selveier", "subheading": ""},
+        {"heading": "Leier", "subheading": ""},
     ]
 
     jsonl = generate_output_list(df, template, ["selveier", "andel", "leier"])
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "eierform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv",
+                "eieform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv",
             },
             "output": "intermediate/green/eieform-status/version=1/edition=20190524T114926/",
             "config": {"type": "status"},
