@@ -34,7 +34,6 @@ class Output:
             for district_id in self.df[self.column_names.district_id].dropna().unique()
             if district_id not in ["16", "17", "99", "00"]
         ]
-        print(districts)
 
         output_list = [
             self._generate_district(district, asdict(self.metadata))
@@ -111,8 +110,6 @@ class Output:
     def _generate_data(
         self, df, district_id, geography_id, name_column=None, geography_name=None
     ):
-        print(f"District: {district_id}")
-        print(f"Geography: {geography_id}")
         if not geography_name:
             if len(df[name_column].unique()) > 1:
                 raise Exception("Multiple names for one geography id")
