@@ -25,9 +25,6 @@ class Output:
     column_names: ColumnNames = ColumnNames()
 
     def generate_output(self) -> list:
-        if self.df[self.values].isnull().values.any():
-            raise Exception("Some values have nan or null")
-
         # For each district create an output object. Oslo i alt is special so we append it later
         districts = [
             district_id

@@ -12,7 +12,7 @@ def test_write_files():
     partial_key = "intermediate/some/value/here/"
     client = boto3.client("s3")
     client.create_bucket(Bucket=bucket_name)
-    output_list = [{"district": "01"}, {"district": "02"}, {"district": "03"}]
+    output_list = [{"bydel_id": "01"}, {"bydel_id": "02"}, {"bydel_id": "03"}]
     aws.write_to_intermediate(partial_key, output_list)
     obj = client.get_object(Bucket=bucket_name, Key=f"{partial_key}02.json")
     obj = json.loads(obj["Body"].read().decode("utf-8"))

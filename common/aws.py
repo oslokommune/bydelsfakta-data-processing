@@ -29,7 +29,7 @@ def write_to_intermediate(output_key: str, output_list: list):
     """
     client = boto3.client("s3")
     for output in output_list:
-        filename = "{}.json".format(output.get("id") or output["district"])
+        filename = "{}.json".format(output.get("id") or output["bydel_id"])
         client.put_object(
             Body=json.dumps(output, ensure_ascii=False, allow_nan=False),
             Bucket=s3_bucket,
