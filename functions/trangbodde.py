@@ -3,7 +3,7 @@ import os
 import pandas as pd
 
 import common.aws as common_aws
-import common.aggregate_dfs as aggregator
+from common.aggregateV2 import Aggregate
 import common.population_utils as population_utils
 import numpy as np
 
@@ -29,14 +29,10 @@ def handle(event, context):
 
 
 def generate_input_df(trangbodde_raw, population_raw, data_point):
-
     population_df = population_utils.generate_population_df(population_raw)
-    # Ignoring Marka and Sentrum
-    ignore_districts = ["16", "17", "99"]
-    population_district_df = population_with_district_aggregated(
-        population_df, ignore_districts=ignore_districts
-    )
 
+    agg = {"population": "sum"}
+    population_district_df = Aggregate(agg).aggregate(df=population_df)
     trangbodde_raw['bydel_id'] = trangbodde_raw['bydel_id'].apply(convert_stupid_district_id)
 
     input_df = pd.merge(
@@ -48,32 +44,17 @@ def generate_input_df(trangbodde_raw, population_raw, data_point):
     input_df[f'{data_point}_ratio'] = input_df['andel_som_bor_trangt']/100
     input_df[data_point] = input_df['population']*input_df[f'{data_point}_ratio']
 
+    # Exclude Marka, Sentrum and Uten registrert adresse
+    input_df = input_df[~input_df['bydel_id'].isin(['16','17','99'])]
+
     return input_df[['date', 'bydel_id', 'bydel_navn', 'delbydel_id', 'delbydel_navn', data_point, f'{data_point}_ratio']]
 
 
 def convert_stupid_district_id(possibly_stupid_id):
-    if possibly_stupid_id == 10000:
-        return 0
+    if possibly_stupid_id == '10000':
+        return '00'
     else:
         return possibly_stupid_id
-
-def population_with_district_aggregated(population_df, ignore_districts=[]):
-    population_df = population_df[~population_df["bydel_id"].isin(ignore_districts)]
-    population_district_df = (
-        population_df.groupby(["bydel_id", "bydel_navn", "date"])['population'].sum().reset_index()
-    )
-    oslo_total_df = population_district_df.groupby("date").sum().reset_index()
-    oslo_total_df["bydel_id"] = 00
-    oslo_total_df["bydel_navn"] = "Oslo i alt"
-    population_district_df = pd.concat(
-        (population_district_df, oslo_total_df), sort=False, ignore_index=True
-    )
-    population_district_df['delbydel_id'] = np.nan
-    population_district_df['delbydel_navn'] = ''
-    population_district_df = pd.concat(
-        (population_df, population_district_df), sort=False, ignore_index=True
-    )
-    return population_district_df
 
 
 if __name__ == "__main__":
