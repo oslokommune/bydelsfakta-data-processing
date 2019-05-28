@@ -19,24 +19,37 @@ graph_metadata = Metadata(
 )
 
 def handle(event, context):
-    """ Assuming we recieve a complete s3 key"""
-    landbakgrunn_raw = common_aws.read_from_s3(
-        s3_key=event["input"]["trangbodde"],
+    s3_key_trangbodde = event["input"]["trangbodde"]
+    s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
+    output_key = event["output"]
+    type_of_ds = event["config"]["type"]
+
+    trangbodde_raw = common_aws.read_from_s3(
+        s3_key=s3_key_trangbodde,
         date_column="aar"
     )
     befolkning_raw = common_aws.read_from_s3(
-        s3_key=event["input"]["befolkning-etter-kjonn-og-alder"],
+        s3_key=s3_key_befolkning,
         date_column="aar")
 
     datapoint = 'antall_trangbodde'
-    input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, datapoint)
-    import json
-    print(json.dumps(_status(input_df, [datapoint])))
-    return input_df
+
+    input_df = generate_input_df(trangbodde_raw, befolkning_raw, datapoint)
+
+    output_list = []
+    if type_of_ds == 'historic':
+        output_list = output_historic(input_df, datapoint)
+
+    elif type_of_ds == 'status':
+        output_list = output_status(input_df, datapoint)
+
+    if output_list:
+        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        return f"Created {output_key}"
 
 
-def generate_input_df(trangbodde_raw, population_raw, data_point):
-    population_df = population_utils.generate_population_df(population_raw)
+def generate_input_df(trangbodde_raw, befolkning_raw, data_point):
+    population_df = population_utils.generate_population_df(befolkning_raw)
 
     agg = {"population": "sum"}
     population_district_df = Aggregate(agg).aggregate(df=population_df)
@@ -58,21 +71,16 @@ def generate_input_df(trangbodde_raw, population_raw, data_point):
 
 
 
-def _historic(input_df, data_points):
+def output_historic(input_df, data_points, output_key):
     [input_df] = transform.historic(input_df)
-    metadata = Metadata(
-        heading='Levekår Trangbodde',
-        series=[{"heading": "Trangbodde", "subheading": ""}],
-    )
     output = Output(
         values = data_points, df=input_df, metadata=graph_metadata, template=TemplateB()
     ).generate_output()
 
     return output
 
-def _status(input_df, data_points):
+def output_status(input_df, data_points, output_key):
     [input_df] = transform.status(input_df)
-
     output = Output(
         values = data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
