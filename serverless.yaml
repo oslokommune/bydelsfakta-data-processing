@@ -24,7 +24,7 @@ package:
     - 'common/*.py'
     - 'functions/*.py'
 
-functions: ${file(serverless/templates/rendered/functions.yaml)}
+functions: ${file(serverless/functions.yaml)}
 
 custom:
   layers:

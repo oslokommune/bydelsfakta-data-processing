@@ -1,0 +1,2 @@
+boligpriser: ${file(serverless/functions/boligpriser.yaml)}
+innvandrer_befolkning: ${file(serverless/functions/innvandrer_befolkning.yaml)}
