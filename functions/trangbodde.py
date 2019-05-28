@@ -5,8 +5,7 @@ import pandas as pd
 import common.aws as common_aws
 from common.aggregateV2 import Aggregate
 import common.population_utils as population_utils
-import numpy as np
-
+import common.transform as transform
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
 
@@ -14,6 +13,10 @@ os.environ["METADATA_API_URL"] = ""
 
 pd.set_option("display.max_rows", 1000)
 
+graph_metadata = Metadata(
+    heading='Levekår Trangbodde',
+    series=[{"heading": "Trangbodde", "subheading": ""}],
+)
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
@@ -28,7 +31,7 @@ def handle(event, context):
     datapoint = 'antall_trangbodde'
     input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, datapoint)
     import json
-    print(json.dumps(_historic(input_df, [datapoint])))
+    print(json.dumps(_status(input_df, [datapoint])))
     return input_df
 
 
@@ -56,12 +59,22 @@ def generate_input_df(trangbodde_raw, population_raw, data_point):
 
 
 def _historic(input_df, data_points):
+    [input_df] = transform.historic(input_df)
     metadata = Metadata(
         heading='Levekår Trangbodde',
         series=[{"heading": "Trangbodde", "subheading": ""}],
     )
     output = Output(
-        values = data_points, df=input_df, metadata=metadata, template=TemplateB()
+        values = data_points, df=input_df, metadata=graph_metadata, template=TemplateB()
+    ).generate_output()
+
+    return output
+
+def _status(input_df, data_points):
+    [input_df] = transform.status(input_df)
+
+    output = Output(
+        values = data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
 
     return output
