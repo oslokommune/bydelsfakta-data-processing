@@ -53,7 +53,7 @@ def generate_input_df(trangbodde_raw, befolkning_raw, data_point):
     agg = {"population": "sum"}
     population_district_df = Aggregate(agg).aggregate(df=population_df)
     trangbodde_raw["bydel_id"] = trangbodde_raw["bydel_id"].apply(
-        convert_stupid_district_id
+        convert_5_digit_district_id
     )
 
     input_df = pd.merge(
@@ -99,11 +99,11 @@ def output_status(input_df, data_points, output_key):
     return output
 
 
-def convert_stupid_district_id(possibly_stupid_id):
-    if possibly_stupid_id == "10000":
+def convert_5_digit_district_id(possibly_5_digit_id):
+    if possibly_5_digit_id == "10000":
         return "00"
     else:
-        return possibly_stupid_id
+        return possibly_5_digit_id
 
 
 if __name__ == "__main__":
