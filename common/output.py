@@ -3,6 +3,7 @@ from dataclasses import dataclass, asdict
 
 import pandas
 
+from common.util import get_district_name
 from common.aggregateV2 import ColumnNames
 from common.templates import Template
 
@@ -87,7 +88,7 @@ class Output:
             )
         )  # Create a data object for oslo i alt
 
-        return {"bydel_id": district_id, "data": data, "meta": metadata}
+        return {"district": get_district_name(district_id), "id": district_id, "data": data, "meta": metadata}
 
     def _generate_oslo_i_alt(self, district_id, metadata):
         df = self.df
@@ -105,7 +106,7 @@ class Output:
             if district not in ["16", "17", "99"]
         ]
         metadata = {**metadata, "scope": "oslo i alt"}
-        return {"bydel_id": district_id, "data": data, "meta": metadata}
+        return {"district": get_district_name(district_id), "id": district_id, "data": data, "meta": metadata}
 
     def _generate_data(
         self, df, district_id, geography_id, name_column=None, geography_name=None
