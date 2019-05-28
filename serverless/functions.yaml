@@ -1,2 +1,3 @@
 boligpriser: ${file(serverless/functions/boligpriser.yaml)}
 innvandrer_befolkning: ${file(serverless/functions/innvandrer_befolkning.yaml)}
+alder_distribusjon_status: ${file(serverless/functions/alder_distribusjon_status.yaml)}
