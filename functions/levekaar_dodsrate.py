@@ -24,9 +24,6 @@ def start(key, output_key, type_of_ds):
         df=df, data_points=["antallet_dode"], ratio_of=["antall_personer"]
     )
 
-    # TODO: Fix in csvlt: add bydel_id
-    df.loc[df["bydel_navn"] == "Oslo i alt", "bydel_id"] = "00"
-
     # TODO: Hardcoded removal of wrongly categorized subdistricts
     df.iloc[95:, 1] = np.nan
     df.iloc[95:, 2] = np.nan
