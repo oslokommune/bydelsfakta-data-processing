@@ -10,6 +10,11 @@ generate_output_list:
         date: year
         data_point1- n: One column for each data_point
 
+        The user can optionally pass in 'bydel_navn' and 'delbydel_navn'
+        columns and have these be used to populate the 'geography' fields.
+        The 'delbydelid' and 'district' columns will then instead be used
+        to populate a new 'id' field in the output.
+
     * template: template to be used for generating output json
         valid values: 'a', 'c', 'i' so far...
 
@@ -20,100 +25,164 @@ generate_output_list:
 
 
 def generate_output_list(df, template, data_points):
+    if "bydel_navn" not in df:
+        df["bydel_navn"] = None
+        district_name_all = None
+    else:
+        district_name_all = "Oslo i alt"
+
     district_list = [
-        x for x in df["district"].unique() if x not in ["00", "16", "17", "99"]
+        (x.district, x.bydel_navn)
+        for x in set(df.loc[:, ["district", "bydel_navn"]].itertuples(index=False))
+        if x.district not in ["00", "16", "17", "99"]
     ]
+    district_list.sort()
+
     output_list = []
-    oslo_total = [district_time_series(df, "00", template, data_points, total_row=True)]
-    for district in district_list:
+    oslo_total = [
+        district_time_series(
+            df,
+            "00",
+            template,
+            data_points,
+            district_name=district_name_all,
+            total_row=True,
+        )
+    ]
+    for (district_id, district_name) in district_list:
+        obj = {
+            "district": district_name or district_id,
+            "template": template,
+            "data": district_time_series_list(
+                df, district_id, template, data_points, district_name=district_name
+            ),
+        }
+        if district_name:
+            obj["id"] = district_id
+
+        output_list.append(obj)
+        oslo_total.append(
+            district_time_series(
+                df, district_id, template, data_points, district_name=district_name
+            )
+        )
+
+    if district_name_all:
         output_list.append(
             {
-                "district": district,
+                "id": "00",
+                "district": "Oslo i alt",
                 "template": template,
-                "data": district_time_series_list(df, district, template, data_points),
+                "data": oslo_total,
             }
         )
-        oslo_total.append(district_time_series(df, district, template, data_points))
-    output_list.append({"district": "00", "template": template, "data": oslo_total})
+    else:
+        output_list.append({"district": "00", "template": template, "data": oslo_total})
 
     return output_list
 
 
-def district_time_series_list(df, district, template, data_points):
+def district_time_series_list(
+    df, district_id, template, data_points, district_name=None
+):
+    district_name_all = "Oslo i alt" if district_name else None
+
     time_series = [
-        district_time_series(df, "00", template, data_points, total_row=True),
-        district_time_series(df, district, template, data_points, avg_row=True),
+        district_time_series(
+            df,
+            "00",
+            template,
+            data_points,
+            district_name=district_name_all,
+            total_row=True,
+        ),
+        district_time_series(
+            df,
+            district_id,
+            template,
+            data_points,
+            district_name=district_name,
+            avg_row=True,
+        ),
     ]
 
-    district_df = df[df["district"] == district]
-    sub_districts = district_df[district_df["delbydelid"].notnull()][
-        "delbydelid"
-    ].unique()
-    for sub_district in sub_districts:
+    district_df = df[df["district"] == district_id]
+
+    sub_districts_df = district_df[district_df["delbydelid"].notnull()]
+    if "delbydel_navn" not in sub_districts_df:
+        sub_districts_df["delbydel_navn"] = None
+    sub_districts_df = sub_districts_df[["delbydelid", "delbydel_navn"]]
+
+    sub_districts = [
+        (x.delbydelid, x.delbydel_navn)
+        for x in set(sub_districts_df.itertuples(index=False))
+    ]
+    sub_districts.sort()
+
+    for (sub_district_id, sub_district_name) in sub_districts:
         time_series.append(
-            sub_district_time_series(district_df, sub_district, template, data_points)
+            sub_district_time_series(
+                district_df,
+                sub_district_id,
+                template,
+                data_points,
+                sub_district_name=sub_district_name,
+            )
         )
+
     return time_series
 
 
 def district_time_series(
-    df, district, template, data_points, avg_row=False, total_row=False
+    df,
+    district_id,
+    template,
+    data_points,
+    district_name=None,
+    avg_row=False,
+    total_row=False,
 ):
-    district_df = df[df["district"] == district]
+    district_df = df[df["district"] == district_id]
     district_df = district_df[district_df["delbydelid"].isnull()]
-    return df_to_template(
-        district,
+    return template_funs[template.lower()](
+        district_id,
         district_df,
-        template,
         data_points,
+        geography_name=district_name,
         avg_row=avg_row,
         total_row=total_row,
     )
 
 
-def sub_district_time_series(district_df, sub_district, template, data_points):
-    sub_district_df = district_df[district_df["delbydelid"] == sub_district]
-    return df_to_template(sub_district, sub_district_df, template, data_points)
-
-
-def df_to_template(
-    geography, df, template, data_points, avg_row=False, total_row=False
+def sub_district_time_series(
+    district_df, sub_district_id, template, data_points, sub_district_name=None
 ):
-    if template.lower() == "a":
-        return df_to_template_a(
-            geography, df, data_points, avg_row=avg_row, total_row=total_row
-        )
-    elif template.lower() == "b":
-        return df_to_template_b(
-            geography, df, data_points, avg_row=avg_row, total_row=total_row
-        )
-    elif template.lower() == "c":
-        return df_to_template_c(
-            geography, df, data_points, avg_row=avg_row, total_row=total_row
-        )
-    elif template.lower() == "i":
-        return df_to_template_i(
-            geography, df, data_points, avg_row=avg_row, total_row=total_row
-        )
-    elif template.lower() == "j":
-        return df_to_template_j(
-            geography, df, data_points, avg_row=avg_row, total_row=total_row
-        )
-    else:
-        raise Exception(f"Template {template} does not exist")
+    sub_district_df = district_df[district_df["delbydelid"] == sub_district_id]
+    return template_funs[template.lower()](
+        sub_district_id, sub_district_df, data_points, geography_name=sub_district_name
+    )
 
 
 def df_to_template_a(
-    geography, df, data_points, avg_row=False, total_row=False, link_to=False
+    geography_id,
+    df,
+    data_points,
+    geography_name=None,
+    avg_row=False,
+    total_row=False,
+    link_to=False,
 ):
 
     obj_a = {
+        "geography": geography_name or geography_id,
         "linkTo": link_to,
-        "geography": geography,
         "avgRow": avg_row,
         "totalRow": total_row,
         "values": [],
     }
+    if geography_name:
+        obj_a["id"] = geography_id
+
     series = {}
     for values in df.to_dict("r"):
         for data_point in data_points:
@@ -123,16 +192,25 @@ def df_to_template_a(
 
 
 def df_to_template_b(
-    geography, df, data_points, avg_row=False, total_row=False, link_to=False
+    geography_id,
+    df,
+    data_points,
+    geography_name=None,
+    avg_row=False,
+    total_row=False,
+    link_to=False,
 ):
     if len(data_points) > 1:
         raise Exception("Template B only takes one datapoint")
     obj_b = {
-        "geography": geography,
+        "geography": geography_name or geography_id,
         "avgRow": avg_row,
         "totalRow": total_row,
         "values": [],
     }
+    if geography_name:
+        obj_b["id"] = geography_id
+
     value_list = []
     data_point = data_points[0]
     for values in df.to_dict("r"):
@@ -141,14 +219,19 @@ def df_to_template_b(
     return obj_b
 
 
-def df_to_template_c(geography, df, data_points, avg_row=False, total_row=False):
+def df_to_template_c(
+    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False
+):
 
     obj_c = {
-        "geography": geography,
+        "geography": geography_name or geography_id,
         "values": [],
         "avgRow": avg_row,
         "totalRow": total_row,
     }
+    if geography_name:
+        obj_c["id"] = geography_id
+
     time_series = list_to_time_series(data_points)
     for values in df.to_dict("r"):
         [
@@ -160,14 +243,19 @@ def df_to_template_c(geography, df, data_points, avg_row=False, total_row=False)
     return obj_c
 
 
-def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False):
+def df_to_template_i(
+    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False
+):
 
     obj_i = {
-        "geography": geography,
+        "geography": geography_name or geography_id,
         "values": [],
         "avgRow": avg_row,
         "totalRow": total_row,
     }
+    if geography_name:
+        obj_i["id"] = geography_id
+
     series = {}
     for values in df.to_dict("r"):
         for data_point in data_points:
@@ -177,14 +265,18 @@ def df_to_template_i(geography, df, data_points, avg_row=False, total_row=False)
     return obj_i
 
 
-def df_to_template_j(geography, df, data_points, avg_row=False, total_row=False):
+def df_to_template_j(
+    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False
+):
 
     obj_j = {
-        "geography": geography,
+        "geography": geography_name or geography_id,
         "values": [],
         "avgRow": avg_row,
         "totalRow": total_row,
     }
+    if geography_name:
+        obj_j["id"] = geography_id
 
     data_row = df.to_dict("records")[
         0
@@ -201,6 +293,15 @@ def df_to_template_j(geography, df, data_points, avg_row=False, total_row=False)
     obj_j["values"] = values
 
     return obj_j
+
+
+template_funs = {
+    "a": df_to_template_a,
+    "b": df_to_template_b,
+    "c": df_to_template_c,
+    "i": df_to_template_i,
+    "j": df_to_template_j,
+}
 
 
 def list_to_time_series(data_points):
