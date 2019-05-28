@@ -1,41 +1,33 @@
 district_01_time_series_list = [
     {
-        "geography": "00",
-        "values": [
-            {"value": "d1_00_2018", "ratio": "d1_00_2018_ratio", "date": 2018},
-            {"value": "d2_00_2018", "ratio": "d2_00_2018_ratio", "date": 2018},
-        ],
-        "linkTo": False,
+        "id": "00",
+        "geography": "NAME",
+        "values": [{"value": "d1_00_2018", "ratio": "d1_00_2018_ratio", "date": 2018}],
         "avgRow": False,
         "totalRow": True,
     },
     {
-        "geography": "01",
-        "values": [
-            {"value": "d1_01_2018", "ratio": "d1_01_2018_ratio", "date": 2018},
-            {"value": "d2_01_2018", "ratio": "d2_01_2018_ratio", "date": 2018},
-        ],
-        "linkTo": False,
+        "id": "01",
+        "geography": "Bydel Gamle Oslo",
+        "values": [{"value": "d1_01_2018", "ratio": "d1_01_2018_ratio", "date": 2018}],
         "avgRow": True,
         "totalRow": False,
     },
     {
-        "geography": "0301010101",
+        "id": "0101",
+        "geography": "Lodalen",
         "values": [
-            {"value": "d1_0101_2018", "ratio": "d1_0101_2018_ratio", "date": 2018},
-            {"value": "d2_0101_2018", "ratio": "d2_0101_2018_ratio", "date": 2018},
+            {"value": "d1_0101_2018", "ratio": "d1_0101_2018_ratio", "date": 2018}
         ],
-        "linkTo": False,
         "avgRow": False,
         "totalRow": False,
     },
     {
-        "geography": "0301010102",
+        "id": "0102",
+        "geography": "Grønland",
         "values": [
-            {"value": "d1_0102_2018", "ratio": "d1_0102_2018_ratio", "date": 2018},
-            {"value": "d2_0102_2018", "ratio": "d2_0102_2018_ratio", "date": 2018},
+            {"value": "d1_0102_2018", "ratio": "d1_0102_2018_ratio", "date": 2018}
         ],
-        "linkTo": False,
         "avgRow": False,
         "totalRow": False,
     },
@@ -43,11 +35,12 @@ district_01_time_series_list = [
 
 output_list = [
     {
-        "district": "01",
+        "bydel_id": "01",
         "template": "c",
         "data": [
             {
-                "geography": "00",
+                "id": "00",
+                "geography": "Oslo i alt",
                 "values": [
                     [
                         {
@@ -62,23 +55,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_00_2017",
-                            "ratio": "d2_00_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_00_2018",
-                            "ratio": "d2_00_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_00_2017", "date": 2017},
+                        {"value": "d2_00_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
                 "totalRow": True,
             },
             {
-                "geography": "01",
+                "id": "01",
+                "geography": "Bydel Gamle Oslo",
                 "values": [
                     [
                         {
@@ -93,23 +79,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_01_2017",
-                            "ratio": "d2_01_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_01_2018",
-                            "ratio": "d2_01_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_01_2017", "date": 2017},
+                        {"value": "d2_01_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": True,
                 "totalRow": False,
             },
             {
-                "geography": "0301010101",
+                "id": "0101",
+                "geography": "Lodalen",
                 "values": [
                     [
                         {
@@ -124,23 +103,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_0101_2017",
-                            "ratio": "d2_0101_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_0101_2018",
-                            "ratio": "d2_0101_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_0101_2017", "date": 2017},
+                        {"value": "d2_0101_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
                 "totalRow": False,
             },
             {
-                "geography": "0301010102",
+                "id": "0102",
+                "geography": "Grønland",
                 "values": [
                     [
                         {
@@ -155,16 +127,8 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_0102_2017",
-                            "ratio": "d2_0102_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_0102_2018",
-                            "ratio": "d2_0102_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_0102_2017", "date": 2017},
+                        {"value": "d2_0102_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
@@ -173,11 +137,12 @@ output_list = [
         ],
     },
     {
-        "district": "02",
+        "bydel_id": "02",
         "template": "c",
         "data": [
             {
-                "geography": "00",
+                "id": "00",
+                "geography": "Oslo i alt",
                 "values": [
                     [
                         {
@@ -192,23 +157,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_00_2017",
-                            "ratio": "d2_00_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_00_2018",
-                            "ratio": "d2_00_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_00_2017", "date": 2017},
+                        {"value": "d2_00_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
                 "totalRow": True,
             },
             {
-                "geography": "02",
+                "id": "02",
+                "geography": "Bydel Grünerløkka",
                 "values": [
                     [
                         {
@@ -223,23 +181,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_02_2017",
-                            "ratio": "d2_02_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_02_2018",
-                            "ratio": "d2_02_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_02_2017", "date": 2017},
+                        {"value": "d2_02_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": True,
                 "totalRow": False,
             },
             {
-                "geography": "0301020201",
+                "id": "0201",
+                "geography": "Grünerløkka vest",
                 "values": [
                     [
                         {
@@ -254,23 +205,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_0201_2017",
-                            "ratio": "d2_0201_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_0201_2018",
-                            "ratio": "d2_0201_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_0201_2017", "date": 2017},
+                        {"value": "d2_0201_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
                 "totalRow": False,
             },
             {
-                "geography": "0301020202",
+                "id": "0202",
+                "geography": "Grünerløkka øst",
                 "values": [
                     [
                         {
@@ -285,16 +229,8 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_0202_2017",
-                            "ratio": "d2_0202_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_0202_2018",
-                            "ratio": "d2_0202_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_0202_2017", "date": 2017},
+                        {"value": "d2_0202_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
@@ -303,11 +239,12 @@ output_list = [
         ],
     },
     {
-        "district": "00",
+        "bydel_id": "00",
         "template": "c",
         "data": [
             {
-                "geography": "00",
+                "id": "00",
+                "geography": "Oslo i alt",
                 "values": [
                     [
                         {
@@ -322,23 +259,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_00_2017",
-                            "ratio": "d2_00_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_00_2018",
-                            "ratio": "d2_00_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_00_2017", "date": 2017},
+                        {"value": "d2_00_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
                 "totalRow": True,
             },
             {
-                "geography": "01",
+                "id": "01",
+                "geography": "Bydel Gamle Oslo",
                 "values": [
                     [
                         {
@@ -353,23 +283,16 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_01_2017",
-                            "ratio": "d2_01_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_01_2018",
-                            "ratio": "d2_01_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_01_2017", "date": 2017},
+                        {"value": "d2_01_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
                 "totalRow": False,
             },
             {
-                "geography": "02",
+                "id": "02",
+                "geography": "Bydel Grünerløkka",
                 "values": [
                     [
                         {
@@ -384,16 +307,8 @@ output_list = [
                         },
                     ],
                     [
-                        {
-                            "value": "d2_02_2017",
-                            "ratio": "d2_02_2017_ratio",
-                            "date": 2017,
-                        },
-                        {
-                            "value": "d2_02_2018",
-                            "ratio": "d2_02_2018_ratio",
-                            "date": 2018,
-                        },
+                        {"value": "d2_02_2017", "date": 2017},
+                        {"value": "d2_02_2018", "date": 2018},
                     ],
                 ],
                 "avgRow": False,
