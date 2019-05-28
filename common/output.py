@@ -87,8 +87,12 @@ class Output:
             )
         )  # Create a data object for oslo i alt
 
-        return {"district": district_name, "id": district_id, "data": data, "meta": metadata}
-
+        return {
+            "district": district_name,
+            "id": district_id,
+            "data": data,
+            "meta": metadata,
+        }
 
     def _generate_oslo_i_alt(self, district_id, metadata):
         df = self.df
@@ -106,7 +110,12 @@ class Output:
             if district not in ["16", "17", "99"]
         ]
         metadata = {**metadata, "scope": "oslo i alt"}
-        return {"district": 'Oslo i alt', "id": district_id, "data": data, "meta": metadata}
+        return {
+            "district": "Oslo i alt",
+            "id": district_id,
+            "data": data,
+            "meta": metadata,
+        }
 
     def _generate_data(
         self, df, district_id, geography_id, name_column=None, geography_name=None

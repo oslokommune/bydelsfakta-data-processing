@@ -59,9 +59,7 @@ def test_df_to_template_b_all():
         ],
     }
 
-    file_01_data = next(obj for obj in output if obj['id'] == "01")[
-        "data"
-    ]
+    file_01_data = next(obj for obj in output if obj["id"] == "01")["data"]
 
     sub_district_0101 = next(data for data in file_01_data if data["id"] == "0101")
     district_01 = next(data for data in file_01_data if data["id"] == "01")
