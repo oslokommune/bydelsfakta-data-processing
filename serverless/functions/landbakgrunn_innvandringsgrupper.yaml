@@ -1,0 +1,2 @@
+handler: functions/landbakgrunn_innvandringsgrupper.handle
+layers: ${self:custom.layers}
