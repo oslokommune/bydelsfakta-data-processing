@@ -4,8 +4,8 @@
 #
 #    pip-compile 
 #
-boto3==1.9.157            # via s3fs
-botocore==1.12.157        # via boto3, s3fs, s3transfer
+boto3==1.9.91
+botocore==1.12.91
 certifi==2019.3.9         # via requests
 chardet==3.0.4            # via requests
 docutils==0.14            # via botocore
@@ -19,4 +19,4 @@ requests==2.22.0
 s3fs==0.2.1
 s3transfer==0.2.0         # via boto3
 six==1.12.0               # via python-dateutil, s3fs
-urllib3==1.25.3           # via botocore, requests
+urllib3==1.24.3           # via botocore, requests
