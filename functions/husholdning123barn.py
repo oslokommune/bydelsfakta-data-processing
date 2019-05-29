@@ -9,6 +9,8 @@ import common.aggregate_dfs # as aggregate
 import common.transform # as transform
 from common.transform_output import generate_output_list
 from common.aggregateV2 import ColumnNames, Aggregate
+from common.templates import TemplateA
+from common.output import Output, Metadata
 
 os.environ["METADATA_API_URL"] = ""
 
@@ -56,36 +58,76 @@ def start(key, output_key, type_of_ds):
         index=["date", "bydel_id", "bydel_navn", "delbydel_id", "delbydel_navn"],
         columns="barnekategori",
         values="antall_husholdninger",
-        fill_value=0,
+        aggfunc=np.sum,
+        fill_value=0
     ).reset_index(drop=False)
 
     # Keep only data from the last year in the data set
     df = common.transform.status(df)[0].reset_index(drop=True)
 
-    print(df.head())
-
-    #sys.exit(1)
-
-    # hus = datasets_for_testing.husholdinger.content()
-
-    # Aggregate
+    # Aggregate from delbydeler to bydel and Oslo total
     aggregation = {"Barn 0": "sum",
                    "Barn 1": "sum",
                    "Barn 2": "sum",
                    "Barn 3+": "sum"}
     agg = Aggregate(aggregation)
-    df_agg = agg.aggregate(df)
-    import time
-    time.sleep(1)
-    print(df_agg)
+    df = agg.aggregate(df)
+
+    print(df)
+
+
+
+    output_structures = [{"name": "husholdninger-med-1-barn",
+                          "heading": "Husholdninger med 1 barn",
+                          "value_col": "Barn 1",
+                          "output_key": None},
+                         {"name": "husholdninger-med-2-barn",
+                          "heading": "Husholdninger med 2 barn",
+                          "value_col": "Barn 2",
+                          "output_key": None},
+                         {"name": "husholdninger-med-3-barn",
+                          "heading": "Husholdninger med 3+ barn",
+                          "value_col": "Barn 3+",
+                          "output_key": None}]
+
+    for os in output_structures:
+        output = generate_output(df, value_col=os["value_col"], heading=os["heading"])
+        # common.aws.write_to_intermediate(os["output_key"], output) # Can't do this yet!
+        print(output)
+        print('=')
+
+    return
 
     sys.exit(1)
 
 
 
-    df = common.aggregate_dfs.aggregate_from_subdistricts(df, ["Barn 0", "Barn 1", "Barn 2", "Barn 3+"])
 
-    print(df)
+
+    #common.aws.write_to_intermediate(output_key, json_lines)
+    #return f"Created {output_key}"
+
+    return
+
+    #output = Output(
+    #    values=data_points, df=input_df, metadata=Metadata("", []), template=template
+    #).generate_output()
+
+    #class Metadata:
+    #    heading: str
+    #    series: list
+    #    publishedDate: str = str(datetime.date.today())
+    #    help: str = "Dette er en beskrivelse for hvordan dataene leses"
+    #    scope: str = "bydel"
+
+    #for loop in schnoop:
+    #    md = Metadata(heading="Husholdninger med 1 barn",
+    #                  scope="Oslo i alt")
+    #    output = Output(values=data_points, df=df, metadata=md, template=TemplateA()).generate_output()
+
+
+
+
     sys.exit(1)
 
 
@@ -168,67 +210,23 @@ def _remap_number_of_children(df):
     return df
 
 
-def _aggregations(data_points):
+def generate_output(df, value_col, heading):
 
-    """Return a list of aggreation dicts (given that 'sum' should be used). To be used when later doing the aggreations."""
-
-    return [
-        {"data_points": data_point, "agg_func": "sum"} for data_point in data_points
+    heading = "Husholdninger med X barn"
+    series = [
+        {"heading": "Husholdninger med X barn",
+         "subheading": ""}
     ]
 
+    # To json : convert df to list of json objects
+    j = Output(
+        df=df,
+        values=[value_col],
+        template=TemplateA(),
+        metadata=Metadata(heading=heading, series=series),
+    ).generate_output()
 
-def aggregate_to_input_format(df, data_points):
-    aggregations = _aggregations(data_points)
-    input_df = aggregate.aggregate_from_subdistricts(df, aggregations)
-    input_df = aggregate.add_ratios(input_df, data_points, data_points)
-    return input_df
-
-
-def with_household_data_points(household_raw):
-    household_raw["household_data_point"] = household_raw["Husholdningstype"].apply(
-        household_data_point
-    )
-
-    with_data_points = pd.concat(
-        (
-            household_raw[["date", "district", "delbydelid"]],
-            household_raw.pivot(
-                columns="household_data_point", values="Antall husholdninger"
-            ),
-        ),
-        axis=1,
-    )
-
-    return (
-        with_data_points.groupby(["delbydelid", "date", "district"]).sum().reset_index()
-    )
-
-
-def household_data_point(household_type):
-    with_children = [
-        "Mor/far med små barn",
-        "Mor/far med store barn",
-        "Par med små barn",
-        "Par med store barn",
-        "Enfamiliehusholdninger med voksne barn",
-        "Flerfamiliehusholdninger med små barn",
-        "Flerfamiliehusholdninger med store barn",
-    ]
-    no_children = [
-        "Flerfamiliehusholdninger uten barn 0 - 17 år",
-        "Par uten hjemmeboende barn",
-        "Flerfamiliehusholdninger uten barn 0-17 år",
-    ]
-    single_adult = ["Aleneboende"]
-
-    if household_type in with_children:
-        return "with_children"
-    elif household_type in no_children:
-        return "no_children"
-    elif household_type in single_adult:
-        return "single_adult"
-    else:
-        raise Exception(f"No data_point for Hushodningstype={household_type}")
+    return j
 
 
 def _output_key(dataset_id, version_id, edition_id):
