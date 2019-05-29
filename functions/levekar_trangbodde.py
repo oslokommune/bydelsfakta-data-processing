@@ -37,13 +37,13 @@ def handle(event, context):
 
     output_list = []
     if type_of_ds == "historic":
-        output_list = output_historic(input_df, datapoint)
+        output_list = output_historic(input_df, [datapoint])
 
     elif type_of_ds == "status":
-        output_list = output_status(input_df, datapoint)
+        output_list = output_status(input_df, [datapoint])
 
     if output_list:
-        #common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
 
@@ -83,8 +83,7 @@ def output_historic(input_df, data_points):
     output = Output(
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateB()
     ).generate_output()
-    import json
-    print(json.dumps(output))
+
     return output
 
 
@@ -93,30 +92,29 @@ def output_status(input_df, data_points):
     output = Output(
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
-
     return output
 
 
 if __name__ == "__main__":
-    # handle(
-    #     {
-    #         "input": {
-    #             "trangbodde": "raw/green/trangbodde/version=1/edition=20190529T121303/Trangbodde(1.1.2015-1.1.2017-v01).csv",
-    #             "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
-    #         },
-    #         "output": "s3/key/or/prefix",
-    #         "config": {"type": "status"}
-    #     },
-    #     None
-    # )
     handle(
         {
             "input": {
                 "trangbodde": "raw/green/trangbodde/version=1/edition=20190529T121303/Trangbodde(1.1.2015-1.1.2017-v01).csv",
-                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
+                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
             },
             "output": "s3/key/or/prefix",
-            "config": {"type": "historic"},
+            "config": {"type": "status"}
         },
-        None,
+        None
     )
+    # handle(
+    #     {
+    #         "input": {
+    #             "trangbodde": "raw/green/trangbodde/version=1/edition=20190529T121303/Trangbodde(1.1.2015-1.1.2017-v01).csv",
+    #             "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
+    #         },
+    #         "output": "s3/key/or/prefix",
+    #         "config": {"type": "historic"},
+    #     },
+    #     None,
+    # )
