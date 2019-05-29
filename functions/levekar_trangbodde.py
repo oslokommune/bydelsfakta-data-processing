@@ -9,8 +9,6 @@ import common.transform as transform
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
 
-os.environ["METADATA_API_URL"] = ""
-
 pd.set_option("display.max_rows", 1000)
 
 graph_metadata = Metadata(
