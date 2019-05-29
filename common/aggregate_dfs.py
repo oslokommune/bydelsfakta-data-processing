@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-from tests import datasets_for_testing
 
 pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 1000)
@@ -370,28 +369,3 @@ def merge_dfs(df1, df2, how="inner", suffixes=["_1", "_2"]):
     )
 
     return df_merged
-
-
-if __name__ == "__main__":
-
-    # This section is present to demonstrate functionality.
-
-    df = datasets_for_testing.data_sets["df1"]
-
-    print("Before aggregation:")
-    print(df)
-
-    AGGS = [
-        {"agg_func": "sum", "data_points": "value_A"},
-        {"agg_func": "wmean", "data_points": "value_C", "data_weights": "value_D"},
-        {"agg_func": "sum", "data_points": "value_D"},
-    ]
-
-    df = aggregate_from_subdistricts(df, AGGS)
-
-    print("\nAfter aggregation:")
-    print(df)
-
-    print(
-        "\nIf we need to do two aggregations of the same column - do twice and merge the resulting tables."
-    )
