@@ -66,7 +66,8 @@ class Aggregate:
 
         oslo[self.column_names.district_id] = "00"
         oslo[self.column_names.district_name] = "Oslo i alt"
-        return pd.concat([districts, oslo, sub_districts])
+
+        return pd.concat([districts, oslo, sub_districts], sort=True).reset_index(drop=True)
 
     def merge(self, df, df2):
         return pd.merge(left=df, right=df2)
