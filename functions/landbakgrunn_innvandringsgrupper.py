@@ -4,9 +4,23 @@ import common.aws as common_aws
 import common.aggregate_dfs as aggregator
 import common.population_utils as population_utils
 from common.aggregateV2 import Aggregate
-
+from common.output import Metadata
 
 pd.set_option("display.max_rows", 1000)
+
+graph_metadata = Metadata(
+    series=[
+        {"heading": "Innvandrer", "subheading": ""},
+        {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
+        {"heading": "Totalt", "subheading": ""},
+    ],
+    heading="10 største innvandringsgrupper"
+)
+
+graph_metadata_as_dict = {
+    "series": graph_metadata.series,
+    "heading": graph_metadata.heading
+}
 
 def handle(event, context):
     s3_key_landbakgrunn = event["input"]["landbakgrunn-storste-innvandringsgrupper"]
@@ -22,7 +36,7 @@ def handle(event, context):
 
     data_points = ["innvandrer", "norskfodt_med_innvandrerforeldre", "total"]
     input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, data_points)
-
+    oslo_df = input_df[input_df['bydel_id']=='00']
     output_list = []
     if type_of_ds == "status":
         output_list = output_list_status(input_df, data_points, top_n=10)
@@ -35,7 +49,6 @@ def handle(event, context):
 
 
 def generate_input_df(landbakgrunn_raw, befolkning_raw, data_points):
-
     befolkning_df = population_utils.generate_population_df(befolkning_raw)
     # Ignoring Marka and Sentrum
     ignore_districts = ["16", "17"]
@@ -82,7 +95,7 @@ def generate_output_list(input_df, data_points, top_n, template_fun):
     ]
     output_list = []
     for district_id, district_name in district_list:
-        district_obj = {"district": district_name, "id": district_id, "data": []}
+        district_obj = {"district": district_name, "id": district_id, "data": [], "meta": graph_metadata_as_dict}
         district_df = input_df[input_df["bydel_id"] == district_id]
         for geography in top_n_countries[district_id]:
             geo_df = district_df[district_df["landbakgrunn"] == geography]
@@ -126,7 +139,7 @@ def process_country_df(df):
     df["total"] = df[data_points].sum(axis=1)
     data_points.append("total")
     oslo_total_df = df.groupby(["date", "landbakgrunn"]).sum().reset_index()
-    oslo_total_df["bydel_id"] = 00
+    oslo_total_df["bydel_id"] = '00'
     oslo_total_df["bydel_navn"] = "Oslo i alt"
     country_df = pd.concat((df, oslo_total_df), sort=False, ignore_index=True)
     return country_df[
@@ -163,6 +176,7 @@ def get_top_n_countries(df, n):
 
 
 if __name__ == "__main__":
+    ''
     # handle(
     #     {
     #         "input": {
