@@ -14,12 +14,6 @@ METADATA = {
 
 def housing(key):
     df = read_from_s3(key)
-
-    # Shift year one up, as "2017" means "2017-12-31" here, but instead we
-    # want it to be "2018" and mean "2018-01-01".
-    # FIXME: This might change in later editions?
-    df["date"] = df["date"] + 1
-
     df["total"] = (
         df["blokk_leiegaard_el"]
         + df["forretningsgaard_bygg_for_felleshusholdning_el"]
