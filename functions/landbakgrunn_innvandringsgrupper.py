@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 
 import common.aws as common_aws
@@ -7,10 +5,8 @@ import common.aggregate_dfs as aggregator
 import common.population_utils as population_utils
 from common.aggregateV2 import Aggregate
 
-os.environ["METADATA_API_URL"] = ""
 
 pd.set_option("display.max_rows", 1000)
-
 
 def handle(event, context):
     s3_key_landbakgrunn = event["input"]["landbakgrunn-storste-innvandringsgrupper"]
