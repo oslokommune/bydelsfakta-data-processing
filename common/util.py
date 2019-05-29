@@ -1,3 +1,5 @@
+import requests
+
 _districts_id = {
     "01": "Bydel Gamle Oslo",
     "02": "Bydel Grünerløkka",
@@ -57,3 +59,12 @@ def get_district_id(name):
 
 def get_district_name(id):
     return _districts_id[id]
+
+def get_latest_edition_of(dataset_id, confidentiality="green"):
+    response = requests.get(f"https://metadata.api-test.oslo.kommune.no/dev/datasets/{dataset_id}/versions/1/editions").json()
+    latest_edition = max(response, key=lambda x: x["Id"] if "Id" in x else -1)
+    dataset_id, version, edition = latest_edition['Id'].split("/")
+    distribution = requests.get(f"https://metadata.api-test.oslo.kommune.no/dev/datasets/{dataset_id}/versions/1/editions/{edition}/distributions").json()
+    file_name = distribution[0]['filename']
+    s3_key = f"raw/{confidentiality}/{dataset_id}/versions/1/editions/{edition}/{file_name}"
+    return s3_key
