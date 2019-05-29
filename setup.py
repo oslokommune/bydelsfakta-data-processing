@@ -13,5 +13,12 @@ setup(
     long_description_content_type="text/markdown",
     url="https://github.com/oslokommune/bydelsfakta-data-processing",
     py_modules=["common", "functions"],
-    install_requires=["numpy", "pandas", "s3fs"],
+    install_requires=[
+        "numpy",
+        "pandas",
+        "s3fs",
+        "requests",
+        "boto3==1.9.91",
+        "botocore==1.12.91",
+    ],
 )
