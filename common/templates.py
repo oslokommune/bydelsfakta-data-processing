@@ -4,7 +4,7 @@ from common.aggregateV2 import ColumnNames
 
 
 def value(date, value, ratio=None):
-    if ratio or ratio==0:
+    if ratio or ratio == 0:
         return {"value": value, "ratio": ratio, "date": date}
     else:
         return {"value": value, "date": date}
