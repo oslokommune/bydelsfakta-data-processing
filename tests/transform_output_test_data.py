@@ -33,9 +33,11 @@ district_01_time_series_list = [
     },
 ]
 
+
 output_list = [
     {
-        "bydel_id": "01",
+        "district": "Bydel Gamle Oslo",
+        "id": "01",
         "template": "c",
         "data": [
             {
@@ -137,7 +139,8 @@ output_list = [
         ],
     },
     {
-        "bydel_id": "02",
+        "district": "Bydel Grünerløkka",
+        "id": "02",
         "template": "c",
         "data": [
             {
@@ -239,7 +242,8 @@ output_list = [
         ],
     },
     {
-        "bydel_id": "00",
+        "district": "Oslo i alt",
+        "id": "00",
         "template": "c",
         "data": [
             {
