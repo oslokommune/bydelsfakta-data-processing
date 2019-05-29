@@ -66,5 +66,5 @@ def get_latest_edition_of(dataset_id, confidentiality="green"):
     dataset_id, version, edition = latest_edition['Id'].split("/")
     distribution = requests.get(f"https://metadata.api-test.oslo.kommune.no/dev/datasets/{dataset_id}/versions/1/editions/{edition}/distributions").json()
     file_name = distribution[0]['filename']
-    s3_key = f"raw/{confidentiality}/{dataset_id}/versions/1/editions/{edition}/{file_name}"
+    s3_key = f"raw/{confidentiality}/{dataset_id}/version=1/edition={edition}/{file_name}"
     return s3_key
