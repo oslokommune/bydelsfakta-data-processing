@@ -14,13 +14,14 @@ graph_metadata = Metadata(
         {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
         {"heading": "Totalt", "subheading": ""},
     ],
-    heading="10 største innvandringsgrupper"
+    heading="10 største innvandringsgrupper",
 )
 
 graph_metadata_as_dict = {
     "series": graph_metadata.series,
-    "heading": graph_metadata.heading
+    "heading": graph_metadata.heading,
 }
+
 
 def handle(event, context):
     s3_key_landbakgrunn = event["input"]["landbakgrunn-storste-innvandringsgrupper"]
@@ -35,9 +36,11 @@ def handle(event, context):
     )
 
     data_points = ["innvandrer", "norskfodt_med_innvandrerforeldre", "total"]
+
     input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, data_points)
-    oslo_df = input_df[input_df['bydel_id']=='00']
+
     output_list = []
+
     if type_of_ds == "status":
         output_list = output_list_status(input_df, data_points, top_n=10)
     elif type_of_ds == "historic":
@@ -95,7 +98,12 @@ def generate_output_list(input_df, data_points, top_n, template_fun):
     ]
     output_list = []
     for district_id, district_name in district_list:
-        district_obj = {"district": district_name, "id": district_id, "data": [], "meta": graph_metadata_as_dict}
+        district_obj = {
+            "district": district_name,
+            "id": district_id,
+            "data": [],
+            "meta": graph_metadata_as_dict,
+        }
         district_df = input_df[input_df["bydel_id"] == district_id]
         for geography in top_n_countries[district_id]:
             geo_df = district_df[district_df["landbakgrunn"] == geography]
@@ -139,7 +147,7 @@ def process_country_df(df):
     df["total"] = df[data_points].sum(axis=1)
     data_points.append("total")
     oslo_total_df = df.groupby(["date", "landbakgrunn"]).sum().reset_index()
-    oslo_total_df["bydel_id"] = '00'
+    oslo_total_df["bydel_id"] = "00"
     oslo_total_df["bydel_navn"] = "Oslo i alt"
     country_df = pd.concat((df, oslo_total_df), sort=False, ignore_index=True)
     return country_df[
@@ -176,7 +184,7 @@ def get_top_n_countries(df, n):
 
 
 if __name__ == "__main__":
-    ''
+    ""
     # handle(
     #     {
     #         "input": {
@@ -188,14 +196,14 @@ if __name__ == "__main__":
     #     },
     #     None
     # )
-    handle(
-        {
-            "input": {
-                "landbakgrunn-storste-innvandringsgrupper": "raw/green/landbakgrunn-storste-innvandringsgrupper/version=1/edition=20190523T211529/Landbakgrunn_storste_innvandringsgrupper(1.1.2008-1.1.2019-v01).csv",
-                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
-            },
-            "output": "s3/key/or/prefix",
-            "config": {"type": "historic"},
-        },
-        None,
-    )
+    # handle(
+    #     {
+    #         "input": {
+    #             "landbakgrunn-storste-innvandringsgrupper": "raw/green/landbakgrunn-storste-innvandringsgrupper/version=1/edition=20190523T211529/Landbakgrunn_storste_innvandringsgrupper(1.1.2008-1.1.2019-v01).csv",
+    #             "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
+    #         },
+    #         "output": "s3/key/or/prefix",
+    #         "config": {"type": "historic"},
+    #     },
+    #     None,
+    # )
