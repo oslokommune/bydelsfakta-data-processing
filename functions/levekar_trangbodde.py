@@ -1,5 +1,3 @@
-import os
-
 import pandas as pd
 
 import common.aws as common_aws
@@ -98,12 +96,12 @@ if __name__ == "__main__":
         {
             "input": {
                 "trangbodde": "raw/green/trangbodde/version=1/edition=20190529T121303/Trangbodde(1.1.2015-1.1.2017-v01).csv",
-                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
+                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
             },
             "output": "s3/key/or/prefix",
-            "config": {"type": "status"}
+            "config": {"type": "status"},
         },
-        None
+        None,
     )
     # handle(
     #     {
