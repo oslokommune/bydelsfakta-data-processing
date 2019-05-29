@@ -4,125 +4,169 @@ import sys  # TEMP FOR DEBUG
 import pandas as pd
 import numpy as np
 
-import common.aws as common_aws
-import common.aggregate_dfs as aggregate
-import common.transform as transform
+import common.aws
+import common.aggregate_dfs # as aggregate
+import common.transform # as transform
 from common.transform_output import generate_output_list
+from common.aggregateV2 import ColumnNames, Aggregate
 
 os.environ["METADATA_API_URL"] = ""
 
 s3_bucket = "ok-origo-dataplatform-dev"
 
-datasets = [{"dataset_title": "Husholdninger med 1 barn",
-             "dataset_id": "husholdning_1-barn_status",
-             "version_id": "",
-             "edition_id": "",
-             "data_point": "Barn 1"},
-            {"dataset_title": "Husholdninger med 2 barn",
-             "dataset_id": "husholdning_2-barn_status",
-             "version_id": "",
-             "edition_id": "",
-             "data_point": "Barn 2"},
-            {"dataset_title": "Husholdninger med 3+ barn",
-             "dataset_id": "husholdning_3-barn_status",
-             "version_id": "",
-             "edition_id": "",
-             "data_point": "Barn 3+"}]
+def handler(event, context):
 
-#historic_dataset_id = "Husholdning-totalt-historisk-NZrxf"
-#historic_version_id = "1-Xh69qF9c"
-#historic_edition_id = "EDITION-gvinX"
-#status_dataset_id = "Husholdning-totalt-status-FzFf5"
-#status_version_id = "1-wgHdAJWY"
-#status_edition_id = "EDITION-nibxq"
-#matrix_dataset_id = "Husholdning-totalt-matrise-e9w4m"
-#matrix_version_id = "1-8fZLJ6dC"
-#matrix_edition_id = "EDITION-756ZB"
+    """ Assuming we receive a complete s3 key"""
 
-def handle(event, context):
-
-    """ Assuming we recieve a complete s3 key"""
-    s3_key = event["keys"]["Husholdninger_med_barn-XdfNB"]
-    bucket = event["bucket"]
-    start(bucket, s3_key)
+    s3_key = event["input"]["husholdninger-med-barn"]
+    output_key = event["output"]
+    type_of_ds = event["config"]["type"]
+    start(s3_key, output_key, type_of_ds)
 
     return "OK"
 
 
-def start(bucket, key):
+def start(key, output_key, type_of_ds):
 
-    household_raw = common_aws.read_from_s3(s3_key=key)
+    number_type = "float64"  # "int64" - this SHOULD be used when the input data are integers.
 
-    household_df = household_raw.copy()
-    household_df["Antall husholdninger"] = household_df["Antall husholdninger"].str.replace(" ", "").astype(int)
+    dtype = {"delbydel_id": object,
+             "delbydel_navn": object,
+             "bydel_id": object,
+             "bydel_navn": object,
+             "aleneboende": number_type,
+             "enfamiliehusholdninger_med_voksne_barn": number_type,
+             "flerfamiliehusholdninger_med_smaa_barn": number_type,
+             "flerfamiliehusholdninger_med_store_barn": number_type,
+             "flerfamiliehusholdninger_uten_barn_0_til_17_aar": number_type,
+             "mor_far_med_smaa_barn": number_type,
+             "mor_far_med_store_barn": number_type,
+             "par_med_smaa_barn": number_type,
+             "par_med_store_barn": number_type,
+             "par_uten_hjemmeboende_barn": number_type}
 
-    # TEMP! Rename "Delbydel" --> "district" <== This needs to be done for husholdning.py as well.
-    household_df = household_df.rename(columns={"Delbydel": "district"})
-    household_df = transform.add_district_id(household_df.copy())
-    household_df = household_df[
-        [
-            "delbydelid",
-            "district",
-            "date",
-            "Barn i husholdningen",
-            "Antall husholdninger"
-        ]
-    ]
+    df = common.aws.read_from_s3(s3_key=key, date_column="aar", dtype=dtype)
+
+    df = _clean_df(df)
+
+    df = _remap_number_of_children(df)
+
+    # Pivot - values for categories in "barnekategori" move to separate columns
+    df = df.pivot_table(
+        index=["date", "bydel_id", "bydel_navn", "delbydel_id", "delbydel_navn"],
+        columns="barnekategori",
+        values="antall_husholdninger",
+        fill_value=0,
+    ).reset_index(drop=False)
+
+    # Keep only data from the last year in the data set
+    df = common.transform.status(df)[0].reset_index(drop=True)
+
+    print(df.head())
+
+    #sys.exit(1)
+
+    # hus = datasets_for_testing.husholdinger.content()
+
+    # Aggregate
+    aggregation = {"Barn 0": "sum",
+                   "Barn 1": "sum",
+                   "Barn 2": "sum",
+                   "Barn 3+": "sum"}
+    agg = Aggregate(aggregation)
+    df_agg = agg.aggregate(df)
+    import time
+    time.sleep(1)
+    print(df_agg)
+
+    sys.exit(1)
+
+
+
+    df = common.aggregate_dfs.aggregate_from_subdistricts(df, ["Barn 0", "Barn 1", "Barn 2", "Barn 3+"])
+
+    print(df)
+    sys.exit(1)
+
+
+    for dataset in datasets:
+
+        print(dataset["dataset_id"])
+
+        # print(generate_output_list(df_agg, template="a", data_points=[dataset["data_point"]]))
+
+        dataset["data"] = generate_output_list(
+            df_agg, template="a", data_points=[dataset["data_point"]]
+        )
+
+        # TO BE REMOVED!
+        debug = False
+        if debug:
+            from pprint import pprint
+
+            with open(r"C:\CURRENT FILES\dump.txt", "wt", encoding="utf-8") as f:
+                pprint(dataset["data"], stream=f)
+                print("\n", file=f)
+                sys.exit(1)
+
+        print(
+            "2019-May-16 13:00: Need to fill in {data_sets} - awaiting pipeline readiness!"
+        )
+        sys.exit(1)
+        ####
+        _write_to_intermediate(
+            dataset["dataset_id"],
+            dataset["version_id"],
+            dataset["edition_id"],
+            dataset["data"],
+            series_heading=dataset["dataset_title"],
+        )
+
+
+def _clean_df(df):
+
+    """Various operations to clean and secure correct format."""
+
+    df = df.rename(columns={"barn_i_hushodlningen": "barn_i_husholdningen"})  # Temp minor colname cleanup
+
+    mandatory = {'date', 'delbydel_id', 'delbydel_navn', 'bydel_id', 'bydel_navn', 'barn_i_husholdningen'}
+    for m in mandatory:
+        assert (m in df.columns)
+
+    number_cols = set(df.columns).difference(mandatory)
+    for nc in number_cols:
+        df[nc] = df[nc].round().astype("int64")  # This line should be removed when the input format is secured.
+        assert (df[nc].dtype == "int64")
+
+    df["antall_husholdninger"] = df[number_cols].sum(axis=1)
+
+    df = df[[*mandatory, "antall_husholdninger"]]
+
+    return (df)
+
+
+def _remap_number_of_children(df):
+
+    """Map to the required format for number of children in the household."""
 
     m = {
         "Ingen barn i HH": "Barn 0",
         "1 barn i HH": "Barn 1",
         "2 barn i HH": "Barn 2",
         "3 barn i HH": "Barn 3+",
-        "4 barn eller mer": "Barn 3+"
+        "4 barn eller mer": "Barn 3+",
     }
-    household_df["Barnekategori"] = (
-        household_df["Barn i husholdningen"].map(m).fillna(np.nan)
+    df["barnekategori"] = (
+        df["barn_i_husholdningen"].map(m).fillna(np.nan)
     )
-    if household_df["Barnekategori"].isnull().any():
-        raise ValueError("Unmapped category found in the column Husholdningstype. See dict 'm'.")
-    household_df = household_df.drop("Barn i husholdningen", axis=1)
+    if df["barnekategori"].isnull().any():
+        raise ValueError(
+            "Unmapped category found in the column 'barn_i_husholdningen'. See dict 'm'."
+        )
+    df = df.drop("barn_i_husholdningen", axis=1)
 
-    # Reshape from group data by rows to group data by col
-    household_df = household_df.groupby(
-        ["delbydelid", "district", "date", "Barnekategori"], as_index=False
-    ).agg("sum")
-    household_df = household_df.pivot_table(
-        index=["delbydelid", "district", "date"],
-        columns="Barnekategori",
-        values="Antall husholdninger",
-        fill_value=0,
-    ).reset_index(drop=False)
+    return df
 
-    df_status = transform.status(household_df)[0]
-    df_agg = aggregate_to_input_format(df_status, ["Barn 0", "Barn 1", "Barn 2", "Barn 3+"])
-
-    for dataset in datasets:
-
-        print(dataset["dataset_id"])
-
-        #print(generate_output_list(df_agg, template="a", data_points=[dataset["data_point"]]))
-
-        dataset["data"] = generate_output_list(df_agg, template="a", data_points=[dataset["data_point"]])
-
-        # TO BE REMOVED!
-        debug = False
-        if debug:
-            from pprint import pprint
-            with open(r"C:\CURRENT FILES\dump.txt", "wt", encoding="utf-8") as f:
-                pprint(dataset["data"], stream=f)
-                print("\n", file=f)
-                sys.exit(1)
-
-
-        print("2019-May-16 13:00: Need to fill in {data_sets} - awaiting pipeline readiness!")
-        sys.exit(1)
-        ####
-        _write_to_intermediate(dataset["dataset_id"],
-                               dataset["version_id"],
-                               dataset["edition_id"],
-                               dataset["data"],
-                               series_heading=dataset["dataset_title"])
 
 def _aggregations(data_points):
 
@@ -191,11 +235,11 @@ def _output_key(dataset_id, version_id, edition_id):
     return f"processed/green/{dataset_id}/version={version_id}/edition={edition_id}/"
 
 
-def _write_to_intermediate(dataset_id, version_id, edition_id, output_list, series_heading):
+def _write_to_intermediate(
+    dataset_id, version_id, edition_id, output_list, series_heading
+):
 
-    series = [
-        {"heading": series_heading, "subheading": ""},
-    ]
+    series = [{"heading": series_heading, "subheading": ""}]
     heading = "Husholdninger"
     output_key = _output_key(dataset_id, version_id, edition_id)
     common_aws.write_to_intermediate(output_key, output_list, heading, series)
@@ -203,12 +247,22 @@ def _write_to_intermediate(dataset_id, version_id, edition_id, output_list, seri
 
 if __name__ == "__main__":
 
-    handle(
+    # Inntil videre jobb med v1
+    # UPDATE input path when v2 is uploaded by Tord. <== KRASJER FORDI ANTALL ER STRENGER MED MELLOMROM
+    # UPDATE: Tord har kontaktet Astrid som skal skaffe en V3.
+    # husholdninger-med-1-barn
+    # husholdninger-med-2-barn
+    # husholdninger-med-3-barn
+    # OUTPUT-dataset
+    # "husholdninger-med-barn": "raw/green/husholdninger-med-barn/version=1/edition=20190523T125413/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"
+
+    handler(
         {
-            "bucket": "ok-origo-dataplatform-dev",
-            "keys": {
-                "Husholdninger_med_barn-XdfNB": "raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/1557487278/Husholdninger_med_barn(1.1.2008-1.1.2018-v02).csv"
+            "input": {
+                "husholdninger-med-barn": "raw/green/husholdninger-med-barn/version=1/edition=20190528T133555/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"
             },
+            "output": "intermediate/green/boligpriser-blokkleiligheter-status/version=1/edition=20190520T114926/",
+            "config": {"type": "status"},
         },
         {},
     )
