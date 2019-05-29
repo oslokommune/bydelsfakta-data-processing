@@ -1,12 +1,7 @@
-import os
-
 import common.aws as common_aws
 import common.transform as transform
-from common.transform_output import generate_output_list
-
-os.environ["METADATA_API_URL"] = ""
-
-s3_bucket = "ok-origo-dataplatform-dev"
+from common.output import Output, Metadata
+from common.templates import TemplateA, TemplateC
 
 
 def handle(event, context):
@@ -19,19 +14,12 @@ def handle(event, context):
 
 def start(key, output_key, type_of_ds):
     df = (
-        common_aws.read_from_s3(
-            s3_key=key,
-            date_column="aar",
-            dtype={"bydel_id": object, "delbydel_id": object},
-        )
+        common_aws.read_from_s3(s3_key=key, date_column="aar")
         .rename(
             columns={
-                "aar": "date",
                 "leier_alle": "leier",
                 "borettslag_andel_alle": "andel",
                 "selveier_alle": "selveier",
-                "bydel_id": "district",
-                "delbydel_id": "delbydelid",
             }
         )
         .drop(
@@ -44,8 +32,10 @@ def start(key, output_key, type_of_ds):
         )
     )
 
-    df = df.drop(df[df["district"] == "15000"].index)
-    df = df.drop(df[df["district"] == "20000"].index)
+    df = df.drop(df[df["bydel_id"] == "15000"].index)
+    df = df.drop(df[df["bydel_id"] == "20000"].index)
+
+    df = df.drop_duplicates()
 
     df["leier_ratio"] = df["leier"].div(100).round(2)
     df["andel_ratio"] = df["andel"].div(100).round(2)
@@ -55,9 +45,9 @@ def start(key, output_key, type_of_ds):
     historic = transform.historic(df)
 
     if type_of_ds == "historisk":
-        create_ds(output_key, "c", *historic)
+        create_ds(output_key, TemplateC(), *historic)
     elif type_of_ds == "status":
-        create_ds(output_key, "a", *status)
+        create_ds(output_key, TemplateA(), *status)
 
 
 def create_ds(output_key, template, df):
@@ -68,10 +58,11 @@ def create_ds(output_key, template, df):
         {"heading": "Leier", "subheading": ""},
     ]
 
-    jsonl = generate_output_list(df, template, ["selveier", "andel", "leier"])
-    common_aws.write_to_intermediate(
-        output_key=output_key, heading=heading, series=series, output_list=jsonl
-    )
+    meta = Metadata(heading=heading, series=series)
+    jsonl = Output(
+        df=df, template=template, metadata=meta, values=["selveier", "andel", "leier"]
+    ).generate_output()
+    common_aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
 
 
 if __name__ == "__main__":
@@ -80,8 +71,8 @@ if __name__ == "__main__":
             "input": {
                 "eieform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv"
             },
-            "output": "intermediate/green/eieform-status/version=1/edition=20190524T114926/",
-            "config": {"type": "status"},
+            "output": "intermediate/green/eieform-historisk/version=1/edition=20190529T102550/",
+            "config": {"type": "historisk"},
         },
         {},
     )
