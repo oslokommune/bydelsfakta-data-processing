@@ -49,7 +49,6 @@ def start(key, output_key, type_of_ds):
         }
     )
 
-    df["date"] = df["date"].add(1)
     df["rekkehus"] = df["rekkehus_horisontal"] + df["rekkehus_vertikal"]
     df = df.drop(["rekkehus_vertikal", "rekkehus_horisontal"], axis=1)
 
