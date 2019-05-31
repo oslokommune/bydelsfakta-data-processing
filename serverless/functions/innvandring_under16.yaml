@@ -1,3 +1,4 @@
-handler: functions/innvanding_under16.handler
+name: bydelsfakta-data-processing-innvandring-under16
+handler: functions/innvandring_under16.handler
 timeout: 60
 layers: ${self:custom.layers}
