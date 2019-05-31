@@ -123,7 +123,7 @@ if __name__ == "__main__":
             "input": {
                 "boligmengde-etter-boligtype": "raw/green/boligmengde-etter-boligtype/version=1/edition=20190524T105717/Boligmengde_etter_boligtype(2011-2017-v01).csv"
             },
-            "output": "intermediate/green/bygningstyper_rekkehus_status/version=1/edition=20190529T115555/",
+            "output": "intermediate/green/bygningstyper_rekkehus_status/version=1/edition=20190531T105555/",
             "config": {"type": "rekkehus_status"},
         },
         {},
