@@ -1,5 +1,3 @@
-import json
-
 import numpy
 import pandas
 
@@ -11,10 +9,10 @@ import common.util
 from common import transform
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
-from common.templates import TemplateA, TemplateH
+from common.templates import TemplateH
 
 column_names = ColumnNames()
-sum = Aggregate('sum')
+sum = Aggregate("sum")
 
 
 def handler(event, context):
@@ -47,13 +45,13 @@ def handler(event, context):
     type_of_ds = event["config"]["type"]
     if type_of_ds == "historisk":
         dfs = transform.historic(
-                population,
-                dead,
-                born,
-                immigration_sub_district,
-                emigration_sub_district,
-                immigration_district,
-                emigration_district
+            population,
+            dead,
+            born,
+            immigration_sub_district,
+            emigration_sub_district,
+            immigration_district,
+            emigration_district,
         )
     else:
         raise Exception("Type should be historisk")
@@ -65,21 +63,36 @@ def handler(event, context):
 
 def process_population(population):
     population = population.dropna()
-    aggregate = sum.aggregate(common.population_utils.generate_population_df(population))
+    aggregate = sum.aggregate(
+        common.population_utils.generate_population_df(population)
+    )
 
-    aggregate.loc[aggregate['bydel_id'] == "00", 'change'] = aggregate[aggregate['bydel_id'] == "00"]['population'].pct_change()
+    aggregate.loc[aggregate["bydel_id"] == "00", "change"] = aggregate[
+        aggregate["bydel_id"] == "00"
+    ]["population"].pct_change()
 
-    aggregate.loc[(aggregate['bydel_id'] != "00") & (aggregate['delbydel_id'].isna()), 'change'] =  aggregate.loc[(aggregate['bydel_id'] != "00") & (aggregate['delbydel_id'].isna())].groupby([
-        column_names.district_name,
-        column_names.district_id
-    ])['population'].apply(lambda x: x.pct_change())
+    aggregate.loc[
+        (aggregate["bydel_id"] != "00") & (aggregate["delbydel_id"].isna()), "change"
+    ] = (
+        aggregate.loc[
+            (aggregate["bydel_id"] != "00") & (aggregate["delbydel_id"].isna())
+        ]
+        .groupby([column_names.district_name, column_names.district_id])["population"]
+        .apply(lambda x: x.pct_change())
+    )
 
-    aggregate.loc[aggregate['delbydel_id'].notna(), 'change'] = aggregate.loc[aggregate['delbydel_id'].notna()].groupby([
-        column_names.district_name,
-        column_names.district_id,
-        column_names.sub_district_name,
-        column_names.sub_district_id
-    ])['population'].apply(lambda x: x.pct_change())
+    aggregate.loc[aggregate["delbydel_id"].notna(), "change"] = (
+        aggregate.loc[aggregate["delbydel_id"].notna()]
+        .groupby(
+            [
+                column_names.district_name,
+                column_names.district_id,
+                column_names.sub_district_name,
+                column_names.sub_district_id,
+            ]
+        )["population"]
+        .apply(lambda x: x.pct_change())
+    )
 
     return aggregate
 
@@ -95,57 +108,73 @@ def process_born(born):
 
 
 def process_immigration(sub_district, district):
-    to_oslo = 'innflytting_til_oslo'
-    between_districts = 'innflytting_mellom_bydeler'
-    between_sub_districts = 'innflytting_mellom_delbydeler'
+    to_oslo = "innflytting_til_oslo"
+    between_districts = "innflytting_mellom_bydeler"
+    between_sub_districts = "innflytting_mellom_delbydeler"
 
     immigration = join_to_migration(
-            district_df=district,
-            sub_district_df=sub_district,
-            oslo=to_oslo,
-            between_districts=between_districts,
-            between_sub_districts=between_sub_districts,
-            output_label="immigration"
+        district_df=district,
+        sub_district_df=sub_district,
+        oslo=to_oslo,
+        between_districts=between_districts,
+        between_sub_districts=between_sub_districts,
+        output_label="immigration",
     )
     return immigration
 
 
 def process_emigration(sub_district, district):
-    from_oslo = 'utflytting_fra_oslo'
-    between_districts = 'utflytting_mellom_bydeler'
-    between_sub_districts = 'utflytting_mellom_delbydeler'
+    from_oslo = "utflytting_fra_oslo"
+    between_districts = "utflytting_mellom_bydeler"
+    between_sub_districts = "utflytting_mellom_delbydeler"
 
     return join_to_migration(
-            district_df=district,
-            sub_district_df=sub_district,
-            oslo=from_oslo,
-            between_districts=between_districts,
-            between_sub_districts=between_sub_districts,
-            output_label="emigration"
+        district_df=district,
+        sub_district_df=sub_district,
+        oslo=from_oslo,
+        between_districts=between_districts,
+        between_sub_districts=between_sub_districts,
+        output_label="emigration",
     )
 
+
 def process_pop_extrapolation(pop_extrapolation):
-    meta = pop_extrapolation[[column_names.date, column_names.district_id, column_names.district_name]]
+    meta = pop_extrapolation[
+        [column_names.date, column_names.district_id, column_names.district_name]
+    ]
     meta.loc[:, column_names.sub_district_id] = numpy.nan
     meta.loc[:, column_names.sub_district_name] = numpy.nan
-    meta.loc[:, 'projection'] = pop_extrapolation.loc[:, "0":"99"].sum(1)
+    meta.loc[:, "projection"] = pop_extrapolation.loc[:, "0":"99"].sum(1)
     return meta
 
 
-def join_to_migration(district_df,
-                      sub_district_df,
-                      oslo,
-                      between_districts,
-                      between_sub_districts,
-                      output_label
-                      ):
+def join_to_migration(
+    district_df,
+    sub_district_df,
+    oslo,
+    between_districts,
+    between_sub_districts,
+    output_label,
+):
 
-    sub_district = sub_district_df.groupby(column_names.default_groupby_columns())[
-        oslo, between_sub_districts].sum().reset_index()
-    sub_district[output_label] = sub_district[oslo] + sub_district[between_sub_districts]
+    sub_district = (
+        sub_district_df.groupby(column_names.default_groupby_columns())[
+            oslo, between_sub_districts
+        ]
+        .sum()
+        .reset_index()
+    )
+    sub_district[output_label] = (
+        sub_district[oslo] + sub_district[between_sub_districts]
+    )
 
-    district = district_df.groupby([column_names.date, column_names.district_id, column_names.district_name])[
-        oslo, between_districts].sum().reset_index()
+    district = (
+        district_df.groupby(
+            [column_names.date, column_names.district_id, column_names.district_name]
+        )[oslo, between_districts]
+        .sum()
+        .reset_index()
+    )
     district[output_label] = district[oslo] + district[between_districts]
     district[column_names.sub_district_id] = numpy.nan
     district[column_names.sub_district_name] = numpy.nan
@@ -157,19 +186,21 @@ def join_to_migration(district_df,
     oslo[column_names.district_id] = "00"
 
     aggregated = pandas.concat([district, oslo, sub_district])[
-        column_names.default_groupby_columns() + [output_label]]
+        column_names.default_groupby_columns() + [output_label]
+    ]
     return aggregated
 
 
-def generate(population,
-             dead,
-             born,
-             immigration_sub_district,
-             emigration_sub_district,
-             immigration_district,
-             emigration_district,
-            pop_extrapolation
-             ):
+def generate(
+    population,
+    dead,
+    born,
+    immigration_sub_district,
+    emigration_sub_district,
+    immigration_district,
+    emigration_district,
+    pop_extrapolation,
+):
     population = process_population(population)
     dead = process_dead(dead)
     born = process_born(born)
@@ -178,14 +209,16 @@ def generate(population,
     pop_extrapolation = process_pop_extrapolation(pop_extrapolation)
 
     agg = Aggregate({})
-    merged = agg.merge_all(population, dead, born, immigration, emigration, how='outer')
-    merged = merged.astype({
-        'antall_dode': pandas.Int64Dtype(),
-        'antall_fodte': pandas.Int64Dtype(),
-        'immigration': pandas.Int64Dtype(),
-        'emigration': pandas.Int64Dtype(),
-        'population': pandas.Int64Dtype(),
-    })
+    merged = agg.merge_all(population, dead, born, immigration, emigration, how="outer")
+    merged = merged.astype(
+        {
+            "antall_dode": pandas.Int64Dtype(),
+            "antall_fodte": pandas.Int64Dtype(),
+            "immigration": pandas.Int64Dtype(),
+            "emigration": pandas.Int64Dtype(),
+            "population": pandas.Int64Dtype(),
+        }
+    )
     return pandas.concat([merged, pop_extrapolation])
 
 
@@ -196,16 +229,16 @@ def write(df, output_key):
         {"heading": "Befolkningsfremskrivning", "subheading": ""},
     ]
     # To json : convert df to list of json objects
-    df = df.rename(columns={
-        'antall_dode': 'deaths',
-        'antall_fodte': 'births'
-    })
+    df = df.rename(columns={"antall_dode": "deaths", "antall_fodte": "births"})
 
     jsonl = Output(
-            df=df,
-            values=[['deaths', 'births', 'emigration', 'immigration', 'population', 'change'], ['projection']],
-            template=TemplateH(),
-            metadata=Metadata(heading=heading, series=series),
+        df=df,
+        values=[
+            ["deaths", "births", "emigration", "immigration", "population", "change"],
+            ["projection"],
+        ],
+        template=TemplateH(),
+        metadata=Metadata(heading=heading, series=series),
     ).generate_output()
 
     common.aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
@@ -214,31 +247,31 @@ def write(df, output_key):
 
 if __name__ == "__main__":
     handler(
-            {
-                "input": {
-                    "befolkning-etter-kjonn-og-alder": common.util.get_latest_edition_of(
-                            "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
-                    ),
-                    "dode": common.util.get_latest_edition_of("dode"),
-                    "fodte": common.util.get_latest_edition_of("fodte"),
-                    "flytting-fra-etter-alder": common.util.get_latest_edition_of(
-                            "flytting-fra-etter-alder"
-                    ),
-                    "flytting-til-etter-alder": common.util.get_latest_edition_of(
-                            "flytting-til-etter-alder"
-                    ),
-                    "flytting-til-etter-inn-kat": common.util.get_latest_edition_of(
-                            "flytting-til-etter-inn-kat"
-                    ),
-                    "flytting-fra-etter-inn-kat": common.util.get_latest_edition_of(
-                            "flytting-fra-etter-inn-kat"
-                    ),
-                    "befolkingsframskrivninger": common.util.get_latest_edition_of(
-                            "befolkingsframskrivninger"
-                    ),
-                },
-                "output": "intermediate/green/befolkningsutvikling_og_forventet_utvikling/version=1/edition=20190422T211529/",
-                "config": {"type": "historisk"},
+        {
+            "input": {
+                "befolkning-etter-kjonn-og-alder": common.util.get_latest_edition_of(
+                    "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
+                ),
+                "dode": common.util.get_latest_edition_of("dode"),
+                "fodte": common.util.get_latest_edition_of("fodte"),
+                "flytting-fra-etter-alder": common.util.get_latest_edition_of(
+                    "flytting-fra-etter-alder"
+                ),
+                "flytting-til-etter-alder": common.util.get_latest_edition_of(
+                    "flytting-til-etter-alder"
+                ),
+                "flytting-til-etter-inn-kat": common.util.get_latest_edition_of(
+                    "flytting-til-etter-inn-kat"
+                ),
+                "flytting-fra-etter-inn-kat": common.util.get_latest_edition_of(
+                    "flytting-fra-etter-inn-kat"
+                ),
+                "befolkingsframskrivninger": common.util.get_latest_edition_of(
+                    "befolkingsframskrivninger"
+                ),
             },
-            {},
+            "output": "intermediate/green/befolkningsutvikling_og_forventet_utvikling/version=1/edition=20190422T211529/",
+            "config": {"type": "historisk"},
+        },
+        {},
     )

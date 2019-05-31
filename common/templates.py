@@ -1,7 +1,5 @@
 import itertools
 
-import numpy
-
 from common.aggregateV2 import ColumnNames
 
 
@@ -25,12 +23,12 @@ class Template:
 class TemplateC(Template):
     def _value(self, df, column_names, value_column):
         value_collection = df.apply(
-                lambda row: value(
-                        date=row[column_names.date],
-                        value=row[value_column],
-                        ratio=row.get(f"{value_column}_ratio", None),
-                ),
-                axis=1,
+            lambda row: value(
+                date=row[column_names.date],
+                value=row[value_column],
+                ratio=row.get(f"{value_column}_ratio", None),
+            ),
+            axis=1,
         )
         if value_collection.empty:
             return []
@@ -45,12 +43,12 @@ class TemplateC(Template):
 class TemplateA(Template):
     def _value(self, df, column_names, value_column):
         value_collection = df.apply(
-                lambda row: value(
-                        date=row[column_names.date],
-                        value=row[value_column],
-                        ratio=row.get(f"{value_column}_ratio", None),
-                ),
-                axis=1,
+            lambda row: value(
+                date=row[column_names.date],
+                value=row[value_column],
+                ratio=row.get(f"{value_column}_ratio", None),
+            ),
+            axis=1,
         )
         if value_collection.empty:
             return []
@@ -100,6 +98,10 @@ class TemplateE(Template):
 
 class TemplateH(TemplateC):
     def _value(self, df, column_names, value_column):
-        dicts = df[[column_names.date] + value_column].T.apply(lambda x: x.dropna().to_dict()).tolist()
+        dicts = (
+            df[[column_names.date] + value_column]
+            .T.apply(lambda x: x.dropna().to_dict())
+            .tolist()
+        )
         filtered = [d for d in dicts if len(d) > 1]
         return filtered

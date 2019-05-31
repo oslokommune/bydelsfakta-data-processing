@@ -18,7 +18,7 @@ class ColumnNames:
             self.district_id,
             self.district_name,
             self.sub_district_id,
-            self.sub_district_name
+            self.sub_district_name,
         ]
 
 
@@ -81,8 +81,8 @@ class Aggregate:
     def merge(self, df, df2):
         return pd.merge(left=df, right=df2)
 
-    def merge_all(self, *dfs, how='inner'):
-        return reduce(lambda df1, df2, : pd.merge(left=df1, right=df2, how=how), dfs)
+    def merge_all(self, *dfs, how="inner"):
+        return reduce(lambda df1, df2,: pd.merge(left=df1, right=df2, how=how), dfs)
 
     def add_ratios(self, df, data_points, ratio_of):
         sums = df[ratio_of].sum(axis=1)
