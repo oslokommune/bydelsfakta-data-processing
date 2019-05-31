@@ -122,7 +122,9 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "boligmengde-etter-boligtype": get_latest_edition_of("boligmengde-etter-boligtype")
+                "boligmengde-etter-boligtype": get_latest_edition_of(
+                    "boligmengde-etter-boligtype"
+                )
             },
             "output": "intermediate/green/bygningstyper_rekkehus_status/version=1/edition=20190531T105555/",
             "config": {"type": "rekkehus_status"},
