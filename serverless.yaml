@@ -13,6 +13,8 @@ provider:
   deploymentPrefix: deploy
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/AmazonS3FullAccess
+  environment:
+    BUCKET_NAME: ok-origo-dataplatform-${self:provider.stage}
 
 plugins:
   - serverless-python-requirements

@@ -1,11 +1,12 @@
 import json
+import os
 from datetime import date
 
 import boto3
 import numpy as np
 import pandas as pd
 
-s3_bucket = "ok-origo-dataplatform-dev"
+s3_bucket = os.environ.get("BUCKET_NAME", "ok-origo-dataplatform-dev")
 
 
 def read_from_s3(s3_key, date_column="aar", dtype=None):
