@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from functools import reduce
 
 import pandas as pd
 
@@ -10,6 +11,15 @@ class ColumnNames:
     district_id: str = "bydel_id"
     sub_district_id: str = "delbydel_id"
     sub_district_name: str = "delbydel_navn"
+
+    def default_groupby_columns(self):
+        return [
+            self.date,
+            self.district_id,
+            self.district_name,
+            self.sub_district_id,
+            self.sub_district_name,
+        ]
 
 
 """
@@ -70,6 +80,9 @@ class Aggregate:
 
     def merge(self, df, df2):
         return pd.merge(left=df, right=df2)
+
+    def merge_all(self, *dfs, how="inner"):
+        return reduce(lambda df1, df2,: pd.merge(left=df1, right=df2, how=how), dfs)
 
     def add_ratios(self, df, data_points, ratio_of):
         sums = df[ratio_of].sum(axis=1)

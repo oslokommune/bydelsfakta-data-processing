@@ -94,3 +94,14 @@ class TemplateE(Template):
         ages = df[series + ["kjonn"]].set_index("kjonn")
         values = ages.apply(lambda x: self._value(x.to_dict(), total, x.name))
         return values.tolist()
+
+
+class TemplateH(TemplateC):
+    def _value(self, df, column_names, value_column):
+        dicts = (
+            df[[column_names.date] + value_column]
+            .T.apply(lambda x: x.dropna().to_dict())
+            .tolist()
+        )
+        filtered = [d for d in dicts if len(d) > 1]
+        return filtered
