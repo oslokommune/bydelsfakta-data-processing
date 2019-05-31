@@ -31,7 +31,7 @@ METADATA = {
 
 
 def handle(event, context):
-    s3_key = event["input"]["boligtype"]
+    s3_key = event["input"]["boligmengde-etter-boligtype"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
     start(s3_key, output_key, type_of_ds)
