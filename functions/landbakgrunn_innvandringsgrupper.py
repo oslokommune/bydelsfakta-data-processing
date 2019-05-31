@@ -1,88 +1,112 @@
-import os
-
 import pandas as pd
 
 import common.aws as common_aws
-import common.transform as transform
 import common.aggregate_dfs as aggregator
-import common.util as util
-
-os.environ["METADATA_API_URL"] = ""
-
-s3_bucket = "ok-origo-dataplatform-dev"
-
-historic_dataset_id = "Landbakgrunn-innvandringsgrupp-87zEq"
-historic_version_id = "1-JNRhrxaH"
-historic_edition_id = "EDITION-Zkwpy"
-status_dataset_id = "Landbakgrunn-innvandringsgrupp-cLcKm"
-status_version_id = "1-jwbJpksw"
-status_edition_id = "EDITION-FbQet"
+import common.population_utils as population_utils
+from common.aggregateV2 import Aggregate
+from common.output import Metadata
 
 pd.set_option("display.max_rows", 1000)
 
+graph_metadata = Metadata(
+    series=[
+        {"heading": "Innvandrer", "subheading": ""},
+        {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
+        {"heading": "Totalt", "subheading": ""},
+    ],
+    heading="10 største innvandringsgrupper",
+)
+
+graph_metadata_as_dict = {
+    "series": graph_metadata.series,
+    "heading": graph_metadata.heading,
+}
+
 
 def handle(event, context):
-    """ Assuming we recieve a complete s3 key"""
-    landbakgrunn_key = event["keys"]["Landbakgrunn_storste_innvandri-VqRsp"]
-    befolkning_key = event["keys"]["Befolkningen_etter_bydel_delby-J7khG"]
-    start(landbakgrunn_key, befolkning_key)
-    return "OK"
-
-
-def start(landbakgrunn_key, befolkning_key):
+    s3_key_landbakgrunn = event["input"]["landbakgrunn-storste-innvandringsgrupper"]
+    s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
+    output_key = event["output"]
+    type_of_ds = event["config"]["type"]
     landbakgrunn_raw = common_aws.read_from_s3(
-        s3_key=landbakgrunn_key, date_column="År"
+        s3_key=s3_key_landbakgrunn, date_column="aar"
     )
-    landbakgrunn_raw = pivot_table(
-        landbakgrunn_raw, "Innvandringskategori", "Antall personer"
+    befolkning_raw = common_aws.read_from_s3(
+        s3_key=s3_key_befolkning, date_column="aar"
     )
 
-    befolkning_raw = common_aws.read_from_s3(s3_key=befolkning_key, date_column="År")
+    data_points = ["innvandrer", "norskfodt_med_innvandrerforeldre", "total"]
 
-    befolkning_df = generate_population_df(befolkning_raw)
+    input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, data_points)
+
+    output_list = []
+
+    if type_of_ds == "status":
+        output_list = output_list_status(input_df, data_points, top_n=10)
+    elif type_of_ds == "historic":
+        output_list = output_list_historic(input_df, data_points, top_n=10)
+
+    if output_list:
+        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        return f"Created {output_key}"
+
+
+def generate_input_df(landbakgrunn_raw, befolkning_raw, data_points):
+    befolkning_df = population_utils.generate_population_df(befolkning_raw)
     # Ignoring Marka and Sentrum
     ignore_districts = ["16", "17"]
-    befolkning_district_df = generate_district_population_df(
+    befolkning_district_df = population_district_only(
         befolkning_df, ignore_districts=ignore_districts
     )
 
     landbakgrunn_df = process_country_df(landbakgrunn_raw)
 
-    data_points = ["Innvandrer", "Norskfødt med innvandrerforeldre", "total"]
     input_df = pd.merge(
-        landbakgrunn_df, befolkning_district_df, how="inner", on=["district", "date"]
+        landbakgrunn_df,
+        befolkning_district_df,
+        how="inner",
+        on=["bydel_id", "date", "bydel_navn"],
     )
     input_df = aggregator.add_ratios(input_df, data_points, ratio_of=["population"])
 
-    output_list_historic = generate_output_list(
-        input_df, data_points, top_n=10, template_fun=generate_geo_obj_historic
-    )
+    return input_df
 
+
+def output_list_historic(input_df, data_points, top_n):
+    output_list = generate_output_list(
+        input_df, data_points, top_n=top_n, template_fun=generate_geo_obj_historic
+    )
+    return output_list
+
+
+def output_list_status(input_df, data_points, top_n):
     input_df_status = input_df[input_df["date"] == input_df["date"].max()]
-    output_list_status = generate_output_list(
-        input_df_status, data_points, top_n=10, template_fun=generate_geo_obj_status
+    output_list = generate_output_list(
+        input_df_status, data_points, top_n=top_n, template_fun=generate_geo_obj_status
     )
-
-    _write_to_processed(
-        historic_dataset_id,
-        historic_version_id,
-        historic_edition_id,
-        output_list_historic,
-    )
-    _write_to_processed(
-        status_dataset_id, status_version_id, status_edition_id, output_list_status
-    )
+    return output_list
 
 
 def generate_output_list(input_df, data_points, top_n, template_fun):
-    top_n_district = get_top_n_district(input_df, top_n)
+    top_n_countries = get_top_n_countries(input_df, top_n)
 
+    district_list = [
+        (x.bydel_id, x.bydel_navn)
+        for x in set(
+            input_df.loc[:, ["bydel_id", "bydel_navn"]].itertuples(index=False)
+        )
+    ]
     output_list = []
-    for district in input_df["district"].unique():
-        district_obj = {"district": district, "data": []}
-        district_df = input_df[input_df["district"] == district]
-        for geography in top_n_district[district]:
-            geo_df = district_df[district_df["Landbakgrunn"] == geography]
+    for district_id, district_name in district_list:
+        district_obj = {
+            "district": district_name,
+            "id": district_id,
+            "data": [],
+            "meta": graph_metadata_as_dict,
+        }
+        district_df = input_df[input_df["bydel_id"] == district_id]
+        for geography in top_n_countries[district_id]:
+            geo_df = district_df[district_df["landbakgrunn"] == geography]
             geo_obj = template_fun(geo_df, geography, data_points)
             district_obj["data"].append(geo_obj)
         output_list.append(district_obj)
@@ -119,98 +143,67 @@ def generate_geo_obj_historic(df, geography, data_points):
 
 
 def process_country_df(df):
-    data_points = ["Innvandrer", "Norskfødt med innvandrerforeldre"]
+    data_points = ["innvandrer", "norskfodt_med_innvandrerforeldre"]
     df["total"] = df[data_points].sum(axis=1)
     data_points.append("total")
-    oslo_total_df = df.groupby(["date", "Landbakgrunn"]).sum().reset_index()
-    df["district"] = df["Bydel"].apply(util.get_district_id)
-    oslo_total_df["district"] = "00"
+    oslo_total_df = df.groupby(["date", "landbakgrunn"]).sum().reset_index()
+    oslo_total_df["bydel_id"] = "00"
+    oslo_total_df["bydel_navn"] = "Oslo i alt"
     country_df = pd.concat((df, oslo_total_df), sort=False, ignore_index=True)
     return country_df[
         [
-            "district",
+            "bydel_id",
+            "bydel_navn",
             "date",
-            "Landbakgrunn",
-            "Innvandrer",
-            "Norskfødt med innvandrerforeldre",
+            "landbakgrunn",
+            "innvandrer",
+            "norskfodt_med_innvandrerforeldre",
             "total",
         ]
     ]
 
 
-def generate_district_population_df(population_df, ignore_districts=[]):
-    population_df = transform.add_district_id(population_df)
-    population_df = population_df[~population_df["district"].isin(ignore_districts)]
-    population_district_df = (
-        population_df.groupby(["district", "date"]).sum().reset_index()
-    )
-    oslo_total_df = population_district_df.groupby("date").sum().reset_index()
-    oslo_total_df["district"] = "00"
-    population_district_df = pd.concat(
-        (population_district_df, oslo_total_df), sort=False, ignore_index=True
-    )
-    return population_district_df
+def population_district_only(population_df, ignore_districts=[]):
+    population_df = population_df[~population_df["bydel_id"].isin(ignore_districts)]
+    agg = {"population": "sum"}
+    population_aggregated_df = Aggregate(agg).aggregate(population_df)
+    population_district_only_df = population_aggregated_df[
+        population_aggregated_df["delbydel_id"].isnull()
+    ]
+    return population_district_only_df
 
 
-def generate_population_df(df):
-    df = df[["delbydelid", "Alder", "Antall personer", "Kjønn", "date"]]
-    df = df[df["delbydelid"].notnull()]
-    df = pivot_table(df, "Kjønn", "Antall personer")
-    df["population"] = df[1] + df[2]
-    df = df[["delbydelid", "date", "population"]]
-    df = df.groupby(["delbydelid", "date"]).sum().reset_index()
-    return df
-
-
-def get_top_n_district(df, n):
+def get_top_n_countries(df, n):
     top_n = {}
-    for district in df["district"].unique():
-        district_df = df[df["district"] == district]
+    for district in df["bydel_id"].unique():
+        district_df = df[df["bydel_id"] == district]
         district_df = district_df[district_df["date"] == district_df["date"].max()]
         district_df = district_df.nlargest(n, "total")
-        top_n[district] = district_df["Landbakgrunn"].tolist()
+        top_n[district] = district_df["landbakgrunn"].tolist()
     return top_n
 
 
-def pivot_table(df, pivot_column, value_column):
-    key_columns = list(
-        filter(lambda x: x not in [pivot_column, value_column], list(df))
-    )
-    df_pivot = pd.concat(
-        (df[key_columns], df.pivot(columns=pivot_column, values=value_column)), axis=1
-    )
-    return df_pivot.groupby(key_columns).sum().reset_index()
-
-
-def _aggregations(data_points):
-    return [
-        {"data_points": data_point, "agg_func": "sum"} for data_point in data_points
-    ]
-
-
-def _output_key(dataset_id, version_id, edition_id):
-    return f"processed/green/{dataset_id}/version={version_id}/edition={edition_id}/"
-
-
-def _write_to_processed(dataset_id, version_id, edition_id, output_list):
-    series = [
-        {"heading": "Innvandrer", "subheading": ""},
-        {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
-        {"heading": "Totalt", "subheading": ""},
-    ]
-    heading = "10 største innvandringsgrupper"
-    output_key = _output_key(dataset_id, version_id, edition_id)
-    common_aws.write_to_intermediate(output_key, output_list, heading, series)
-
-
 if __name__ == "__main__":
-    handle(
-        {
-            "bucket": "ok-origo-dataplatform-dev",
-            "keys": {
-                "Landbakgrunn_storste_innvandri-VqRsp": "raw/green/Landbakgrunn_storste_innvandri-VqRsp/version=1-vSao7mKy/edition=EDITION-MGGzQ/Landbakgrunn_storste_innvandringsgrupper(1.1.2008-1.1.2018-v01).csv",
-                "Befolkningen_etter_bydel_delby-J7khG": "raw/green/Befolkningen_etter_bydel_delby-J7khG/version=1-HFe342Fu/edition=EDITION-MHjs3/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2018-v01).csv",
-            },
-        },
-        {},
-    )
+    ""
+    # handle(
+    #     {
+    #         "input": {
+    #             "landbakgrunn-storste-innvandringsgrupper": "raw/green/landbakgrunn-storste-innvandringsgrupper/version=1/edition=20190523T211529/Landbakgrunn_storste_innvandringsgrupper(1.1.2008-1.1.2019-v01).csv",
+    #             "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
+    #         },
+    #         "output": "s3/key/or/prefix",
+    #         "config": {"type": "status"}
+    #     },
+    #     None
+    # )
+    # handle(
+    #     {
+    #         "input": {
+    #             "landbakgrunn-storste-innvandringsgrupper": "raw/green/landbakgrunn-storste-innvandringsgrupper/version=1/edition=20190523T211529/Landbakgrunn_storste_innvandringsgrupper(1.1.2008-1.1.2019-v01).csv",
+    #             "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
+    #         },
+    #         "output": "s3/key/or/prefix",
+    #         "config": {"type": "historic"},
+    #     },
+    #     None,
+    # )
