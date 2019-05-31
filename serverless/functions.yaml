@@ -8,3 +8,4 @@ levekar_trangbodde: ${file(serverless/functions/levekar_trangbodde.yaml)}
 landbakgrunn_innvandringsgrupper: ${file(serverless/functions/landbakgrunn_innvandringsgrupper.yaml)}
 bygningstyper: ${file(serverless/functions/bygningstyper.yaml)}
 levekar_ikke_sysselsatte: ${file(serverless/functions/levekar_ikke_sysselsatte.yaml)}
+fattige_barnehusholdninger: ${file(serverless/functions/fattige_barnehusholdninger.yaml)}
