@@ -4,6 +4,7 @@ alder_distribusjon_status: ${file(serverless/functions/alder_distribusjon_status
 levekaar_dodsrate: ${file(serverless/functions/levekaar_dodsrate.yaml)}
 kommunale_boliger: ${file(serverless/functions/kommunale_boliger.yaml)}
 eieform: ${file(serverless/functions/eieform.yaml)}
+ikke_fullfort_vgs: ${file(serverless/functions/ikke_fullfort_vgs.yaml)}
 levekar_trangbodde: ${file(serverless/functions/levekar_trangbodde.yaml)}
 landbakgrunn_innvandringsgrupper: ${file(serverless/functions/landbakgrunn_innvandringsgrupper.yaml)}
 bygningstyper: ${file(serverless/functions/bygningstyper.yaml)}
