@@ -32,7 +32,7 @@ def handle(event, context):
     input_df = generate_input_df(trangbodde_raw, befolkning_raw, datapoint)
 
     output_list = []
-    if type_of_ds == "historic":
+    if type_of_ds == "historisk":
         output_list = output_historic(input_df, [datapoint])
 
     elif type_of_ds == "status":
