@@ -1,3 +1,4 @@
+name: bydelsfakta-data-processing-bygningstyper
 handler: functions/bygningstyper.handle
 timeout: 60
 layers: ${self:custom.layers}

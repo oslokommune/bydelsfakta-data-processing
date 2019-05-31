@@ -1,3 +1,4 @@
+name: bydelsfakta-data-processing-eieform
 handler: functions/eieform.handle
 timeout: 60
 layers: ${self:custom.layers}
