@@ -3,6 +3,7 @@ from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB
+from common.util import get_latest_edition_of
 
 METADATA = {
     "blokk_status": Metadata(heading="Blokker og leiegårder", series=[]),
@@ -121,7 +122,7 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "boligmengde-etter-boligtype": "raw/green/boligmengde-etter-boligtype/version=1/edition=20190524T105717/Boligmengde_etter_boligtype(2011-2017-v01).csv"
+                "boligmengde-etter-boligtype": get_latest_edition_of("boligmengde-etter-boligtype")
             },
             "output": "intermediate/green/bygningstyper_rekkehus_status/version=1/edition=20190531T105555/",
             "config": {"type": "rekkehus_status"},
