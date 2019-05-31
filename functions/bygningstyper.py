@@ -31,7 +31,7 @@ METADATA = {
 
 
 def handle(event, context):
-    s3_key = event["input"]["eieform"]
+    s3_key = event["input"]["boligtype"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
     start(s3_key, output_key, type_of_ds)
@@ -122,7 +122,7 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "eieform": "raw/green/boligmengde-etter-boligtype/version=1/edition=20190524T105717/Boligmengde_etter_boligtype(2011-2017-v01).csv"
+                "boligmengde-etter-boligtype": "raw/green/boligmengde-etter-boligtype/version=1/edition=20190524T105717/Boligmengde_etter_boligtype(2011-2017-v01).csv"
             },
             "output": "intermediate/green/bygningstyper_rekkehus_status/version=1/edition=20190529T115555/",
             "config": {"type": "rekkehus_status"},
