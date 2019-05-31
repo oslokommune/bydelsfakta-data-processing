@@ -44,12 +44,11 @@ def start(key, output_key, type_of_ds):
         df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
     )
 
-    df_status = status(df)
-    df_historic = historic(df)
-
     if type_of_ds == "historisk":
+        df_historic = historic(df)
         create_ds(output_key, TemplateB(), type_of_ds, *df_historic)
     elif type_of_ds == "status":
+        df_status = status(df)
         create_ds(output_key, TemplateA(), type_of_ds, *df_status)
 
 
