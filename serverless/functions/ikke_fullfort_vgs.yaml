@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-ikke-fullfort-vgs
+handler: functions/ikke_fullfort_vgs.handler
+timeout: 60
+layers: ${self:custom.layers}
