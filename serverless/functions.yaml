@@ -7,3 +7,4 @@ kommunale_boliger: ${file(serverless/functions/kommunale_boliger.yaml)}
 eieform: ${file(serverless/functions/eieform.yaml)}
 levekar_trangbodde: ${file(serverless/functions/levekar_trangbodde.yaml)}
 landbakgrunn_innvandringsgrupper: ${file(serverless/functions/landbakgrunn_innvandringsgrupper.yaml)}
+bygningstyper: ${file(serverless/functions/bygningstyper.yaml)}
