@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-sysselsatte
-handler: functions/sysselsatte.handle
-timeout: 60
-layers: ${self:custom.layers}
