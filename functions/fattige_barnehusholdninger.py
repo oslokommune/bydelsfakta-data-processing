@@ -1,4 +1,3 @@
-import numpy as np
 import logging
 
 from common.aws import read_from_s3, write_to_intermediate
@@ -19,7 +18,7 @@ METADATA = {
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
-    s3_key = event["input"]["fattige-barnehusholdninger"]
+    s3_key = event["input"]["fattige-husholdninger"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
     logger.info(f"Received s3 key: {s3_key}")
@@ -36,9 +35,7 @@ def start(key, output_key, type_of_ds):
         / 100
     )
 
-    # FIXME: This should be done in csvlt
-    df.loc[df["bydel_navn"] == "Oslo i alt", "bydel_id"] = "00"
-    df.loc[df["delbydel_navn"] == "Oslo i alt", "delbydel_navn"] = np.nan
+    df = df[df["antall_fattige_barnehusholdninger"].notnull()]
 
     df["antall_fattige_barnehusholdninger_ratio"] = (
         df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
@@ -66,12 +63,10 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "fattige-barnehusholdninger": get_latest_edition_of(
-                    "fattige-husholdninger"
-                )
+                "fattige-husholdninger": get_latest_edition_of("fattige-husholdninger")
             },
-            "output": "intermediate/green/fattige-barnehusholdninger/version=1/edition=20190531T102550/",
-            "config": {"type": "status"},
+            "output": "intermediate/green/fattige-barnehusholdninger-historisk/version=1/edition=20190531T181010/",
+            "config": {"type": "historisk"},
         },
         {},
     )
