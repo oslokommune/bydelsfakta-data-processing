@@ -1,10 +1,14 @@
 import numpy as np
+import pandas as pd
 from pprint import pprint
 from enum import Enum
 from common.aws import read_from_s3, write_to_intermediate
-from common.transform import add_district_id
-from common.aggregate_dfs import aggregate_from_subdistricts, merge_dfs
-from common.transform_output import generate_output_list
+from common.output import Output, Metadata
+from common.templates import TemplateB, TemplateG
+from common.population_utils import generate_population_df
+from common.transform import historic, status
+from common.aggregateV2 import Aggregate
+from common.aggregation import sum_nans
 
 
 class DatasetType(Enum):
@@ -14,117 +18,125 @@ class DatasetType(Enum):
 
 
 METADATA = {
-    DatasetType.HISTORIC: {"heading": "Folkemengde utvikling historisk", "series": []},
-    DatasetType.HISTORIC_CHANGE: {
-        "heading": "Folkemengde utvikling historisk prosent",
-        "series": [],
-    },
-    DatasetType.KEYNUMBERS: {
-        "heading": "Nøkkeltall om befolkningen",
-        "series": [
+    DatasetType.HISTORIC: Metadata(
+        heading="Folkemengde utvikling historisk", series=[]
+    ),
+    DatasetType.HISTORIC_CHANGE: Metadata(
+        heading="Folkemengde utvikling historisk prosent", series=[]
+    ),
+    DatasetType.KEYNUMBERS: Metadata(
+        heading="Nøkkeltall om befolkningen",
+        series=[
             {"heading": "Folkemengde", "subheading": "(totalt)"},
             {"heading": "Utvikling siste år", "subheading": False},
             {"heading": "Utvikling siste 10 år", "subheading": False},
         ],
-    },
+    ),
 }
 
 
-def read_population_data(key):
-    df = read_from_s3(key)
-    df["delbydelid"].fillna("0301999999", inplace=True)
-    df = add_district_id(df)
-    df = df.rename(
-        columns={
-            "Antall personer": "value",
-            # "Delbydel": "delbydel_id",
-            # "district": "bydel_id",
-        }
-    )
-    return df
+def filter_10year_set(df):
+    max_year = df["date"].max()
+    min_year = max_year - 10
+
+    if not (df.date == min_year).any():
+        raise ValueError(
+            f"Dataset does not contain 10 year before {max_year}: {min_year}"
+        )
+
+    year_filter = df["date"].isin([max_year, min_year])
+    return df[year_filter]
 
 
-def population_sum(df):
-    return df.groupby(["district", "delbydelid", "date"])["value"].sum().reset_index()
-
-
-def calculate_change(df):
-    indexed = df.set_index(["district", "delbydelid", "date"])
-    grouped = indexed.groupby(level="delbydelid")
-    change = grouped.diff().rename(columns={"value": "change"}).reset_index()
-    change_10y = (
-        grouped.diff(periods=10).rename(columns={"value": "change_10y"}).reset_index()
-    )
-
-    merge_df = merge_dfs(df, change)
-    return merge_dfs(merge_df, change_10y)
+def calculate_change(df, *, column_name):
+    indexed = df.set_index(["bydel_id", "delbydel_id", "date"])
+    grouped = indexed.groupby(level="delbydel_id")
+    return grouped.diff().rename(columns={"population": column_name}).reset_index()
 
 
 def calculate_change_ratio(df):
-    df["change_ratio"] = df["change"] / df["value"].shift(1)
-    df["change_10y_ratio"] = df["change_10y"] / df["value"].shift(10)
+    df["change_ratio"] = df["change"] / df["population"].shift(1)
+    df["change_10y_ratio"] = df["change_10y"] / df["population"].shift(10)
     return df
 
 
-def sum_nans(df):
-    """
-    Sum aggregation function with special NaN handling. Only accepts series
-    that are either all NaN or contains no NaNs.
+def generate(df):
+    df = generate_population_df(df)
+    change = calculate_change(df, column_name="change")
+    change_10y = calculate_change(filter_10year_set(df), column_name="change_10y")
 
-    Args:
-        df: pandas series.
+    join_on = ["date", "bydel_id", "delbydel_id"]
+    df = pd.merge(df, change, how="left", on=join_on)
+    df = pd.merge(df, change_10y, how="left", on=join_on)
 
-    Returns:
-        sum of the series if all values are not NaN, or NaN if all values in
-        the series are NaN.
+    df = Aggregate(
+        {"population": "sum", "change": sum_nans, "change_10y": sum_nans}
+    ).aggregate(df)
 
-    Raises:
-        ValueError: If the series contains a mix of values and NaNs.
-    """
-    no_nans = df.notna().all()
-    all_nans = df.isna().all()
-
-    if no_nans:
-        return np.sum(df)
-    elif all_nans:
-        return np.nan
-    else:
-        raise ValueError("Mix of NaN and values")
-
-
-def calculate(*, key, dataset_type):
-    df = read_population_data(key)
-    df = population_sum(df)
-    df = calculate_change(df)
-    df = aggregate_from_subdistricts(
-        df,
-        [
-            {"agg_func": "sum", "data_points": "value"},
-            {"agg_func": sum_nans, "data_points": "change"},
-            {"agg_func": sum_nans, "data_points": "change_10y"},
-        ],
-    )
     df = calculate_change_ratio(df)
+    return df
+
+
+def generate_keynumbers(df):
+    [status_df] = status(df)
+    growth_df = df[df.date > df.date.max() - 10][
+        ["bydel_id", "delbydel_id", "date", "population"]
+    ]
+
+    # Avoid dropping NaN indexes during pivot
+    growth_df["delbydel_id"] = growth_df["delbydel_id"].fillna("#")
+
+    growth_df = growth_df.pivot_table(
+        index=["bydel_id", "delbydel_id"], columns="date", values="population"
+    ).reset_index()
+
+    # Add back NaN delbydel_id
+    growth_df["delbydel_id"] = growth_df["delbydel_id"].replace("#", np.nan)
+
+    return pd.merge(status_df, growth_df, how="outer", on=["bydel_id", "delbydel_id"])
+
+
+def start(*, key, dataset_type):
+    df = read_from_s3(key)
+    [df] = historic(df)
+    df = generate(df)
 
     if dataset_type is DatasetType.HISTORIC:
-        return generate_output_list(df, template="b", data_points=["value"])
-    if dataset_type is DatasetType.HISTORIC_CHANGE:
-        return generate_output_list(
-            df.dropna(axis=0, how="any", subset=["change", "change_ratio"]),
-            template="b",
-            data_points=["change"],
+        output = Output(
+            values=["population"],
+            df=df,
+            template=TemplateB(),
+            metadata=METADATA[dataset_type],
         )
-    if dataset_type is DatasetType.KEYNUMBERS:
-        return generate_output_list(
-            df, template="g", data_points=["value", "change", "change_10y", "value"]
+    elif dataset_type is DatasetType.HISTORIC_CHANGE:
+        df = df.dropna(axis=0, how="any", subset=["change", "change_ratio"])
+
+        output = Output(
+            values=["change"],
+            df=df,
+            template=TemplateB(),
+            metadata=METADATA[dataset_type],
         )
+    elif dataset_type is DatasetType.KEYNUMBERS:
+        df = generate_keynumbers(df)
+        max_year = df["date"].max()
+        year_range = list(range(max_year - 9, max_year + 1))
+
+        output = Output(
+            values=["population", "change", "change_10y"],
+            df=df,
+            template=TemplateG(history_columns=year_range),
+            metadata=METADATA[dataset_type],
+        )
+
+    return output.generate_output()
 
 
 def handle(event, context):
     dataset_type = DatasetType(event["config"]["type"])
     metadata = METADATA[dataset_type]
 
-    jsonl = calculate(
+    jsonl = start(
         key=event["input"]["Befolkningen_etter_bydel_delby-J7khG"],
         dataset_type=dataset_type,
     )
@@ -137,8 +149,8 @@ def handle(event, context):
 
 
 if __name__ == "__main__":
-    data = calculate(
-        key="raw/green/Befolkningen_etter_bydel_delby-J7khG/version=1-HFe342Fu/edition=EDITION-MHjs3/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2018-v01).csv",
+    data = start(
+        key="raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190529T082603/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
         dataset_type=DatasetType.KEYNUMBERS,
     )
     pprint(data)

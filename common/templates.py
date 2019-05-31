@@ -96,6 +96,19 @@ class TemplateE(Template):
         return values.tolist()
 
 
+class TemplateG(Template):
+    def __init__(self, *args, history_columns, **kwargs):
+        self.history_columns = history_columns
+        super().__init__(*args, **kwargs)
+
+    def values(self, df, series, column_names: ColumnNames = ColumnNames()):
+        history = list(df[self.history_columns].iloc[0].values)
+
+        status_df = df[df[column_names.date] == df[column_names.date].max()]
+        status = [status_df[col].item() for col in series]
+        return [*status, history]
+
+
 class TemplateH(TemplateC):
     def _value(self, df, column_names, value_column):
         dicts = (

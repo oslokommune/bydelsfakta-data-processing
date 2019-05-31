@@ -243,35 +243,6 @@ def df_to_template_c(
     return obj_c
 
 
-def df_to_template_g(
-    geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False
-):
-    """
-    Creates a list of "status" values (values only from the last year)
-    for all data_points except the last one, which will be a list from
-    the last 10 years.
-    """
-    obj_g = {
-        "geography": geography_name or geography_id,
-        "values": [],
-        "avgRow": avg_row,
-        "totalRow": total_row,
-    }
-    if geography_name:
-        obj_g["id"] = geography_id
-
-    data_points = data_points.copy()
-
-    historic_data_point = data_points.pop()
-    history = df[historic_data_point].tail(10).to_list()
-
-    status_df = df[df["date"] == df["date"].max()]
-    status = [status_df[dp].item() for dp in data_points]
-
-    obj_g["values"] = [*status, history]
-    return obj_g
-
-
 def df_to_template_i(
     geography_id, df, data_points, geography_name=None, avg_row=False, total_row=False
 ):
@@ -328,7 +299,6 @@ template_funs = {
     "a": df_to_template_a,
     "b": df_to_template_b,
     "c": df_to_template_c,
-    "g": df_to_template_g,
     "i": df_to_template_i,
     "j": df_to_template_j,
 }
