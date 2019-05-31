@@ -16,6 +16,7 @@ ikke_fullfort_andel = "andelen_som_ikke_har_fullfort_i_lopet_av_5_aar"
 def read(s3_key):
     # Generate the dataframe we want to start aggregating on
     df = common.aws.read_from_s3(s3_key)
+    df[ikke_fullfort_andel] = df[ikke_fullfort_andel] / 100
     df = df.rename(columns={ikke_fullfort_andel: f"{ikke_fullfort_antall}_ratio"})
     return df
 
