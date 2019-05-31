@@ -1,4 +1,3 @@
-import numpy as np
 import logging
 
 from common.aws import read_from_s3, write_to_intermediate
@@ -64,9 +63,7 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "fattige-husholdninger": get_latest_edition_of(
-                    "fattige-husholdninger"
-                )
+                "fattige-husholdninger": get_latest_edition_of("fattige-husholdninger")
             },
             "output": "intermediate/green/fattige-barnehusholdninger-historisk/version=1/edition=20190531T181010/",
             "config": {"type": "historisk"},
