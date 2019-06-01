@@ -12,3 +12,4 @@ bygningstyper: ${file(serverless/functions/bygningstyper.yaml)}
 levekar_ikke_sysselsatte: ${file(serverless/functions/levekar_ikke_sysselsatte.yaml)}
 husholdning: ${file(serverless/functions/husholdning.yaml)}
 fattige_barnehusholdninger: ${file(serverless/functions/fattige_barnehusholdninger.yaml)}
+trangboddhet: ${file(serverless/functions/trangboddhet.yaml)}
