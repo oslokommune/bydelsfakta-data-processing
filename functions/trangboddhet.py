@@ -1,213 +1,137 @@
-import common.aggregate_dfs
-import common.aws
-import common.transform
-import common.transform_output
+from common.aws import read_from_s3, write_to_intermediate
+from common.transform import status, historic
+from common.aggregateV2 import Aggregate
+from common.output import Output, Metadata
+from common.templates import TemplateA, TemplateC, TemplateB, TemplateJ
+from common.util import get_latest_edition_of
 
 
-def read_from_s3(s3_key):
+METADATA = {
+    "05-09_status": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
+    "05-09_historisk": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
+    "10-19_status": Metadata(heading="Personer per rom - 1,0 - 1,9", series=[]),
+    "10-19_historisk": Metadata(heading="Personer per rom - 1,5 - 1,9", series=[]),
+    "over-2_status": Metadata(heading="Personer per rom - 2,0 og over", series=[]),
+    "over-2_historisk": Metadata(heading="Personer per rom - 2,0 og over", series=[]),
+    "under05_status": Metadata(heading="Personer per rom - under 0,5", series=[]),
+    "under05_historisk": Metadata(heading="Personer per rom - under 0.5", series=[]),
+    "alle_status": Metadata(
+        heading="",
+        series=[
+            {"heading": "Personer per rom - Under 0,5", "subheading": ""},
+            {"heading": "Personer per rom - 0,5 - 0,9", "subheading": ""},
+            {"heading": "Personer per rom - 1,0 - 1,9", "subheading": ""},
+            {"heading": "Personer per rom - 2,0 og over", "subheading": ""},
+        ],
+    ),
+    "alle_historisk": Metadata(
+        heading="",
+        series=[
+            {"heading": "Personer per rom - Under 0,5", "subheading": ""},
+            {"heading": "Personer per rom - 0,5 - 0,9", "subheading": ""},
+            {"heading": "Personer per rom - 1,0 - 1,9", "subheading": ""},
+            {"heading": "Personer per rom - 2,0 og over", "subheading": ""},
+        ],
+    ),
+}
 
-    # read from s3, renames `value_column` to value
-    df = common.aws.read_from_s3(s3_key)
+DATA_POINTS = {
+    "05-09_status": ["personer_per_rom_0_5_til_0_9"],
+    "05-09_historisk": ["personer_per_rom_0_5_til_0_9"],
+    "10-19_status": ["personer_per_rom_1_0_til_1_9"],
+    "10-19_historisk": ["personer_per_rom_1_0_til_1_9"],
+    "over-2_status": ["personer_per_rom_2_0_og_over"],
+    "over-2_historisk": ["personer_per_rom_2_0_og_over"],
+    "under05_status": ["personer_per_rom_under_0_5"],
+    "under05_historisk": ["personer_per_rom_under_0_5"],
+    "alle_status": [
+        "personer_per_rom_under_0_5",
+        "personer_per_rom_0_5_til_0_9",
+        "personer_per_rom_1_0_til_1_9",
+        "personer_per_rom_2_0_og_over",
+    ],
+    "alle_historisk": [
+        "personer_per_rom_under_0_5",
+        "personer_per_rom_0_5_til_0_9",
+        "personer_per_rom_1_0_til_1_9",
+        "personer_per_rom_2_0_og_over",
+    ],
+}
 
-    return df
+VALUE_POINTS = [
+    "personer_per_rom_under_0_5",
+    "personer_per_rom_0_5_til_0_9",
+    "personer_per_rom_1_0_til_1_9",
+    "personer_per_rom_2_0_og_over",
+]
 
 
-def prepare(df):
-
-    # Generate the dataframe we want to start aggregating on
-    df = population(df)
-
-    return df
-
-
-def population(df):
-
-    df = df.groupby(["district", "delbydelid", "date"])["value"].sum()
-    return df.reset_index()
+def handle(event, context):
+    s3_key = event["input"]["hushold-etter-rom-per-person"]
+    output_key = event["output"]
+    type_of_ds = event["config"]["type"]
+    start(s3_key, output_key, type_of_ds)
+    return "OK"
 
 
-def generate(df, value_labels):
+def start(key, output_key, type_of_ds):
+    df = read_from_s3(s3_key=key, date_column="aar")
 
-    # Only generate the aggregated set, not (yet) create the outputs
-
-    aggregations = [{"agg_func": "sum", "data_points": vl} for vl in value_labels]
-
-    agg_df = common.aggregate_dfs.aggregate_from_subdistricts(df, aggregations)
-
-    agg_df = common.aggregate_dfs.add_ratios(
-        agg_df, data_points=value_labels, ratio_of=value_labels
+    agg = Aggregate(
+        {
+            "personer_per_rom_under_0_5": "sum",
+            "personer_per_rom_0_5_til_0_9": "sum",
+            "personer_per_rom_1_0_til_1_9": "sum",
+            "personer_per_rom_2_0_og_over": "sum",
+            "personer_per_rom_i_alt": "sum",
+        }
     )
 
-    return agg_df
+    df = agg.aggregate(df)
+    df = agg.add_ratios(df, VALUE_POINTS, VALUE_POINTS)
+
+    if type_of_ds == "05-09_status":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "05-09_historisk":
+        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+    elif type_of_ds == "10-19_status":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "10-19_historisk":
+        create_ds(output_key, TemplateB(), type_of_ds, *status(df))
+    elif type_of_ds == "over-2_status":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "over-2_historisk":
+        create_ds(output_key, TemplateB(), type_of_ds, *status(df))
+    elif type_of_ds == "under05_status":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "under05_historisk":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "alle_status":
+        create_ds(output_key, TemplateJ(), type_of_ds, *status(df))
+    elif type_of_ds == "alle_historisk":
+        create_ds(output_key, TemplateC(), type_of_ds, *status(df))
 
 
-def write(output_list, output_key, value_labels, heading):
-
-    # Fix proper headings
-    series = [{"heading": vl, "subheading": ""} for vl in value_labels]
-    heading = heading
-
-    common.aws.write_to_intermediate(
-        output_key=output_key, output_list=output_list, heading=heading, series=series
-    )
-
-
-def data_processing(df, value_labels):
-
-    # This function is testable.
-
-    # We use only sub districts
-    df = df[df["delbydelid"].notnull()]
-
-    # Add district number
-    df = common.transform.add_district_id(df)
-
-    # Create historic and status data (at sub_district level)
-    historic = common.transform.historic(df)
-    status = common.transform.status(df)
-
-    # Generate the aggregated datasets
-    historic_agg = generate(*historic, value_labels)
-    status_agg = generate(*status, value_labels)
-
-    # Make output
-    output_data = {}
-
-    output_data[
-        "trangboddhet-alle-status"
-    ] = common.transform_output.generate_output_list(status_agg, "j", value_labels)
-    output_data[
-        "trangboddhet_alle_historisk-4DAEn"
-    ] = common.transform_output.generate_output_list(historic_agg, "c", value_labels)
-
-    output_data[
-        "trangboddhet-under-0-5-status"
-    ] = common.transform_output.generate_output_list(
-        status_agg, "a", ["Personer per rom - Under 0,5"]
-    )
-    output_data[
-        "trangboddhet-under-0-5-historisk"
-    ] = common.transform_output.generate_output_list(
-        historic_agg, "b", ["Personer per rom - Under 0,5"]
-    )
-
-    output_data[
-        "trangboddhet-0-5-0-9-status"
-    ] = common.transform_output.generate_output_list(
-        status_agg, "a", ["Personer per rom - 0,5 - 0,9"]
-    )
-    output_data[
-        "trangboddhet-0-5-0-9-historisk"
-    ] = common.transform_output.generate_output_list(
-        historic_agg, "b", ["Personer per rom - 0,5 - 0,9"]
-    )
-
-    output_data[
-        "trangboddhet-1-0-1-9-status"
-    ] = common.transform_output.generate_output_list(
-        status_agg, "a", ["Personer per rom - 1,0 - 1,9"]
-    )
-    output_data[
-        "trangboddhet-1-0-1-9-historisk"
-    ] = common.transform_output.generate_output_list(
-        historic_agg, "b", ["Personer per rom - 1,0 - 1,9"]
-    )
-
-    output_data[
-        "trangboddhet-over-2-status"
-    ] = common.transform_output.generate_output_list(
-        status_agg, "a", ["Personer per rom - 2,0 og over"]
-    )
-    output_data[
-        "trangboddhet-over-2-historisk"
-    ] = common.transform_output.generate_output_list(
-        historic_agg, "b", ["Personer per rom - 2,0 og over"]
-    )
-
-    return output_data
-
-
-def handler(event, context):
-
-    # These keys should be extracted from "event", but since we do not have the new pipeline yet
-    # it needs to be hardcoded
-
-    s3_key = r"raw/green/Husholdninger_etter_rom_per_pe-48LKF/version=1-oPutm8TS/edition=EDITION-3mQwN/Husholdninger_etter_rom_per_person(1.1.2015-1.1.2017-v01).csv"
-
-    source = read_from_s3(s3_key=s3_key)
-
-    value_labels = [
-        "Personer per rom - Under 0,5",
-        "Personer per rom - 0,5 - 0,9",
-        "Personer per rom - 1,0 - 1,9",
-        "Personer per rom - 2,0 og over",
-    ]
-
-    output_data = data_processing(source, value_labels)
-
-    set_IDs = {
-        "trangboddhet-alle-status": {
-            "ver_ID": "1-uozVNtqz",
-            "edition": "EDITION-NhDso",
-        },
-        "trangboddhet_alle_historisk-4DAEn": {
-            "ver_ID": "1-NpEWu8Kp",
-            "edition": "EDITION-ukGfK",
-        },
-        "trangboddhet-under-0-5-status": {
-            "ver_ID": "1-SiFGuLvX",
-            "edition": "EDITION-hv76W",
-        },
-        "trangboddhet-under-0-5-historisk": {
-            "ver_ID": "1-QymhyHjz",
-            "edition": "EDITION-Brjio",
-        },
-        "trangboddhet-0-5-0-9-status": {
-            "ver_ID": "1-ksEYDMnT",
-            "edition": "EDITION-S2Lcs",
-        },
-        "trangboddhet-0-5-0-9-historisk": {
-            "ver_ID": "1-aFiHVUW4",
-            "edition": "EDITION-WNAes",
-        },
-        "trangboddhet-1-0-1-9-status": {
-            "ver_ID": "1-kuU9GsfB",
-            "edition": "EDITION-MHzJr",
-        },
-        "trangboddhet-1-0-1-9-historisk": {
-            "ver_ID": "1-4z6WVuiv",
-            "edition": "EDITION-9rUHD",
-        },
-        "trangboddhet-over-2-status": {
-            "ver_ID": "1-nmNo2hv3",
-            "edition": "EDITION-aAJPT",
-        },
-        "trangboddhet-over-2-historisk": {
-            "ver_ID": "1-qbmHy82x",
-            "edition": "EDITION-ew29J",
-        },
-    }
-
-    assert sorted(list(set_IDs.keys())) == sorted(list(output_data.keys()))
-
-    # Write to processed at S3
-    for output_data_name in output_data.keys():
-
-        ver_ID = set_IDs[output_data_name]["ver_ID"]
-        edition = set_IDs[output_data_name]["edition"]
-
-        output_key = (
-            f"processed/green/{output_data_name}/version={ver_ID}/edition={edition}/"
-        )
-
-        write(output_data[output_data_name], output_key, value_labels, output_data_name)
-
-    output_keys = list(
-        output_data.keys()
-    )  # Note - this currently returns the titles, not the keys.
-
-    return output_keys
+def create_ds(output_key, template, type_of_ds, df):
+    jsonl = Output(
+        df=df,
+        template=template,
+        metadata=METADATA[type_of_ds],
+        values=DATA_POINTS[type_of_ds],
+    ).generate_output()
+    write_to_intermediate(output_key=output_key, output_list=jsonl)
 
 
 if __name__ == "__main__":
-    handler({}, {})
+    handle(
+        {
+            "input": {
+                "hushold-etter-rom-per-person": get_latest_edition_of(
+                    "hushold-etter-rom-per-person"
+                )
+            },
+            "output": "intermediate/green/trangboddhet/version=1/edition=20190601T093045/",
+            "config": {"type": "alle_status"},
+        },
+        {},
+    )
