@@ -9,7 +9,7 @@ from common.util import get_latest_edition_of
 
 column_names = ColumnNames()
 
-ikke_fullfort_antall = "antall_personer_ikke_fullfort_i_løpet_av_5_aar"
+ikke_fullfort_antall = "antall_personer_ikke_fullfort_i_lopet_av_5_aar"
 ikke_fullfort_andel = "andelen_som_ikke_har_fullfort_i_lopet_av_5_aar"
 
 
