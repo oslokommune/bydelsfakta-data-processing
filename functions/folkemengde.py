@@ -134,15 +134,12 @@ def start(*, key, dataset_type):
 
 def handle(event, context):
     dataset_type = DatasetType(event["config"]["type"])
-    metadata = METADATA[dataset_type]
 
     jsonl = start(
         key=event["input"]["befolkning-etter-kjonn-og-alder"], dataset_type=dataset_type
     )
     write_to_intermediate(
         output_key=event["output"],
-        heading=metadata["heading"],
-        series=metadata["series"],
         output_list=jsonl,
     )
 
