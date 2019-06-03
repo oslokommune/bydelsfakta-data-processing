@@ -8,7 +8,7 @@ from common.templates import TemplateA, TemplateB
 
 METADATA = {
     "status": Metadata(heading="Kommunale boliger av boligmassen i alt", series=[]),
-    "historic": Metadata(heading="Kommunale boliger av boligmassen i alt", series=[]),
+    "historisk": Metadata(heading="Kommunale boliger av boligmassen i alt", series=[]),
 }
 
 
@@ -42,7 +42,7 @@ def start(*, dataset_type, municipal_key, housing_key):
     if dataset_type == "status":
         dfs = status(df_municipal, df_housing)
         template = TemplateA()
-    elif dataset_type == "historic":
+    elif dataset_type == "historisk":
         dfs = historic(df_municipal, df_housing)
         template = TemplateB()
 
