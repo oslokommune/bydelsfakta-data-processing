@@ -25,15 +25,12 @@ def handler(event, context):
     start(s3_key, output_key, type_of_ds)
     return "OK"
 
-
 def start(key, output_key, type_of_ds):
     df = read_from_s3(
         s3_key=key, date_column="aar", dtype={"bydel_id": object, "delbydel_id": object}
     )
     df = df.drop(columns=['norge'])
     df['total'] = df['asia_afrika_latin_amerika_og_ost_europa_utenfor_eu'] +  df['vest_europa_usa_canada_australia_og_new_zealand'] + df['ost_europeiske_eu_land']
-
-    df["bydel_id"].fillna("00", inplace=True)
 
     df = pivot_table(df, 'botid', 'total')
 
