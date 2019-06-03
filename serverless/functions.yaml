@@ -13,3 +13,4 @@ levekar_ikke_sysselsatte: ${file(serverless/functions/levekar_ikke_sysselsatte.y
 husholdning: ${file(serverless/functions/husholdning.yaml)}
 fattige_barnehusholdninger: ${file(serverless/functions/fattige_barnehusholdninger.yaml)}
 trangboddhet: ${file(serverless/functions/trangboddhet.yaml)}
+folkemengde: ${file(serverless/functions/folkemengde.yaml)}
