@@ -12,9 +12,9 @@ from common.aggregation import sum_nans
 
 
 class DatasetType(Enum):
-    HISTORIC = "historic"
-    HISTORIC_CHANGE = "historic_change"
-    KEYNUMBERS = "keynumbers"
+    HISTORIC = "historisk"
+    HISTORIC_CHANGE = "historisk-prosent"
+    KEYNUMBERS = "nokkeltall"
 
 
 METADATA = {
@@ -137,8 +137,7 @@ def handle(event, context):
     metadata = METADATA[dataset_type]
 
     jsonl = start(
-        key=event["input"]["Befolkningen_etter_bydel_delby-J7khG"],
-        dataset_type=dataset_type,
+        key=event["input"]["befolkning-etter-kjonn-og-alder"], dataset_type=dataset_type
     )
     write_to_intermediate(
         output_key=event["output"],
