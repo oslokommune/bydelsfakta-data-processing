@@ -83,11 +83,11 @@ def output_status(input_df, data_points):
 
 if __name__ == "__main__":
     lav_utdanning_s3_key = get_latest_edition_of("lav-utdanning")
-    handle(
-        {
-            "input": {"lav-utdanning": lav_utdanning_s3_key},
-            "output": "s3/key/or/prefix",
-            "config": {"type": "historisk"},
-        },
-        None,
-    )
+    # handle(
+    #     {
+    #         "input": {"lav-utdanning": lav_utdanning_s3_key},
+    #         "output": "s3/key/or/prefix",
+    #         "config": {"type": "historisk"},
+    #     },
+    #     None,
+    # )
