@@ -12,10 +12,15 @@ from common.output import Metadata, Output
 pd.set_option("display.max_rows", 1000)
 
 graph_metadata = Metadata(
-    heading = "Ikke-vestlige innvandrere korttid", series = [
-    {"heading": "Ikke-vestlige innvandrere som har bodd kortere tid enn 5 år per bydel og delbydel i Oslo.",
-     "subheading": ""}
-])
+    heading="Ikke-vestlige innvandrere korttid",
+    series=[
+        {
+            "heading": "Ikke-vestlige innvandrere som har bodd kortere tid enn 5 år per bydel og delbydel i Oslo.",
+            "subheading": "",
+        }
+    ],
+)
+
 
 def handler(event, context):
     """ Assuming we recieve a complete s3 key"""
@@ -25,23 +30,42 @@ def handler(event, context):
     start(s3_key, output_key, type_of_ds)
     return "OK"
 
+
 def start(key, output_key, type_of_ds):
     df = read_from_s3(
         s3_key=key, date_column="aar", dtype={"bydel_id": object, "delbydel_id": object}
     )
-    df = df.drop(columns=['norge'])
-    df['total'] = df['asia_afrika_latin_amerika_og_ost_europa_utenfor_eu'] +  df['vest_europa_usa_canada_australia_og_new_zealand'] + df['ost_europeiske_eu_land']
+    df = df.drop(columns=["norge"])
+    df["total"] = (
+        df["asia_afrika_latin_amerika_og_ost_europa_utenfor_eu"]
+        + df["vest_europa_usa_canada_australia_og_new_zealand"]
+        + df["ost_europeiske_eu_land"]
+    )
 
-    df = pivot_table(df, 'botid', 'total')
+    df = pivot_table(df, "botid", "total")
 
-    df = df.rename(columns={"Innvandrer, lang botid (>5 år)": "innvandrer_lang", "Innvandrer, kort botid (<=5 år)": "innvandrer_kort", "Øvrige befolkning": "ovrig_befolkning"})
-    df = df.groupby(['delbydel_id', 'date', 'bydel_id', 'delbydel_navn', 'bydel_navn']).sum().reset_index()
-    value = 'innvandrer_kort'
+    df = df.rename(
+        columns={
+            "Innvandrer, lang botid (>5 år)": "innvandrer_lang",
+            "Innvandrer, kort botid (<=5 år)": "innvandrer_kort",
+            "Øvrige befolkning": "ovrig_befolkning",
+        }
+    )
+    df = (
+        df.groupby(["delbydel_id", "date", "bydel_id", "delbydel_navn", "bydel_navn"])
+        .sum()
+        .reset_index()
+    )
+    value = "innvandrer_kort"
 
-    df['totalt_beboere'] = df['innvandrer_lang'] + df['ovrig_befolkning']  + df['innvandrer_kort']
-    agg = {value: 'sum', 'totalt_beboere': 'sum'}
+    df["totalt_beboere"] = (
+        df["innvandrer_lang"] + df["ovrig_befolkning"] + df["innvandrer_kort"]
+    )
+    agg = {value: "sum", "totalt_beboere": "sum"}
     df = Aggregate(agg).aggregate(df=df)
-    df = Aggregate(agg).add_ratios(df=df,data_points= [value], ratio_of=[ 'totalt_beboere'])
+    df = Aggregate(agg).add_ratios(
+        df=df, data_points=[value], ratio_of=["totalt_beboere"]
+    )
 
     status = common.transform.status(df)
     historic = common.transform.historic(df)
@@ -50,9 +74,8 @@ def start(key, output_key, type_of_ds):
             output_key, TemplateB(), ["innvandrer_kort"], graph_metadata, *historic
         )
     elif type_of_ds == "status":
-        create_ds(
-            output_key, TemplateA(), ["innvandrer_kort"], graph_metadata, *status
-        )
+        create_ds(output_key, TemplateA(), ["innvandrer_kort"], graph_metadata, *status)
+
 
 def pivot_table(df, pivot_column, value_column):
     key_columns = list(
