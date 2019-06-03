@@ -7,14 +7,14 @@ from common.util import get_latest_edition_of
 
 
 METADATA = {
-    "05-09_status": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
-    "05-09_historisk": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
-    "10-19_status": Metadata(heading="Personer per rom - 1,0 - 1,9", series=[]),
-    "10-19_historisk": Metadata(heading="Personer per rom - 1,5 - 1,9", series=[]),
+    "0-5-0-9_status": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
+    "0-5-0-9_historisk": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
+    "1-0-1-9_status": Metadata(heading="Personer per rom - 1,0 - 1,9", series=[]),
+    "1-0-1-9_historisk": Metadata(heading="Personer per rom - 1,5 - 1,9", series=[]),
     "over-2_status": Metadata(heading="Personer per rom - 2,0 og over", series=[]),
     "over-2_historisk": Metadata(heading="Personer per rom - 2,0 og over", series=[]),
-    "under05_status": Metadata(heading="Personer per rom - under 0,5", series=[]),
-    "under05_historisk": Metadata(heading="Personer per rom - under 0.5", series=[]),
+    "under-0-5_status": Metadata(heading="Personer per rom - under 0,5", series=[]),
+    "under-0-5_historisk": Metadata(heading="Personer per rom - under 0.5", series=[]),
     "alle_status": Metadata(
         heading="",
         series=[
@@ -36,14 +36,14 @@ METADATA = {
 }
 
 DATA_POINTS = {
-    "05-09_status": ["personer_per_rom_0_5_til_0_9"],
-    "05-09_historisk": ["personer_per_rom_0_5_til_0_9"],
-    "10-19_status": ["personer_per_rom_1_0_til_1_9"],
-    "10-19_historisk": ["personer_per_rom_1_0_til_1_9"],
+    "0-5-0-9_status": ["personer_per_rom_0_5_til_0_9"],
+    "0-5-0-9_historisk": ["personer_per_rom_0_5_til_0_9"],
+    "1-0-1-9_status": ["personer_per_rom_1_0_til_1_9"],
+    "1-0-1-9_historisk": ["personer_per_rom_1_0_til_1_9"],
     "over-2_status": ["personer_per_rom_2_0_og_over"],
     "over-2_historisk": ["personer_per_rom_2_0_og_over"],
-    "under05_status": ["personer_per_rom_under_0_5"],
-    "under05_historisk": ["personer_per_rom_under_0_5"],
+    "under-0-5_status": ["personer_per_rom_under_0_5"],
+    "under-0-5_historisk": ["personer_per_rom_under_0_5"],
     "alle_status": [
         "personer_per_rom_under_0_5",
         "personer_per_rom_0_5_til_0_9",
@@ -87,24 +87,25 @@ def start(key, output_key, type_of_ds):
         }
     )
 
+    df = df[df["bydel_id"] != "00"]
     df = agg.aggregate(df)
     df = agg.add_ratios(df, VALUE_POINTS, VALUE_POINTS)
 
-    if type_of_ds == "05-09_status":
+    if type_of_ds == "0-5-0-9_status":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
-    elif type_of_ds == "05-09_historisk":
+    elif type_of_ds == "0-5-0-9_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
-    elif type_of_ds == "10-19_status":
+    elif type_of_ds == "1-0-1-9_status":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
-    elif type_of_ds == "10-19_historisk":
+    elif type_of_ds == "1-0-1-9_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *status(df))
     elif type_of_ds == "over-2_status":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "over-2_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *status(df))
-    elif type_of_ds == "under05_status":
+    elif type_of_ds == "under-0-5_status":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
-    elif type_of_ds == "under05_historisk":
+    elif type_of_ds == "under-0-5_historisk":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "alle_status":
         create_ds(output_key, TemplateJ(), type_of_ds, *status(df))
