@@ -16,7 +16,7 @@ METADATA = {
     "under-0-5_status": Metadata(heading="Personer per rom - under 0,5", series=[]),
     "under-0-5_historisk": Metadata(heading="Personer per rom - under 0.5", series=[]),
     "alle_status": Metadata(
-        heading="",
+        heading="Husstander fordelt på personer per rom",
         series=[
             {"heading": "Personer per rom - Under 0,5", "subheading": ""},
             {"heading": "Personer per rom - 0,5 - 0,9", "subheading": ""},
@@ -98,19 +98,19 @@ def start(key, output_key, type_of_ds):
     elif type_of_ds == "1-0-1-9_status":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "1-0-1-9_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *status(df))
+        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "over-2_status":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "over-2_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *status(df))
+        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "under-0-5_status":
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "under-0-5_historisk":
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_key, TemplateA(), type_of_ds, *historic(df))
     elif type_of_ds == "alle_status":
         create_ds(output_key, TemplateJ(), type_of_ds, *status(df))
     elif type_of_ds == "alle_historisk":
-        create_ds(output_key, TemplateC(), type_of_ds, *status(df))
+        create_ds(output_key, TemplateC(), type_of_ds, *historic(df))
 
 
 def create_ds(output_key, template, type_of_ds, df):
