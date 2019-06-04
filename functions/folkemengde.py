@@ -138,10 +138,7 @@ def handle(event, context):
     jsonl = start(
         key=event["input"]["befolkning-etter-kjonn-og-alder"], dataset_type=dataset_type
     )
-    write_to_intermediate(
-        output_key=event["output"],
-        output_list=jsonl,
-    )
+    write_to_intermediate(output_key=event["output"], output_list=jsonl)
 
 
 if __name__ == "__main__":
