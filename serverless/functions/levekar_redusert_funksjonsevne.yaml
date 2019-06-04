@@ -1,4 +1,4 @@
-name: bydelsfakta-data-processing-levekar-redusert_funksjonsevne
+name: bydelsfakta-data-processing-levekar-redusert-funksjonsevne
 handler: functions/levekar_redusert_funksjonsevne.handle
 timeout: 60
 layers: ${self:custom.layers}
