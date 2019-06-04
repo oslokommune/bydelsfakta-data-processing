@@ -1,5 +1,3 @@
-
-
 import common.transform as transform
 import common.aws as common_aws
 from common.util import get_latest_edition_of
@@ -9,9 +7,7 @@ from common.templates import TemplateA, TemplateB
 
 graph_metadata = Metadata(
     heading="Personer fra 16 til 66 år med redusert funksjonsevne",
-    series=[
-        {"heading": "Redusert funksjonsevne", "subheading": ""}
-    ],
+    series=[{"heading": "Redusert funksjonsevne", "subheading": ""}],
 )
 
 
@@ -26,7 +22,9 @@ def handle(event, context):
         s3_key=s3_key_redusert_funksjonsevne, date_column="aar"
     )
 
-    input_df[f'{data_point}_ratio'] = input_df['andel_personer_med_redusert_funksjonsevne'] / 100
+    input_df[f"{data_point}_ratio"] = (
+        input_df["andel_personer_med_redusert_funksjonsevne"] / 100
+    )
 
     output_list = []
     if type_of_ds == "historisk":
@@ -61,7 +59,7 @@ def output_status(input_df, data_points):
 
 
 if __name__ == "__main__":
-    redusert_funksjonsevne_s3_key = get_latest_edition_of('redusert-funksjonsevne')
+    redusert_funksjonsevne_s3_key = get_latest_edition_of("redusert-funksjonsevne")
     handle(
         {
             "input": {"redusert-funksjonsevne": redusert_funksjonsevne_s3_key},
