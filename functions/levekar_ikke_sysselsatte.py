@@ -44,7 +44,7 @@ def handle(event, context):
         return f"Created {output_key}"
 
     else:
-        raise Exception('No data in outputlist')
+        raise Exception("No data in outputlist")
 
 
 def generate_input_df(sysselsatte_raw, befolkning_raw, data_point):
