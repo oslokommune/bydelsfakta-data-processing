@@ -146,9 +146,7 @@ def process_pop_extrapolation(pop_extrapolation):
     meta.loc[:, column_names.sub_district_name] = numpy.nan
     meta.loc[:, "projection"] = pop_extrapolation.loc[:, "0":"99"].sum(1)
 
-    oslo = meta.groupby([
-        column_names.date,
-    ])['projection'].sum().reset_index()
+    oslo = meta.groupby([column_names.date])["projection"].sum().reset_index()
     oslo[column_names.district_id] = "00"
     oslo[column_names.district_name] = "Oslo i alt"
     meta = pandas.concat([meta, oslo])
