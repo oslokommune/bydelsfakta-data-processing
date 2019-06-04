@@ -67,7 +67,7 @@ VALUE_POINTS = [
 
 
 def handle(event, context):
-    s3_key = event["input"]["hushold-etter-rom-per-person"]
+    s3_key = event["input"]["husholdninger-etter-rom-per-person"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
     start(s3_key, output_key, type_of_ds)
@@ -127,8 +127,8 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "hushold-etter-rom-per-person": get_latest_edition_of(
-                    "hushold-etter-rom-per-person"
+                "husholdninger-etter-rom-per-person": get_latest_edition_of(
+                    "husholdninger-etter-rom-per-person"
                 )
             },
             "output": "intermediate/green/trangboddhet/version=1/edition=20190601T093045/",
