@@ -102,7 +102,7 @@ class TemplateG(Template):
         super().__init__(*args, **kwargs)
 
     def values(self, df, series, column_names: ColumnNames = ColumnNames()):
-        history = list(df[self.history_columns].iloc[0].values)
+        history = list(df[self.history_columns].iloc[0].to_list())
 
         status_df = df[df[column_names.date] == df[column_names.date].max()]
         status = [status_df[col].item() for col in series]

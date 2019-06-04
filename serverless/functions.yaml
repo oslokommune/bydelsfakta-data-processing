@@ -15,3 +15,4 @@ fattige_barnehusholdninger: ${file(serverless/functions/fattige_barnehusholdning
 trangboddhet: ${file(serverless/functions/trangboddhet.yaml)}
 folkemengde: ${file(serverless/functions/folkemengde.yaml)}
 botid_ikke_vestlige: ${file(serverless/functions/botid_ikke_vestlige.yaml)}
+levekar_lav_utdanning: ${file(serverless/functions/levekar_lav_utdanning.yaml)}
