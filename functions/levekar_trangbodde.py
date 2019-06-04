@@ -42,6 +42,9 @@ def handle(event, context):
         common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
+    else:
+        raise Exception('No data in outputlist')
+
 
 def generate_input_df(trangbodde_raw, befolkning_raw, data_point):
     population_df = population_utils.generate_population_df(befolkning_raw)
