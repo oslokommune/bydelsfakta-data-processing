@@ -38,7 +38,7 @@ def handler(event, context):
     emigration_district = event["input"]["flytting-fra-etter-inn-kat"]
     emigration_district = common.aws.read_from_s3(emigration_district)
 
-    pop_extrapolation = event["input"]["befolkingsframskrivninger"]
+    pop_extrapolation = event["input"]["befolkningsframskrivninger"]
     pop_extrapolation = common.aws.read_from_s3(pop_extrapolation)
 
     output_key = event["output"]
@@ -271,8 +271,8 @@ if __name__ == "__main__":
                 "flytting-fra-etter-inn-kat": common.util.get_latest_edition_of(
                     "flytting-fra-etter-inn-kat"
                 ),
-                "befolkingsframskrivninger": common.util.get_latest_edition_of(
-                    "befolkingsframskrivninger"
+                "befolkningsframskrivninger": common.util.get_latest_edition_of(
+                    "befolkningsframskrivninger"
                 ),
             },
             "output": "intermediate/green/befolkningsutvikling_og_forventet_utvikling/version=1/edition=20190422T211529/",
