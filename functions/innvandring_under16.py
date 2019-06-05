@@ -1,132 +1,112 @@
-from common import aws
-from common import transform
-from common import aggregate_dfs
-from common.transform_output import generate_output_list
+from common.aws import read_from_s3, write_to_intermediate
+from common.transform import status, historic
+from common.aggregateV2 import Aggregate
+from common.output import Output, Metadata
+from common.templates import TemplateA, TemplateB
+from common.util import get_latest_edition_of
 
 
-DATASETS = [
-    {
-        "data_points": ["innvandrer"],
-        "heading": "Andel innvandrere (under 16)",
-        "status": {
-            "dataset_id": "Andel-innvandrere-under-16-sta-imHqA",
-            "version_id": "1-XCUTiZRV",
-            "edition_id": "EDITION-X9RWM",
-        },
-        "historic": {
-            "dataset_id": "Andel-innvandrere-under-16-his-5EUaC",
-            "version_id": "1-HFJhCiEE",
-            "edition_id": "EDITION-YeWHS",
-        },
-    },
-    {
-        "data_points": ["en_forelder"],
-        "heading": "Andel (under 16) med én innvandrerforelder",
-        "status": {
-            "dataset_id": "Andel-under-16-med-en-innvandr-rRuib",
-            "version_id": "1-trUGzZxu",
-            "edition_id": "EDITION-bc3AZ",
-        },
-        "historic": {
-            "dataset_id": "Andel-under-16-med-en-innvandr-JnGas",
-            "version_id": "1-89Kk4ZjT",
-            "edition_id": "EDITION-9VN6b",
-        },
-    },
-    {
-        "data_points": ["to_foreldre"],
-        "heading": "Andel (under 16) med to innvandrerforeldre",
-        "status": {
-            "dataset_id": "Andel-under-16-med-to-innvandr-jVhZm",
-            "version_id": "1-XPgSftSS",
-            "edition_id": "EDITION-J5SWX",
-        },
-        "historic": {
-            "dataset_id": "Andel-under-16-med-to-innvandr-Zgj32",
-            "version_id": "1-TF7MurAo",
-            "edition_id": "EDITION-x8PmL",
-        },
-    },
-]
+METADATA = {
+    "en-innvandrer_historisk": Metadata(
+        heading="Andel (under 16) med én innvandrerforelder", series=[]
+    ),
+    "en-innvandrer_status": Metadata(
+        heading="Andel (under 16) med én innvandrerforelder", series=[]
+    ),
+    "to-innvandrer_historisk": Metadata(
+        heading="Andel (under 16) med to innvandrerforeldre", series=[]
+    ),
+    "to-innvandrer_status": Metadata(
+        heading="Andel (under 16) med to innvandrerforeldre", series=[]
+    ),
+    "innvandrer_status": Metadata(heading="Andel innvandrere (under 16)", series=[]),
+    "innvandrer_historisk": Metadata(heading="Andel innvandrere (under 16)", series=[]),
+}
 
-DATA_POINTS = [point for d in DATASETS for point in d["data_points"]]
+DATA_POINTS = {
+    "en-innvandrer_historisk": ["en_forelder"],
+    "en-innvandrer_status": ["en_forelder"],
+    "to-innvandrer_historisk": ["to_foreldre"],
+    "to-innvandrer_status": ["to_foreldre"],
+    "innvandrer_status": ["innvandrer"],
+    "innvandrer_historisk": ["innvandrer"],
+}
+
+VALUE_POINTS = ["to_foreldre", "en_forelder", "innvandrer"]
 
 
 def handle(event, context):
-    landbakgrunn_key = event["keys"]["Landbakgrunn_etter_alder-Yh7UC"]
-    start(landbakgrunn_key)
+    s3_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
+    output_key = event["output"]
+    type_of_ds = event["config"]["type"]
+    start(s3_key, output_key, type_of_ds)
     return "OK"
 
 
-def start(landbakgrunn_key):
-    raw = aws.read_from_s3(landbakgrunn_key)
-    df = (
-        raw.pivot_table(
-            index=["date", "delbydelid", "Alder"],
-            columns="Innvandringskategori",
-            values="Antall personer",
-            fill_value=0,
-            aggfunc="sum",
-            margins=True,
-            margins_name="total",
-        )
-        .reset_index()
-        .rename_axis(columns="")
+def start(key, output_key, type_of_ds):
+    df = read_from_s3(key)
+
+    df = df[df["alder"] == "0-15 år"].reset_index()
+    df["en_forelder"] = (
+        df["norskfodt_med_en_utenlandskfodt_forelder"]
+        + df["utenlandsfodt_med_en_norsk_forelder"]
+    )
+    df = df.rename(columns={"norskfodt_med_innvandrerforeldre": "to_foreldre"})
+
+    df["total"] = (
+        df["fodt_i_utlandet_av_norskfodte_foreldre"]
+        + df["innvandrer"]
+        + df["uten_innvandringsbakgrunn"]
+        + df["to_foreldre"]
+        + df["en_forelder"]
     )
 
-    df = df[df["Alder"] == "0-15 år"].reset_index()
-    df["en_forelder"] = (
-        df["Norskfødt med en utenlandskfødt forelder"]
-        + df["Utenlandsfødt m/en norsk forelder"]
-    )
-    df = df.rename(
-        columns={
-            "Innvandrer": "innvandrer",
-            "Norskfødt med innvandrerforeldre": "to_foreldre",
+    agg = Aggregate(
+        {
+            "to_foreldre": "sum",
+            "en_forelder": "sum",
+            "innvandrer": "sum",
+            "total": "sum",
         }
     )
-    df = df[["date", "delbydelid", "innvandrer", "en_forelder", "to_foreldre", "total"]]
-    df = transform.add_district_id(df)
 
-    aggregations = [
-        {"agg_func": "sum", "data_points": dp} for dp in DATA_POINTS + ["total"]
-    ]
-    df = aggregate_dfs.aggregate_from_subdistricts(df, aggregations)
-    df = aggregate_dfs.add_ratios(df, DATA_POINTS, ["total"])
+    df = agg.aggregate(df)
+    df = agg.add_ratios(df, VALUE_POINTS, ["total"])
 
-    status_df = transform.status(df)
-    historic_df = transform.historic(df)
-
-    for dataset in DATASETS:
-        status_output_key = _output_key(**dataset["status"])
-        historic_output_key = _output_key(**dataset["historic"])
-
-        status_outout_list = generate_output_list(
-            *status_df, template="a", data_points=dataset["data_points"]
-        )
-        historic_output_list = generate_output_list(
-            *historic_df, template="b", data_points=dataset["data_points"]
-        )
-
-        aws.write_to_intermediate(
-            status_output_key, status_outout_list, dataset["heading"], []
-        )
-        aws.write_to_intermediate(
-            historic_output_key, historic_output_list, dataset["heading"], []
-        )
+    if type_of_ds == "en-innvandrer_historisk":
+        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+    elif type_of_ds == "en-innvandrer_status":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "to-innvandrer_historisk":
+        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+    elif type_of_ds == "to-innvandrer_status":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "innvandrer_historisk":
+        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+    elif type_of_ds == "innvandrer_status":
+        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
 
 
-def _output_key(dataset_id, version_id, edition_id):
-    return f"processed/green/{dataset_id}/version={version_id}/edition={edition_id}/"
+def create_ds(output_key, template, type_of_ds, df):
+    jsonl = Output(
+        df=df,
+        template=template,
+        metadata=METADATA[type_of_ds],
+        values=DATA_POINTS[type_of_ds],
+    ).generate_output()
+    write_to_intermediate(output_key=output_key, output_list=jsonl)
 
 
 if __name__ == "__main__":
     handle(
         {
-            "bucket": "ok-origo-dataplatform-dev",
-            "keys": {
-                "Landbakgrunn_etter_alder-Yh7UC": "raw/green/Landbakgrunn_etter_alder-Yh7UC/version=1-tidZ36sM/edition=EDITION-BFMSo/Landbakgrunn_etter_alder(1.1.2008-1.1.2018-v01).csv"
+            "input": {
+                "innvandrer-befolkningen-0-15-ar": get_latest_edition_of(
+                    "innvandrer-befolkningen-0-15-ar"
+                )
             },
+            "output": "intermediate/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190604T164725/",
+            "config": {"type": "innvandrer_status"},
         },
-        None,
+        {},
     )

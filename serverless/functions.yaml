@@ -17,3 +17,4 @@ folkemengde: ${file(serverless/functions/folkemengde.yaml)}
 botid_ikke_vestlige: ${file(serverless/functions/botid_ikke_vestlige.yaml)}
 levekar_lav_utdanning: ${file(serverless/functions/levekar_lav_utdanning.yaml)}
 levekar_redusert_funksjonsevne: ${file(serverless/functions/levekar_redusert_funksjonsevne.yaml)}
+innvandring_under16: ${file(serverless/functions/innvandring_under16.yaml)}
