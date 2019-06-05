@@ -3,6 +3,7 @@
   "description": "",
   "version": "0.1.0",
   "dependencies": {
+    "serverless": "^1.44.1",
     "serverless-plugin-existing-s3": "^2.3.0"
   },
   "devDependencies": {

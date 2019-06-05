@@ -8,18 +8,12 @@ from common.templates import TemplateA, TemplateB
 
 METADATA = {
     "status": Metadata(heading="Kommunale boliger av boligmassen i alt", series=[]),
-    "historic": Metadata(heading="Kommunale boliger av boligmassen i alt", series=[]),
+    "historisk": Metadata(heading="Kommunale boliger av boligmassen i alt", series=[]),
 }
 
 
 def housing(key):
     df = read_from_s3(key)
-
-    # Shift year one up, as "2017" means "2017-12-31" here, but instead we
-    # want it to be "2018" and mean "2018-01-01".
-    # FIXME: This might change in later editions?
-    df["date"] = df["date"] + 1
-
     df["total"] = (
         df["blokk_leiegaard_el"]
         + df["forretningsgaard_bygg_for_felleshusholdning_el"]
@@ -48,7 +42,7 @@ def start(*, dataset_type, municipal_key, housing_key):
     if dataset_type == "status":
         dfs = status(df_municipal, df_housing)
         template = TemplateA()
-    elif dataset_type == "historic":
+    elif dataset_type == "historisk":
         dfs = historic(df_municipal, df_housing)
         template = TemplateB()
 

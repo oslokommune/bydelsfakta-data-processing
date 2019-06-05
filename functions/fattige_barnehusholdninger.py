@@ -1,114 +1,72 @@
-import os
-
-import pandas as pd
-
-import common.aws as common_aws
-import common.transform as transform
 import logging
-from common.transform_output import generate_output_list
+
+from common.aws import read_from_s3, write_to_intermediate
+from common.transform import status, historic
+from common.output import Output, Metadata
+from common.templates import TemplateA, TemplateB
+from common.util import get_latest_edition_of
+
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-os.environ["METADATA_API_URL"] = ""
-
-s3_bucket = "ok-origo-dataplatform-dev"
-
-historic_dataset_id = "Fattige_barnehusholdninger_his-GoaU8"
-historic_version_id = "1-cp43chmn"
-historic_edition_id = "EDITION-Xgfhy"
-status_dataset_id = "Fattige_barnehusholdninger_sta-EmecB"
-status_version_id = "1-mYw6GSnH"
-status_edition_id = "EDITION-yKMnS"
-
-pd.set_option("display.max_rows", 1000)
+METADATA = {
+    "status": Metadata(heading="Lavinntekts husholdninger med barn", series=[]),
+    "historisk": Metadata(heading="Lavinntekts husholdninger med barn", series=[]),
+}
 
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
-    s3_key = event["keys"]["Fattige-barnehusholdninger-iFHCQ"]
-    bucket = event["bucket"]
+    s3_key = event["input"]["fattige-husholdninger"]
+    output_key = event["output"]
+    type_of_ds = event["config"]["type"]
     logger.info(f"Received s3 key: {s3_key}")
-    start(bucket, s3_key)
+    start(s3_key, output_key, type_of_ds)
     return "OK"
 
 
-def start(bucket, key):
-    low_income_household_raw = common_aws.read_from_s3(s3_key=key, date_column="År")
+def start(key, output_key, type_of_ds):
+    df = read_from_s3(s3_key=key, date_column="aar")
 
-    data_points = ["antall_fattige_barnehusholdninger"]
-
-    input_df = generate_input_df(low_income_household_raw.copy(), data_points)
-
-    low_income_household_historic = generate_output_list(
-        *transform.historic(input_df), template="b", data_points=data_points
-    )
-    low_income_household_status = generate_output_list(
-        *transform.status(input_df), template="a", data_points=data_points
-    )
-
-    _write_to_intermediate(
-        historic_dataset_id,
-        historic_version_id,
-        historic_edition_id,
-        low_income_household_historic,
-    )
-    _write_to_intermediate(
-        status_dataset_id,
-        status_version_id,
-        status_edition_id,
-        low_income_household_status,
-    )
-
-
-def generate_input_df(df, data_points):
-    df["Geografi"] = df["Geografi"].apply(str.strip)
-    with_district = transform.add_district_id(
-        filter_invalid_geographies(df), district_column="Geografi"
-    )
-    input_df = add_data_points(with_district, data_points[0])
-    return input_df
-
-
-def filter_invalid_geographies(df):
-    return df[df["Geografi"] != "Uoppgitt"]
-
-
-def add_data_points(df, datapoint):
-    df[datapoint] = (
-        df["Husholdninger med barn <18 år"]
-        * df["Husholdninger med barn <18 år EU-skala"]
+    df["antall_fattige_barnehusholdninger"] = (
+        df["husholdninger_med_barn_under_18_aar"]
+        * df["husholdninger_med_barn_under_18_aar_eu_skala"]
         / 100
     )
-    df[f"{datapoint}_ratio"] = df["Husholdninger med barn <18 år EU-skala"] / 100
-    df = df[df[datapoint].notnull()]
-    return df[["delbydelid", "district", "date", datapoint, f"{datapoint}_ratio"]]
+
+    df = df[df["antall_fattige_barnehusholdninger"].notnull()]
+
+    df["antall_fattige_barnehusholdninger_ratio"] = (
+        df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
+    )
+
+    if type_of_ds == "historisk":
+        df_historic = historic(df)
+        create_ds(output_key, TemplateB(), type_of_ds, *df_historic)
+    elif type_of_ds == "status":
+        df_status = status(df)
+        create_ds(output_key, TemplateA(), type_of_ds, *df_status)
 
 
-def _aggregations(data_points):
-    return [
-        {"data_points": data_point, "agg_func": "sum"} for data_point in data_points
-    ]
-
-
-def _output_key(dataset_id, version_id, edition_id):
-    return f"processed/green/{dataset_id}/version={version_id}/edition={edition_id}/"
-
-
-def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
-    series = []
-    heading = "Lavinntekts husholdninger med barn"
-    output_key = _output_key(dataset_id, version_id, edition_id)
-    common_aws.write_to_intermediate(output_key, output_list, heading, series)
+def create_ds(output_key, template, type_of_ds, df):
+    jsonl = Output(
+        df=df,
+        template=template,
+        metadata=METADATA[type_of_ds],
+        values=["antall_fattige_barnehusholdninger"],
+    ).generate_output()
+    write_to_intermediate(output_key=output_key, output_list=jsonl)
 
 
 if __name__ == "__main__":
     handle(
         {
-            "bucket": "ok-origo-dataplatform-dev",
-            "keys": {
-                "Fattige-barnehusholdninger-iFHCQ": "raw/green/Fattige-barnehusholdninger-iFHCQ/version=1-BmaNpQzh/edition=EDITION-PbaPQ/Fattige_barnehusholdninger(2014-2016-v01).csv"
+            "input": {
+                "fattige-husholdninger": get_latest_edition_of("fattige-husholdninger")
             },
+            "output": "intermediate/green/fattige-barnehusholdninger-historisk/version=1/edition=20190531T181010/",
+            "config": {"type": "historisk"},
         },
         {},
     )

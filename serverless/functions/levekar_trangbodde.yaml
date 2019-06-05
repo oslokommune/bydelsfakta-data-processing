@@ -1,3 +1,4 @@
+name: bydelsfakta-data-processing-levekar-trangbodde
 handler: functions/levekar_trangbodde.handle
 timeout: 60
 layers: ${self:custom.layers}

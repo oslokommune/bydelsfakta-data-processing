@@ -1,152 +1,122 @@
-import os
-
 import pandas as pd
 
-import common.aws as common_aws
-import common.aggregate_dfs as aggregate
-import common.transform as transform
-from common.transform_output import generate_output_list
+from common import aws, util, transform
+from common.aggregateV2 import Aggregate, ColumnNames
+from common.output import Output, Metadata
+from common.templates import TemplateA, TemplateC
 
-os.environ["METADATA_API_URL"] = ""
+value_columns = [
+    "enfamiliehusholdninger_med_voksne_barn",
+    "flerfamiliehusholdninger_med_smaa_barn",
+    "flerfamiliehusholdninger_med_store_barn",
+    "flerfamiliehusholdninger_uten_barn_0_til_17_aar",
+    "mor_eller_far_med_smaa_barn",
+    "mor_eller_far_med_store_barn",
+    "par_med_smaa_barn",
+    "par_med_store_barn",
+    "par_uten_hjemmeboende_barn",
+]
 
-s3_bucket = "ok-origo-dataplatform-dev"
-
-historic_dataset_id = "Husholdning-totalt-historisk-NZrxf"
-historic_version_id = "1-Xh69qF9c"
-historic_edition_id = "EDITION-gvinX"
-status_dataset_id = "Husholdning-totalt-status-FzFf5"
-status_version_id = "1-wgHdAJWY"
-status_edition_id = "EDITION-nibxq"
-matrix_dataset_id = "Husholdning-totalt-matrise-e9w4m"
-matrix_version_id = "1-8fZLJ6dC"
-matrix_edition_id = "EDITION-756ZB"
+column_names = ColumnNames()
 
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
-    s3_key = event["keys"]["Husholdninger_med_barn-XdfNB"]
-    bucket = event["bucket"]
-    start(bucket, s3_key)
-    return "OK"
+    s3_key = event["input"]["husholdninger-med-barn"]
+    output_key = event["output"]
+    type = event["config"]["type"]
+    source = aws.read_from_s3(s3_key=s3_key)
 
-
-def start(bucket, key):
-    household_raw = common_aws.read_from_s3(s3_key=key, date_column="År")
-
-    data_points = ["single_adult", "no_children", "with_children"]
-
-    with_district = transform.add_district_id(household_raw.copy())
-
-    with_data_points = with_household_data_points(with_district)
-
-    input_df = aggregate_to_input_format(with_data_points, data_points)
-
-    household_total_historic = generate_output_list(
-        *transform.historic(input_df), template="c", data_points=data_points
-    )
-    household_total_status = generate_output_list(
-        *transform.status(input_df), template="a", data_points=data_points
-    )
-    household_total_matrix = generate_output_list(
-        *transform.status(input_df), template="i", data_points=data_points
-    )
-
-    _write_to_intermediate(
-        historic_dataset_id,
-        historic_version_id,
-        historic_edition_id,
-        household_total_historic,
-    )
-    _write_to_intermediate(
-        status_dataset_id, status_version_id, status_edition_id, household_total_status
-    )
-    _write_to_intermediate(
-        matrix_dataset_id, matrix_version_id, matrix_edition_id, household_total_matrix
-    )
-
-
-def _aggregations(data_points):
-    return [
-        {"data_points": data_point, "agg_func": "sum"} for data_point in data_points
-    ]
-
-
-def aggregate_to_input_format(df, data_points):
-    aggregations = _aggregations(data_points)
-    input_df = aggregate.aggregate_from_subdistricts(df, aggregations)
-    input_df = aggregate.add_ratios(input_df, data_points, data_points)
-    return input_df
-
-
-def with_household_data_points(household_raw):
-    household_raw["household_data_point"] = household_raw["Husholdningstype"].apply(
-        household_data_point
-    )
-
-    with_data_points = pd.concat(
-        (
-            household_raw[["date", "district", "delbydelid"]],
-            household_raw.pivot(
-                columns="household_data_point", values="Antall husholdninger"
-            ),
-        ),
-        axis=1,
-    )
-
-    return (
-        with_data_points.groupby(["delbydelid", "date", "district"]).sum().reset_index()
-    )
-
-
-def household_data_point(household_type):
-    with_children = [
-        "Mor/far med små barn",
-        "Mor/far med store barn",
-        "Par med små barn",
-        "Par med store barn",
-        "Enfamiliehusholdninger med voksne barn",
-        "Flerfamiliehusholdninger med små barn",
-        "Flerfamiliehusholdninger med store barn",
-    ]
-    no_children = [
-        "Flerfamiliehusholdninger uten barn 0 - 17 år",
-        "Par uten hjemmeboende barn",
-        "Flerfamiliehusholdninger uten barn 0-17 år",
-    ]
-    single_adult = ["Aleneboende"]
-
-    if household_type in with_children:
-        return "with_children"
-    elif household_type in no_children:
-        return "no_children"
-    elif household_type in single_adult:
-        return "single_adult"
-    else:
-        raise Exception(f"No data_point for Hushodningstype={household_type}")
-
-
-def _output_key(dataset_id, version_id, edition_id):
-    return f"processed/green/{dataset_id}/version={version_id}/edition={edition_id}/"
-
-
-def _write_to_intermediate(dataset_id, version_id, edition_id, output_list):
     series = [
         {"heading": "Aleneboende", "subheading": ""},
         {"heading": "Øvrige husholdninger uten barn", "subheading": ""},
         {"heading": "Husholdninger med barn", "subheading": ""},
     ]
-    heading = "Husholdninger"
-    output_key = _output_key(dataset_id, version_id, edition_id)
-    common_aws.write_to_intermediate(output_key, output_list, heading, series)
+
+    metadata = Metadata(heading="Husholdning total", series=series)
+
+    if type == "status":
+        [df] = transform.status(source)
+        template = TemplateA()
+
+    elif type == "historisk":
+        [df] = transform.historic(source)
+        template = TemplateC()
+    else:
+        raise Exception("Wrong dataset type")
+
+    df = process(df)
+    output = Output(
+        df=df,
+        values=["single_adult", "no_children", "with_children"],
+        template=template,
+        metadata=metadata,
+    )
+
+    write(output=output, output_key=output_key)
+    return f"Complete: {output_key}"
+
+
+def process(source):
+    loners = source[column_names.default_groupby_columns() + ["aleneboende"]]
+    loners = loners.groupby(column_names.default_groupby_columns()).sum().reset_index()
+    loners = loners.rename(columns={"aleneboende": "single_adult"})
+
+    rest = source.drop(columns=["aleneboende"])
+
+    agg = Aggregate("sum")
+    meta = rest[column_names.default_groupby_columns() + ["barn_i_husholdningen"]]
+    meta["total"] = rest[value_columns].sum(axis=1)
+
+    household_pivot = pd.pivot_table(
+        meta,
+        index=column_names.default_groupby_columns(),
+        columns=["barn_i_husholdningen"],
+        values=["total"],
+    )
+    household_pivot.columns = household_pivot.columns.droplevel(0)
+    household_pivot = household_pivot.reset_index().rename_axis(None, axis=1)
+
+    household_pivot["with_children"] = (
+        household_pivot["1 barn i HH"]
+        + household_pivot["2 barn i HH"]
+        + household_pivot["3 barn i HH"]
+        + household_pivot["4 barn eller mer"]
+    )
+    household_pivot = household_pivot.rename(columns={"Ingen barn i HH": "no_children"})
+
+    househoulds = household_pivot[
+        column_names.default_groupby_columns() + ["no_children", "with_children"]
+    ]
+    merged = agg.merge_all(loners, househoulds, how="outer")
+
+    merged["with_children"] = merged["with_children"].fillna(0)
+
+    aggregated = agg.aggregate(merged)
+
+    aggregated = agg.add_ratios(
+        aggregated,
+        data_points=["no_children", "single_adult", "with_children"],
+        ratio_of=["no_children", "single_adult", "with_children"],
+    )
+    return aggregated
+
+
+def write(output: Output, output_key):
+    aws.write_to_intermediate(
+        output_list=output.generate_output(), output_key=output_key
+    )
 
 
 if __name__ == "__main__":
     handle(
         {
-            "bucket": "ok-origo-dataplatform-dev",
-            "keys": {
-                "Husholdninger_med_barn-XdfNB": "raw/green/Husholdninger_med_barn-XdfNB/version=1-oTr62ZHJ/edition=EDITION-ivaYi/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"
+            "input": {
+                "husholdninger-med-barn": util.get_latest_edition_of(
+                    "husholdninger-med-barn"
+                )
             },
+            "config": {"type": "historisk"},
         },
         {},
     )

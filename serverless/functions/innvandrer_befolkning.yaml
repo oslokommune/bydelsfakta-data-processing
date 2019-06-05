@@ -1,3 +1,4 @@
+name: bydelsfakta-data-processing-innvandrer-befolkning
 handler: functions/innvandrer_befolkning.handler
 timeout: 60
 layers: ${self:custom.layers}

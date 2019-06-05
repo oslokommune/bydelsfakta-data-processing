@@ -43,12 +43,15 @@ def handle(event, context):
 
     if type_of_ds == "status":
         output_list = output_list_status(input_df, data_points, top_n=10)
-    elif type_of_ds == "historic":
+    elif type_of_ds == "historisk":
         output_list = output_list_historic(input_df, data_points, top_n=10)
 
     if output_list:
         common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
+
+    else:
+        raise Exception("No data in outputlist")
 
 
 def generate_input_df(landbakgrunn_raw, befolkning_raw, data_points):

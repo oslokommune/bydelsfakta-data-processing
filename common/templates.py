@@ -94,3 +94,27 @@ class TemplateE(Template):
         ages = df[series + ["kjonn"]].set_index("kjonn")
         values = ages.apply(lambda x: self._value(x.to_dict(), total, x.name))
         return values.tolist()
+
+
+class TemplateG(Template):
+    def __init__(self, *args, history_columns, **kwargs):
+        self.history_columns = history_columns
+        super().__init__(*args, **kwargs)
+
+    def values(self, df, series, column_names: ColumnNames = ColumnNames()):
+        history = list(df[self.history_columns].iloc[0].to_list())
+
+        status_df = df[df[column_names.date] == df[column_names.date].max()]
+        status = [status_df[col].item() for col in series]
+        return [*status, history]
+
+
+class TemplateH(TemplateC):
+    def _value(self, df, column_names, value_column):
+        dicts = (
+            df[[column_names.date] + value_column]
+            .T.apply(lambda x: x.dropna().to_dict())
+            .tolist()
+        )
+        filtered = [d for d in dicts if len(d) > 1]
+        return filtered
