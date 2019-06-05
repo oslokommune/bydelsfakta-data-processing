@@ -35,7 +35,7 @@ DATA_POINTS = {
 VALUE_POINTS = ["to_foreldre", "en_forelder", "innvandrer"]
 
 
-def handle(event, context):
+def handler(event, context):
     s3_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
@@ -98,7 +98,7 @@ def create_ds(output_key, template, type_of_ds, df):
 
 
 if __name__ == "__main__":
-    handle(
+    handler(
         {
             "input": {
                 "innvandrer-befolkningen-0-15-ar": get_latest_edition_of(
