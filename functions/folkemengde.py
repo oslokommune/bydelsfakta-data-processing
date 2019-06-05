@@ -55,6 +55,7 @@ def calculate_change(df, *, column_name):
 
 
 def calculate_change_ratio(df):
+    df = df.sort_values(["bydel_id", "delbydel_id", "date"])
     df["change_ratio"] = df["change"] / df["population"].shift(1)
     df["change_10y_ratio"] = df["change_10y"] / df["population"].shift(10)
     return df

@@ -15,6 +15,16 @@ def df():
     return pd.DataFrame(data={"date": years, "d1": d1})
 
 
+@pytest.fixture
+def ratio_df(df):
+    df["population"] = range(10, len(df) + 10)
+    df["change"] = [np.nan, *[1] * 11]
+    df["change_10y"] = [*[np.nan] * 11, 10]
+    df["bydel_id"] = "01"
+    df["delbydel_id"] = "0101"
+    return df
+
+
 class TestFilter10YearSet:
     def test_valid(self, df):
         df = filter_10year_set(df)
@@ -61,24 +71,32 @@ class TestCalculateChange:
 
 
 class TestCalculateChangeRatio:
-    def test_change_ratio(self, df):
-        df["population"] = range(10, len(df) + 10)
-        df["change"] = [np.nan, *[1] * 11]
-        df["change_10y"] = [*[np.nan] * 11, 10]
-        df = calculate_change_ratio(df)
+    def test_change_ratio(self, ratio_df):
+        df = calculate_change_ratio(ratio_df)
 
         assert (df[df.date == 2009].change_ratio == 0.1).all()
         assert (df[df.date == 2019].change_ratio == 0.05).all()
         assert df[df.date < 2019].change_10y_ratio.isna().all()
         assert np.isclose(df[df.date == 2019].change_10y_ratio, 0.909_091).all()
 
-    def test_missing_years(self, df):
-        df = df[df.date > 2016].copy()
-        df["population"] = range(10, len(df) + 10)
-        df["change"] = [np.nan, 1, 1]
-        df["change_10y"] = [np.nan, np.nan, 1]
+    def test_missing_years(self, ratio_df):
+        df = ratio_df[ratio_df.date > 2016].copy()
         df = calculate_change_ratio(df)
 
         assert (df[df.date == 2017].change_ratio.isna()).all()
-        assert np.isclose(df[df.date == 2019].change_ratio, 0.090_909).all()
+        assert np.isclose(df[df.date == 2019].change_ratio, 0.05).all()
         assert df.change_10y_ratio.isna().all()
+
+    def test_sorted_data(self, ratio_df):
+        df = ratio_df
+        actual = df.iloc[1].change / df.iloc[0].population
+
+        df2 = df.copy()
+        df2["bydel_id"] = "01"
+        df2["delbydel_id"] = "0102"
+
+        df = pd.concat([df, df2])
+        df = df.sort_values("date")
+        df = calculate_change_ratio(df)
+
+        assert df.iloc[1].change_ratio == actual
