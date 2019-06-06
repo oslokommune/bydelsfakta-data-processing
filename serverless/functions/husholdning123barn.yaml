@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-husholdning123barn
+handler: functions/husholdning123barn.handle
+timeout: 60
+layers: ${self:custom.layers}
