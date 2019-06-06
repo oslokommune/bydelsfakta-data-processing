@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import common.aws
 import common.aggregate_dfs  # as aggregate
@@ -8,10 +7,6 @@ from common.templates import TemplateA
 from common.output import Output, Metadata
 from common.util import get_latest_edition_of
 
-os.environ["METADATA_API_URL"] = ""
-
-s3_bucket = "ok-origo-dataplatform-dev"
-
 
 def handler(event, context):
 
@@ -19,7 +14,7 @@ def handler(event, context):
 
     s3_key = event["input"]["husholdninger-med-barn"]
     output_key = event["output"]
-    output_set = event["config"]["output_set"]
+    output_set = event["config"]["type"]
     start(s3_key, output_key, output_set)
 
     return "OK"
@@ -196,7 +191,7 @@ if __name__ == "__main__":
         {
             "input": {"husholdninger-med-barn": input_data},
             "output": "intermediate/green/husholdninger-med-1-barn/version=1/edition=20190520T114926/",
-            "config": {"output_set": "husholdninger-med-1-barn"},
+            "config": {"type": "husholdninger-med-1-barn"},
         },
         {},
     )
