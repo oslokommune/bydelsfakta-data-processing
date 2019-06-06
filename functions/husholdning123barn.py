@@ -1,12 +1,9 @@
 import os
-import sys  # TEMP FOR DEBUG
-
 import numpy as np
-
 import common.aws
 import common.aggregate_dfs  # as aggregate
 import common.transform  # as transform
-from common.aggregateV2 import ColumnNames, Aggregate
+from common.aggregateV2 import Aggregate
 from common.templates import TemplateA
 from common.output import Output, Metadata
 from common.util import get_latest_edition_of
@@ -30,8 +27,9 @@ def handler(event, context):
 
 def start(key, output_key, output_set):
 
-    number_type = "float64"  # Fails when reading directly as "int64", convert after reading
-
+    number_type = (
+        "float64"
+    )  # Fails when reading directly as "int64", convert after reading
     dtype = {
         "delbydel_id": object,
         "delbydel_navn": object,
@@ -102,19 +100,8 @@ def start(key, output_key, output_set):
     output = generate_output(
         df,
         value_col=output_structures[output_set]["value_col"],
-        heading=output_structures[output_set]["heading"]
+        heading=output_structures[output_set]["heading"],
     )
-
-    print(output)
-
-    DEBUG = 0
-    if DEBUG:
-        from pprint import pprint
-
-        with open(r"C:\CURRENT FILES\dump.txt", "wt", encoding="utf-8") as f:
-            pprint(output, stream=f)
-            print("\n", file=f)
-            sys.exit(1)
 
     common.aws.write_to_intermediate(output_key, output)  # Can't do this yet!
 
@@ -197,13 +184,12 @@ def _write_to_intermediate(
     series = [{"heading": series_heading, "subheading": ""}]
     heading = "Husholdninger"
     output_key = _output_key(dataset_id, version_id, edition_id)
-    common_aws.write_to_intermediate(output_key, output_list, heading, series)
+    common.aws.write_to_intermediate(output_key, output_list, heading, series)
 
 
 if __name__ == "__main__":
 
     input_data = get_latest_edition_of("husholdninger-med-barn")
-    print(input_data)
 
     # Test writing one set
     handler(
