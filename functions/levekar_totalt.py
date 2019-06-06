@@ -9,13 +9,13 @@ from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
 from common.population_utils import generate_population_df
 
-
 graph_metadata = Metadata(
     heading="Personer fra 16 til 66 år med redusert funksjonsevne",
     series=[{"heading": "Redusert funksjonsevne", "subheading": ""}],
 )
 
 key_cols = ColumnNames().default_groupby_columns()
+
 
 def handle(event, context):
     s3_key_redusert_funksjonsevne = event["input"]["redusert-funksjonsevne"]
@@ -26,6 +26,7 @@ def handle(event, context):
     s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
     s3_key_ikke_fullfort_vgs = event["input"]["ikke-fullfort-vgs"]
     s3_key_dodsrater = event["input"]["dodsrater"]
+    s3_key_trangbodde = event["input"]["trangbodde"]
 
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
@@ -54,6 +55,9 @@ def handle(event, context):
     dodsrater_raw = common_aws.read_from_s3(
         s3_key=s3_key_dodsrater, date_column='aar'
     )
+    trangbodde_raw = common_aws.read_from_s3(
+        s3_key=s3_key_trangbodde, date_column='aar'
+    )
 
     redusert_funksjonsevne_input_df = generate_redusert_funksjonsevne_df(redusert_funksjonsevne_raw)
     ikke_vestlig_kort_botid_input_df = generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw)
@@ -62,6 +66,19 @@ def handle(event, context):
     ikke_sysselsatte_input_df = generate_ikke_sysselsatte_df(sysselsatte_raw, befolkning_raw.copy())
     ikke_fullfort_vgs_input_df = generate_ikke_fullfort_vgs_df(ikke_fullfort_vgs_raw)
     dodsrater_input_df = generate_dosrater_df(dodsrater_raw)
+    trangbodde_input_df = generate_trangbodde_input_df(trangbodde_raw, befolkning_raw.copy())
+
+    input_df = Aggregate({}).merge_all(*[
+        redusert_funksjonsevne_input_df,
+        ikke_vestlig_kort_botid_input_df,
+        lav_utdanning_input_df,
+        fattige_barnehusholdninger_input_df,
+        ikke_sysselsatte_input_df,
+        ikke_fullfort_vgs_input_df,
+        dodsrater_input_df,
+        trangbodde_input_df
+    ])
+
     return
     # output_list = []
     # if type_of_ds == "historisk":
@@ -76,6 +93,38 @@ def handle(event, context):
     #
     # else:
     #     raise Exception("No data in outputlist")
+
+
+# dict with df and data_point
+def merge_shitloads(master_df, slave_dfs):
+    df = master_df
+    for slave_df in slave_dfs:
+        df = pd.merge(
+
+        )
+
+
+def generate_trangbodde_input_df(trangbodde_raw, befolkning_raw):
+    data_point = "antall_trangbodde"
+    population_df = generate_population_df(befolkning_raw)
+
+    agg = {"population": "sum"}
+    population_district_df = Aggregate(agg).aggregate(df=population_df)
+
+    df = pd.merge(
+        trangbodde_raw,
+        population_district_df[["date", "bydel_id", "delbydel_id", "population"]],
+        how="inner",
+        on=["bydel_id", "date", "delbydel_id"],
+    )
+
+    df[f"{data_point}_ratio"] = df["andel_som_bor_trangt"] / 100
+    df[data_point] = df["population"] * df[f"{data_point}_ratio"]
+
+    # Exclude Marka, Sentrum and Uten registrert adresse
+    df = df[~df["bydel_id"].isin(["16", "17", "99"])]
+
+    return df[[*key_cols, data_point, f"{data_point}_ratio"]]
 
 
 def generate_dosrater_df(dodsrater_raw):
@@ -103,6 +152,7 @@ def generate_ikke_fullfort_vgs_df(ikke_fullfort_vgs_raw):
 
     return df[[*key_cols, data_point, data_point_ratio]]
 
+
 def generate_ikke_sysselsatte_df(sysselsatte_raw, befolkning_raw):
     data_point = "antall_ikke_sysselsatte"
     population_col = "population"
@@ -116,7 +166,6 @@ def generate_ikke_sysselsatte_df(sysselsatte_raw, befolkning_raw):
     # Value for date in "sysselsatte" was measured in 4th. quarter of 2017, while date for "befolkning" was measured 1.1.2018.
     sysselsatte_df['date'] = sysselsatte_df['date'] + 1
     sysselsatte_df = sysselsatte_df[sysselsatte_df["delbydel_id"].isin(sub_districts)]
-
 
     sysselsatte_befolkning_df = pd.merge(
         sysselsatte_df,
@@ -140,9 +189,8 @@ def generate_ikke_sysselsatte_df(sysselsatte_raw, befolkning_raw):
 
     input_df = agg.add_ratios(
         aggregated_df, data_points=[data_point], ratio_of=[population_col]
-    )  # aggregator.add_ratios(aggregated_df, [data_point], ratio_of=[total])
+    )
     return input_df[[*key_cols, data_point, f"{data_point}_ratio"]]
-
 
 
 def generate_fattige_barnehusholdninger_df(fattige_husholdninger_raw):
@@ -161,7 +209,6 @@ def generate_fattige_barnehusholdninger_df(fattige_husholdninger_raw):
         df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
     )
     return df[[*key_cols, data_point, data_point_ratio]]
-
 
 
 def generate_lav_utdanning_df(lav_utdanning_raw):
@@ -186,7 +233,8 @@ def generate_lav_utdanning_df(lav_utdanning_raw):
     input_df = aggregator.add_ratios(
         input_df, data_points=[data_point], ratio_of=["total"]
     )
-    return input_df
+    return input_df[[*key_cols, data_point, f'{data_point}_ratio']]
+
 
 def generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw):
     value_cols_raw = [
@@ -200,7 +248,7 @@ def generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw):
 
     df = pivot_table(df, pivot_column="botid", value_columns=["total", "ikke_vestlig"])
 
-    df['total_befolkning']= df[
+    df['total_befolkning'] = df[
         [('total', 'Innvandrer, kort botid (<=5 år)'),
          ('total', 'Innvandrer, lang botid (>5 år)'),
          ('total', 'Øvrige befolkning')]].sum(axis=1)
@@ -216,6 +264,7 @@ def generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw):
 
     return df[[*key_cols, 'ikke_vestlig_kort', 'ikke_vestlig_kort_ratio']]
 
+
 def generate_redusert_funksjonsevne_df(redusert_funksjonsevne_raw):
     data_point = "antall_redusert_funksjonsevne"
     input_df = redusert_funksjonsevne_raw.rename(
@@ -225,6 +274,7 @@ def generate_redusert_funksjonsevne_df(redusert_funksjonsevne_raw):
         input_df["andel_personer_med_redusert_funksjonsevne"] / 100
     )
     return input_df[[*key_cols, data_point, f'{data_point}_ratio']]
+
 
 def output_historic(input_df, data_points):
     [input_df] = transform.historic(input_df)
@@ -252,6 +302,7 @@ def pivot_table(df, pivot_column, value_columns):
     )
     return df_pivot.groupby(key_columns).sum().reset_index()
 
+
 if __name__ == "__main__":
     redusert_funksjonsevne_s3_key = get_latest_edition_of("redusert-funksjonsevne")
     botid_ikke_vestlige_s3_key = get_latest_edition_of("botid-ikke-vestlige")
@@ -263,6 +314,7 @@ if __name__ == "__main__":
     )
     ikke_fullfort_vgs_s3_key = get_latest_edition_of("ikke-fullfort-vgs")
     dodsrater_s3_key = get_latest_edition_of("dodsrater")
+    trangbodde_s3_key = get_latest_edition_of("trangbodde")
     handle(
         {
             "input": {
@@ -273,7 +325,8 @@ if __name__ == "__main__":
                 "sysselsatte": sysselsatte_s3_key,
                 "befolkning-etter-kjonn-og-alder": befolkning_s3_key,
                 "ikke-fullfort-vgs": ikke_fullfort_vgs_s3_key,
-                "dodsrater": dodsrater_s3_key
+                "dodsrater": dodsrater_s3_key,
+                "trangbodde": trangbodde_s3_key
             },
             "output": "s3/key/or/prefix",
             "config": {"type": "status"},
