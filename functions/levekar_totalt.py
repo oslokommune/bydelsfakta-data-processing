@@ -15,6 +15,19 @@ graph_metadata = Metadata(
 )
 
 key_cols = ColumnNames().default_groupby_columns()
+ratio_columns = [
+    'antall_redusert_funksjonsevne_ratio_district',
+    'antall_redusert_funksjonsevne_ratio_oslo',
+    'ikke_vestlig_kort_ratio_district', 'ikke_vestlig_kort_ratio_oslo',
+    'lav_utdanning_ratio_district', 'lav_utdanning_ratio_oslo',
+    'antall_fattige_barnehusholdninger_ratio_district',
+    'antall_fattige_barnehusholdninger_ratio_oslo',
+    'antall_ikke_sysselsatte_ratio_district',
+    'antall_ikke_sysselsatte_ratio_oslo',
+    'ikke_fullfort_vgs_ratio_district', 'ikke_fullfort_vgs_ratio_oslo',
+    'antallet_dode_ratio_district', 'antallet_dode_ratio_oslo',
+    'antall_trangbodde_ratio_district', 'antall_trangbodde_ratio_oslo'
+]
 
 
 def handle(event, context):
@@ -78,7 +91,7 @@ def handle(event, context):
         dodsrater_input_df,
         trangbodde_input_df
     ])
-
+    print(input_df.columns)
     return
     # output_list = []
     # if type_of_ds == "historisk":
@@ -95,13 +108,21 @@ def handle(event, context):
     #     raise Exception("No data in outputlist")
 
 
-# dict with df and data_point
-def merge_shitloads(master_df, slave_dfs):
-    df = master_df
-    for slave_df in slave_dfs:
-        df = pd.merge(
+def add_relative_ratio(df, ratio_col):
+    df = df[~df["bydel_id"].isin(["16", "17", "99"])]
+    oslo_ratio_col = f'{ratio_col}_oslo'
+    district_ratio_col = f'{ratio_col}_district'
+    oslo_total_df = df[df['bydel_id'] == "00"]
+    result_df = pd.DataFrame(columns=[*key_cols, district_ratio_col, oslo_ratio_col])
+    for (date, district_id), group_df in df.groupby(by=['date', 'bydel_id']):
+        tmp_df = group_df.copy()
+        district_mean = tmp_df[tmp_df['delbydel_id'].isnull()][ratio_col].unique()[0]
+        oslo_mean = oslo_total_df[oslo_total_df["date"] == date][ratio_col].unique()[0]
+        tmp_df[district_ratio_col] = tmp_df[ratio_col] / district_mean
+        tmp_df[oslo_ratio_col] = tmp_df[ratio_col] / oslo_mean
+        result_df = result_df.append(tmp_df[[*key_cols, district_ratio_col, oslo_ratio_col]])
 
-        )
+    return result_df
 
 
 def generate_trangbodde_input_df(trangbodde_raw, befolkning_raw):
@@ -121,10 +142,7 @@ def generate_trangbodde_input_df(trangbodde_raw, befolkning_raw):
     df[f"{data_point}_ratio"] = df["andel_som_bor_trangt"] / 100
     df[data_point] = df["population"] * df[f"{data_point}_ratio"]
 
-    # Exclude Marka, Sentrum and Uten registrert adresse
-    df = df[~df["bydel_id"].isin(["16", "17", "99"])]
-
-    return df[[*key_cols, data_point, f"{data_point}_ratio"]]
+    return add_relative_ratio(df, f"{data_point}_ratio")
 
 
 def generate_dosrater_df(dodsrater_raw):
@@ -139,7 +157,7 @@ def generate_dosrater_df(dodsrater_raw):
     df.iloc[95:, 1] = np.nan
     df.iloc[95:, 2] = np.nan
 
-    return df[[*key_cols, data_point, f'{data_point}_ratio']]
+    return add_relative_ratio(df, f'{data_point}_ratio')
 
 
 def generate_ikke_fullfort_vgs_df(ikke_fullfort_vgs_raw):
@@ -150,7 +168,7 @@ def generate_ikke_fullfort_vgs_df(ikke_fullfort_vgs_raw):
     data_point_ratio = f'{data_point}_ratio'
     df[data_point_ratio] = df["andelen_som_ikke_har_fullfort_i_lopet_av_5_aar"] / 100
 
-    return df[[*key_cols, data_point, data_point_ratio]]
+    return add_relative_ratio(df, data_point_ratio)
 
 
 def generate_ikke_sysselsatte_df(sysselsatte_raw, befolkning_raw):
@@ -190,7 +208,7 @@ def generate_ikke_sysselsatte_df(sysselsatte_raw, befolkning_raw):
     input_df = agg.add_ratios(
         aggregated_df, data_points=[data_point], ratio_of=[population_col]
     )
-    return input_df[[*key_cols, data_point, f"{data_point}_ratio"]]
+    return add_relative_ratio(input_df, f'{data_point}_ratio')
 
 
 def generate_fattige_barnehusholdninger_df(fattige_husholdninger_raw):
@@ -208,7 +226,7 @@ def generate_fattige_barnehusholdninger_df(fattige_husholdninger_raw):
     df[data_point_ratio] = (
         df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
     )
-    return df[[*key_cols, data_point, data_point_ratio]]
+    return add_relative_ratio(df, data_point_ratio)
 
 
 def generate_lav_utdanning_df(lav_utdanning_raw):
@@ -233,7 +251,7 @@ def generate_lav_utdanning_df(lav_utdanning_raw):
     input_df = aggregator.add_ratios(
         input_df, data_points=[data_point], ratio_of=["total"]
     )
-    return input_df[[*key_cols, data_point, f'{data_point}_ratio']]
+    return add_relative_ratio(input_df, f'{data_point}_ratio')
 
 
 def generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw):
@@ -262,7 +280,7 @@ def generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw):
     df = aggregator.aggregate(df)
     df = aggregator.add_ratios(df=df, data_points=['ikke_vestlig_kort'], ratio_of=['total_befolkning'])
 
-    return df[[*key_cols, 'ikke_vestlig_kort', 'ikke_vestlig_kort_ratio']]
+    return add_relative_ratio(df, 'ikke_vestlig_kort_ratio')
 
 
 def generate_redusert_funksjonsevne_df(redusert_funksjonsevne_raw):
@@ -273,7 +291,7 @@ def generate_redusert_funksjonsevne_df(redusert_funksjonsevne_raw):
     input_df[f"{data_point}_ratio"] = (
         input_df["andel_personer_med_redusert_funksjonsevne"] / 100
     )
-    return input_df[[*key_cols, data_point, f'{data_point}_ratio']]
+    return add_relative_ratio(input_df, f'{data_point}_ratio')
 
 
 def output_historic(input_df, data_points):
