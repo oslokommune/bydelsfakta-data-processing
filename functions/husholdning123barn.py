@@ -8,7 +8,7 @@ from common.output import Output, Metadata
 from common.util import get_latest_edition_of
 
 
-def handler(event, context):
+def handle(event, context):
 
     """ Assuming we receive a complete s3 key"""
 
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     input_data = get_latest_edition_of("husholdninger-med-barn")
 
     # Test writing one set
-    handler(
+    handle(
         {
             "input": {"husholdninger-med-barn": input_data},
             "output": "intermediate/green/husholdninger-med-1-barn/version=1/edition=20190520T114926/",
