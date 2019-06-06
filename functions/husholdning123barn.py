@@ -30,15 +30,14 @@ def handler(event, context):
 
 def start(key, output_key, output_set):
 
-    number_type = (
-        "float64"
-    )  # "int64" - this SHOULD be used when the input data are integers.
+    number_type = "float64"  # Fails when reading directly as "int64", convert after reading
 
     dtype = {
         "delbydel_id": object,
         "delbydel_navn": object,
         "bydel_id": object,
         "bydel_navn": object,
+        "barn_i_husholdningen": object,
         "aleneboende": number_type,
         "enfamiliehusholdninger_med_voksne_barn": number_type,
         "flerfamiliehusholdninger_med_smaa_barn": number_type,
@@ -52,6 +51,10 @@ def start(key, output_key, output_set):
     }
 
     df = common.aws.read_from_s3(s3_key=key, date_column="aar", dtype=dtype)
+
+    for col in df.columns:
+        if df[col].dtype == number_type:
+            df[col] = df[col].astype("int64")
 
     df = _clean_df(df)
 
@@ -104,7 +107,7 @@ def start(key, output_key, output_set):
 
     print(output)
 
-    DEBUG = 1
+    DEBUG = 0
     if DEBUG:
         from pprint import pprint
 
@@ -199,16 +202,8 @@ def _write_to_intermediate(
 
 if __name__ == "__main__":
 
-    # Inntil videre jobb med v1
-    # UPDATE input path when v2 is uploaded by Tord. <== KRASJER FORDI ANTALL ER STRENGER MED MELLOMROM
-    # UPDATE: Tord har kontaktet Astrid som skal skaffe en V3.
-
-    # "husholdninger-med-barn": "raw/green/husholdninger-med-barn/version=1/edition=20190523T125413/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"
-
-    # INPUT_DATA = "raw/green/husholdninger-med-barn/version=1/edition=20190528T133555/Husholdninger_med_barn(1.1.2008-1.1.2018-v01).csv"
     input_data = get_latest_edition_of("husholdninger-med-barn")
     print(input_data)
-    #sys.exit(1)
 
     # Test writing one set
     handler(
