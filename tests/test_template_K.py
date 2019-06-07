@@ -3,9 +3,7 @@ import pandas as pd
 
 from common.output import Output, Metadata
 from common.templates import TemplateK
-from tests.template_helper import (
-    column_names,
-)
+from tests.template_helper import column_names
 from tests.transform_output_test_data import output_list_k
 
 template = TemplateK()
@@ -15,6 +13,7 @@ test_df = pd.read_csv(
     sep=";",
     dtype={column_names.sub_district_id: object, column_names.district_id: object},
 )
+
 
 def test_df_to_template_k():
     data_points = ["d1", "d2"]
@@ -115,4 +114,3 @@ def test_output_list():
 
 
 test_df_to_template_k()
-

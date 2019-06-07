@@ -323,7 +323,6 @@ output_list = [
 ]
 
 
-
 output_list_k = [
     {
         "district": "Bydel Gamle Oslo",

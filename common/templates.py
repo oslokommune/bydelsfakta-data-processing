@@ -119,23 +119,19 @@ class TemplateH(TemplateC):
         filtered = [d for d in dicts if len(d) > 1]
         return filtered
 
+
 class TemplateK(Template):
     def _custom_object(self, date, district_ratio, oslo_ratio):
-        return {
-            "date": date,
-            "districtRatio": district_ratio,
-            "osloRatio": oslo_ratio
-        }
+        return {"date": date, "districtRatio": district_ratio, "osloRatio": oslo_ratio}
 
     def _value(self, df, column_names, value_column):
         value_collection = df.apply(
-            lambda row:
-            self._custom_object(
+            lambda row: self._custom_object(
                 date=row[column_names.date],
-                district_ratio=row[f'{value_column}_ratio_district'],
-                oslo_ratio=row[f'{value_column}_ratio_oslo']
+                district_ratio=row[f"{value_column}_ratio_district"],
+                oslo_ratio=row[f"{value_column}_ratio_oslo"],
             ),
-            axis=1
+            axis=1,
         )
         if value_collection.empty:
             return []

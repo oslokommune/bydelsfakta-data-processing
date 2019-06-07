@@ -10,7 +10,6 @@ from common.templates import TemplateK
 from common.population_utils import generate_population_df
 
 
-
 value_columns = [
     "antall_redusert_funksjonsevne",
     "ikke_vestlig_kort",
@@ -19,7 +18,7 @@ value_columns = [
     "antall_ikke_sysselsatte",
     "ikke_fullfort_vgs",
     "antallet_dode",
-    "antall_trangbodde"
+    "antall_trangbodde",
 ]
 
 
@@ -33,7 +32,7 @@ graph_metadata = Metadata(
         {"heading": "Ikke sysselsatte", "subheading": ""},
         {"heading": "Ikke fullført vgs", "subheading": ""},
         {"heading": "Dødsfall", "subheading": ""},
-        {"heading": "Trangbodde", "subheading": ""}
+        {"heading": "Trangbodde", "subheading": ""},
     ],
 )
 
@@ -119,8 +118,9 @@ def handle(event, context):
         raise Exception(f"Invalid config type: {type_of_ds}")
 
     if output_list:
-        #common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        # common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         import json
+
         print(json.dumps(output_list))
         return f"Created {output_key}"
 
