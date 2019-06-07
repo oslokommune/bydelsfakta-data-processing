@@ -29,15 +29,10 @@ def handle(event, context):
 def start(key, output_key, type_of_ds):
     df = read_from_s3(s3_key=key, date_column="aar")
 
-    df["antall_fattige_barnehusholdninger"] = (
-        df["husholdninger_med_barn_under_18_aar"]
-        * df["husholdninger_med_barn_under_18_aar_eu_skala"]
-        / 100
-    )
+    df = df[df["husholdninger_med_barn_under_18_aar"].notnull()]
+    df = df[df["husholdninger_med_barn_under_18_aar_eu_skala"].notnull()]
 
-    df = df[df["antall_fattige_barnehusholdninger"].notnull()]
-
-    df["antall_fattige_barnehusholdninger_ratio"] = (
+    df["husholdninger_med_barn_under_18_aar_ratio"] = (
         df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
     )
 
@@ -54,7 +49,7 @@ def create_ds(output_key, template, type_of_ds, df):
         df=df,
         template=template,
         metadata=METADATA[type_of_ds],
-        values=["antall_fattige_barnehusholdninger"],
+        values=["husholdninger_med_barn_under_18_aar"],
     ).generate_output()
     write_to_intermediate(output_key=output_key, output_list=jsonl)
 

@@ -7,30 +7,30 @@ from common.util import get_latest_edition_of
 
 
 METADATA = {
-    "0-5-0-9_status": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
-    "0-5-0-9_historisk": Metadata(heading="Personer per rom - 0,5 - 0,9", series=[]),
-    "1-0-1-9_status": Metadata(heading="Personer per rom - 1,0 - 1,9", series=[]),
+    "0-5-0-9_status": Metadata(heading="0,5–0,9 rom per person", series=[]),
+    "0-5-0-9_historisk": Metadata(heading="0,5–0,9 rom per person", series=[]),
+    "1-0-1-9_status": Metadata(heading="1,0–1,9 rom per person", series=[]),
     "1-0-1-9_historisk": Metadata(heading="Personer per rom - 1,5 - 1,9", series=[]),
-    "over-2_status": Metadata(heading="Personer per rom - 2,0 og over", series=[]),
-    "over-2_historisk": Metadata(heading="Personer per rom - 2,0 og over", series=[]),
-    "under-0-5_status": Metadata(heading="Personer per rom - under 0,5", series=[]),
+    "over-2_status": Metadata(heading="2 rom eller flere per person", series=[]),
+    "over-2_historisk": Metadata(heading="2 rom eller flere per person", series=[]),
+    "under-0-5_status": Metadata(heading="Under 0,5 rom per preson", series=[]),
     "under-0-5_historisk": Metadata(heading="Personer per rom - under 0.5", series=[]),
     "alle_status": Metadata(
         heading="Husstander fordelt på personer per rom",
         series=[
-            {"heading": "Personer per rom - Under 0,5", "subheading": ""},
-            {"heading": "Personer per rom - 0,5 - 0,9", "subheading": ""},
-            {"heading": "Personer per rom - 1,0 - 1,9", "subheading": ""},
-            {"heading": "Personer per rom - 2,0 og over", "subheading": ""},
+            {"heading": "Under 0,5 rom per person", "subheading": ""},
+            {"heading": "0,5–0,9 rom per person", "subheading": ""},
+            {"heading": "1,0–1,9 rom per person", "subheading": ""},
+            {"heading": "2 rom eller flere per person", "subheading": ""},
         ],
     ),
     "alle_historisk": Metadata(
         heading="",
         series=[
-            {"heading": "Personer per rom - Under 0,5", "subheading": ""},
-            {"heading": "Personer per rom - 0,5 - 0,9", "subheading": ""},
-            {"heading": "Personer per rom - 1,0 - 1,9", "subheading": ""},
-            {"heading": "Personer per rom - 2,0 og over", "subheading": ""},
+            {"heading": "Under 0,5 rom per person", "subheading": ""},
+            {"heading": "0,5–0,9 rom per person", "subheading": ""},
+            {"heading": "1,0–1,9 rom per person", "subheading": ""},
+            {"heading": "2 rom eller flere per person", "subheading": ""},
         ],
     ),
 }
