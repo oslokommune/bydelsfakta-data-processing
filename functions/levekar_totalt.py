@@ -118,10 +118,7 @@ def handle(event, context):
         raise Exception(f"Invalid config type: {type_of_ds}")
 
     if output_list:
-        # common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        import json
-
-        print(json.dumps(output_list))
+        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
     else:
