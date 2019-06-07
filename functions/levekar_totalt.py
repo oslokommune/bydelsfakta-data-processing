@@ -83,7 +83,7 @@ def handle(event, context):
         redusert_funksjonsevne_raw
     )
     ikke_vestlig_kort_botid_input_df = generate_ikke_vestlig_innvandrer_kort_botid_df(
-        botid_ikke_vestlige_raw
+        botid_ikke_vestlige_raw, befolkning_raw.copy()
     )
     lav_utdanning_input_df = generate_lav_utdanning_df(lav_utdanning_raw)
     fattige_barnehusholdninger_input_df = generate_fattige_barnehusholdninger_df(
@@ -266,33 +266,34 @@ def generate_lav_utdanning_df(lav_utdanning_raw):
     return add_relative_ratio(input_df, f"{data_point}_ratio")
 
 
-def generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw):
-    value_cols_raw = [
-        "asia_afrika_latin_amerika_og_ost_europa_utenfor_eu",
-        "vest_europa_usa_canada_australia_og_new_zealand",
-        "ost_europeiske_eu_land",
-    ]
+def generate_ikke_vestlig_innvandrer_kort_botid_df(
+    botid_ikke_vestlige_raw, befolkning_raw
+):
+    data_point = "ikke_vestlig_kort"
+    kort_botid = "Innvandrer, kort botid (<=5 år)"
+    ikke_vestlig = "asia_afrika_latin_amerika_og_ost_europa_utenfor_eu"
+
     df = botid_ikke_vestlige_raw.drop(columns=["norge"])
-    df["total"] = df[value_cols_raw].sum(axis=1)
-    df["ikke_vestlig"] = df["asia_afrika_latin_amerika_og_ost_europa_utenfor_eu"]
-    df = df.drop(columns=value_cols_raw)
+    df = pivot_table(df, "botid", ikke_vestlig)
+    df[data_point] = df[kort_botid]
 
-    df = pivot_table(df, pivot_column="botid", value_columns=["total", "ikke_vestlig"])
-
-    df["total_befolkning"] = df[
-        [
-            ("total", "Innvandrer, kort botid (<=5 år)"),
-            ("total", "Innvandrer, lang botid (>5 år)"),
-            ("total", "Øvrige befolkning"),
-        ]
-    ].sum(axis=1)
-
-    df["ikke_vestlig_kort"] = df[("ikke_vestlig", "Innvandrer, kort botid (<=5 år)")]
-
-    aggregator = Aggregate({"ikke_vestlig_kort": "sum", "total_befolkning": "sum"})
+    aggregator = Aggregate({data_point: "sum"})
     df = aggregator.aggregate(df)
+
+    population_df = generate_population_df(befolkning_raw)
+    population_district_df = Aggregate({"population": "sum"}).aggregate(
+        df=population_df
+    )
+
+    df = pd.merge(
+        df,
+        population_district_df[["date", "bydel_id", "delbydel_id", "population"]],
+        how="inner",
+        on=["bydel_id", "date", "delbydel_id"],
+    )
+
     df = aggregator.add_ratios(
-        df=df, data_points=["ikke_vestlig_kort"], ratio_of=["total_befolkning"]
+        df=df, data_points=["ikke_vestlig_kort"], ratio_of=["population"]
     )
 
     return add_relative_ratio(df, "ikke_vestlig_kort_ratio")
