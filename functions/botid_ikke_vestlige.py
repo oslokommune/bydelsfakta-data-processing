@@ -33,23 +33,19 @@ def handler(event, context):
 
 
 def start(s3_key_botid, s3_key_befolkning, output_key, type_of_ds):
-    botid_ikke_vestlige_raw = read_from_s3(
-        s3_key=s3_key_botid, date_column="aar"
-    )
+    botid_ikke_vestlige_raw = read_from_s3(s3_key=s3_key_botid, date_column="aar")
 
-    befolkning_raw = read_from_s3(
-        s3_key=s3_key_befolkning, date_column='aar'
-    )
+    befolkning_raw = read_from_s3(s3_key=s3_key_befolkning, date_column="aar")
 
     data_point = "ikke_vestlig_kort"
 
-    df = generate_ikke_vestlig_innvandrer_kort_botid_df(botid_ikke_vestlige_raw, befolkning_raw, data_point=data_point)
+    df = generate_ikke_vestlig_innvandrer_kort_botid_df(
+        botid_ikke_vestlige_raw, befolkning_raw, data_point=data_point
+    )
 
     if type_of_ds == "historisk":
         historic = common.transform.historic(df)
-        create_ds(
-            output_key, TemplateB(), [data_point], graph_metadata, *historic
-        )
+        create_ds(output_key, TemplateB(), [data_point], graph_metadata, *historic)
     elif type_of_ds == "status":
         status = common.transform.status(df)
         create_ds(output_key, TemplateA(), [data_point], graph_metadata, *status)
@@ -107,8 +103,12 @@ if __name__ == "__main__":
     handler(
         {
             "input": {
-                "botid-ikke-vestlige": util.get_latest_edition_of('botid-ikke-vestlige'),
-                "befolkning-etter-kjonn-og-alder": util.get_latest_edition_of("befolkning-etter-kjonn-og-alder", confidentiality='yellow')
+                "botid-ikke-vestlige": util.get_latest_edition_of(
+                    "botid-ikke-vestlige"
+                ),
+                "befolkning-etter-kjonn-og-alder": util.get_latest_edition_of(
+                    "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
+                ),
             },
             "output": "intermediate/green/levekar-innvandrere-ikke-vestlige-kort-status/version=1/edition=20190525T183610/",
             "config": {"type": "status"},
