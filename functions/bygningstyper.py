@@ -42,7 +42,6 @@ def handle(event, context):
 def start(key, output_key, type_of_ds):
     df = read_from_s3(s3_key=key, date_column="aar").rename(
         columns={
-            "blokk_leiegaard_el": "blokk",
             "frittliggende_enebolig_eller_vaaningshus": "enebolig",
             "horisontaldelt_tomannsbolig_eller_annet_boligbygg_med_mindre_enn_3_etasjer": "rekkehus_horisontal",
             "hus_i_kjede_rekkehus_terrasse_hus_vertikaldelt_tomannsbolig": "rekkehus_vertikal",
@@ -51,18 +50,13 @@ def start(key, output_key, type_of_ds):
     )
 
     df["rekkehus"] = df["rekkehus_horisontal"] + df["rekkehus_vertikal"]
+    df["blokk"] = df["blokk_leiegaard_el"] + df["forretningsbygg"]
     df = df.drop(["rekkehus_vertikal", "rekkehus_horisontal"], axis=1)
 
-    df["total"] = df["rekkehus"] + df["blokk"] + df["enebolig"] + df["forretningsbygg"]
+    df["total"] = df["rekkehus"] + df["blokk"] + df["enebolig"]
 
     agg = Aggregate(
-        {
-            "total": "sum",
-            "rekkehus": "sum",
-            "enebolig": "sum",
-            "blokk": "sum",
-            "forretningsbygg": "sum",
-        }
+        {"total": "sum", "rekkehus": "sum", "enebolig": "sum", "blokk": "sum"}
     )
 
     df = agg.aggregate(df)
