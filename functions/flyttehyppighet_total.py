@@ -38,7 +38,9 @@ def handle(event, context):
         output_list = output_status(input_df)
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        import json
+        print(json.dumps(output_list))
+        #common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
     else:
@@ -55,19 +57,10 @@ def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
 
     flytting_df = pd.merge(flytting_fra_raw, flytting_til_raw, on=key_cols)
 
-    value_columns = list(set(flytting_df.columns) - set(key_cols))
-    agg = _agg(value_columns)
-    input_df = Aggregate(agg).aggregate(
+    input_df = Aggregate("sum").aggregate(
         flytting_df, extra_groupby_columns=[aldersgruppe_col]
     )
     return input_df
-
-
-def _agg(values):
-    agg = {}
-    for value in values:
-        agg[value] = "sum"
-    return agg
 
 
 def output_historic(input_df):
@@ -87,63 +80,57 @@ def output_status(input_df):
     return output
 
 
-class CustomTemplate(Template):
-    def _immigration_object(self, row_data):
-        return {
-            "alder": row_data[aldersgruppe_col],
-            "mellomDelbydeler": row_data["innflytting_mellom_delbydeler"],
-            "innenforDelbydelen": row_data["innflytting_innenfor_delbydelen"],
-            "tilFraOslo": row_data["innflytting_til_oslo"],
+def _immigration_object(row_data):
+    return {
+        "alder": row_data[aldersgruppe_col],
+        "mellomDelbydeler": row_data["innflytting_mellom_delbydeler"],
+        "innenforDelbydelen": row_data["innflytting_innenfor_delbydelen"],
+        "tilFraOslo": row_data["innflytting_til_oslo"],
+    }
+
+
+def _emigration_object(row_data):
+    return {
+        "alder": row_data[aldersgruppe_col],
+        "mellomDelbydeler": row_data["utflytting_mellom_delbydeler"],
+        "innenforDelbydelen": row_data["utflytting_innenfor_delbydelen"],
+        "tilFraOslo": row_data["utflytting_fra_oslo"],
+    }
+
+
+def _value_list(value_collection):
+    if value_collection.empty:
+        return []
+    return value_collection.tolist()
+
+
+def _values(df):
+    value_list = []
+    for date, group_df in df.groupby(by=["date"]):
+        immigration_list = group_df.apply(
+            lambda row: _immigration_object(row), axis=1
+        )
+        emigration_list = group_df.apply(
+            lambda row: _emigration_object(row), axis=1
+        )
+        value = {
+            "year": date,
+            "immigration": _value_list(immigration_list),
+            "emigration": _value_list(emigration_list),
         }
+        value_list.append(value)
 
-    def _emigration_object(self, row_data):
-        return {
-            "alder": row_data[aldersgruppe_col],
-            "mellomDelbydeler": row_data["utflytting_mellom_delbydeler"],
-            "innenforDelbydelen": row_data["utflytting_innenfor_delbydelen"],
-            "tilFraOslo": row_data["utflytting_fra_oslo"],
-        }
-
-    def _value_list(self, value_collection):
-        if value_collection.empty:
-            return []
-        return value_collection.tolist()
-
-    def _values(self, df, series, column_names=ColumnNames()):
-        value_list = []
-        for date, group_df in df.groupby(by=["date"]):
-            immigration_list = group_df.apply(
-                lambda row: self._immigration_object(row), axis=1
-            )
-            emigration_list = group_df.apply(
-                lambda row: self._emigration_object(row), axis=1
-            )
-            value = {
-                "year": date,
-                "immigration": self._value_list(immigration_list),
-                "emigration": self._value_list(emigration_list),
-            }
-            value_list.append(value)
-
-        return value_list
-
-    def values(self, df, series, column_names: ColumnNames = ColumnNames()):
-        """
-        Method for creating the values used in the output json structure
-        :param df: dataframe
-        :param series: list of columns to use as values
-        """
-        raise NotImplementedError()
+    return value_list
 
 
-class HistoricTemplate(CustomTemplate):
+class HistoricTemplate(Template):
     def values(self, df, series, column_names=ColumnNames()):
-        return self._values(df, series, column_names=ColumnNames())
+        return _values(df)
 
 
-class StatusTemplate(CustomTemplate):
+class StatusTemplate(Template):
     def values(self, df, series, column_names=ColumnNames()):
-        return self._values(df, series, column_names=ColumnNames()).pop()
+        return _values(df).pop()
 
 
 if __name__ == "__main__":
@@ -156,7 +143,7 @@ if __name__ == "__main__":
                 flytting_til_etter_alder_id: flytting_til_etter_alder_s3_key,
             },
             "output": "s3/key/or/prefix",
-            "config": {"type": "status"},
+            "config": {"type": "historisk"},
         },
         None,
     )
