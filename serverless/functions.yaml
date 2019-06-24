@@ -20,3 +20,4 @@ levekar_redusert_funksjonsevne: ${file(serverless/functions/levekar_redusert_fun
 innvandring_under16: ${file(serverless/functions/innvandring_under16.yaml)}
 husholdning123barn: ${file(serverless/functions/husholdning123barn.yaml)}
 levekar_totalt: ${file(serverless/functions/levekar_totalt.yaml)}
+flyttehyppighet_totalt: ${file(serverless/functions/flyttehyppighet_totalt.yaml)}
