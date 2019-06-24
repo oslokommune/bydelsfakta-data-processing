@@ -38,9 +38,7 @@ def handle(event, context):
         output_list = output_status(input_df)
 
     if output_list:
-        import json
-        print(json.dumps(output_list))
-        #common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
     else:
