@@ -63,12 +63,12 @@ def get_district_name(id):
 
 def get_latest_edition_of(dataset_id, confidentiality="green"):
     response = requests.get(
-        f"https://metadata.api-test.oslo.kommune.no/dev/datasets/{dataset_id}/versions/1/editions"
+        f"https://463aw752ag.execute-api.eu-west-1.amazonaws.com/dev/datasets/{dataset_id}/versions/1/editions"
     ).json()
     latest_edition = max(response, key=lambda x: x["Id"] if "Id" in x else -1)
     dataset_id, version, edition = latest_edition["Id"].split("/")
     distribution = requests.get(
-        f"https://metadata.api-test.oslo.kommune.no/dev/datasets/{dataset_id}/versions/1/editions/{edition}/distributions"
+        f"https://463aw752ag.execute-api.eu-west-1.amazonaws.com/dev/datasets/{dataset_id}/versions/1/editions/{edition}/distributions"
     ).json()
     file_name = distribution[0]["filename"]
     s3_key = (

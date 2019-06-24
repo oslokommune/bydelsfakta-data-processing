@@ -105,12 +105,8 @@ def _value_list(value_collection):
 def _values(df):
     value_list = []
     for date, group_df in df.groupby(by=["date"]):
-        immigration_list = group_df.apply(
-            lambda row: _immigration_object(row), axis=1
-        )
-        emigration_list = group_df.apply(
-            lambda row: _emigration_object(row), axis=1
-        )
+        immigration_list = group_df.apply(lambda row: _immigration_object(row), axis=1)
+        emigration_list = group_df.apply(lambda row: _emigration_object(row), axis=1)
         value = {
             "year": date,
             "immigration": _value_list(immigration_list),
