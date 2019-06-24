@@ -1,5 +1,3 @@
-import itertools
-
 import pandas as pd
 
 import common.transform as transform
@@ -11,10 +9,7 @@ from common.templates import Template
 
 
 graph_metadata = Metadata(
-    heading="Flytting",
-    series=[
-        {"heading": "Flytting", "subheading": ""}
-    ],
+    heading="Flytting", series=[{"heading": "Flytting", "subheading": ""}]
 )
 
 flytting_fra_etter_alder_id = "flytting-fra-etter-alder"
@@ -50,22 +45,6 @@ def handle(event, context):
         raise Exception("No data in outputlist")
 
 
-[
-    "date",
-    "bydel_id",
-    "bydel_navn",
-    "delbydel_id",
-    "delbydel_navn",
-    "aldersgruppe_10_aar",
-    "utflytting_fra_oslo",
-    "utflytting_innenfor_delbydelen",
-    "utflytting_mellom_delbydeler",
-    "innflytting_til_oslo",
-    "innflytting_innenfor_delbydelen",
-    "innflytting_mellom_delbydeler",
-]
-
-
 def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
     flytting_fra_raw = common_aws.read_from_s3(
         s3_key=s3_key_flytting_fra_raw, date_column="aar"
@@ -94,10 +73,7 @@ def _agg(values):
 def output_historic(input_df):
     [input_df] = transform.historic(input_df)
     output = Output(
-        values=None,
-        df=input_df,
-        metadata=graph_metadata,
-        template=CustomTemplate(),
+        values=None, df=input_df, metadata=graph_metadata, template=CustomTemplate()
     ).generate_output()
 
     return output
@@ -106,16 +82,12 @@ def output_historic(input_df):
 def output_status(input_df):
     [input_df] = transform.status(input_df)
     output = Output(
-        values=None,
-        df=input_df,
-        metadata=graph_metadata,
-        template=CustomTemplate(),
+        values=None, df=input_df, metadata=graph_metadata, template=CustomTemplate()
     ).generate_output()
     return output
 
 
 class CustomTemplate(Template):
-
     def _immigration_object(self, row_data):
         return {
             "alder": row_data[aldersgruppe_col],
@@ -140,8 +112,12 @@ class CustomTemplate(Template):
     def values(self, df, series, column_names=ColumnNames()):
         value_list = []
         for date, group_df in df.groupby(by=["date"]):
-            immigration_list = group_df.apply(lambda row: self._immigration_object(row), axis=1)
-            emigration_list = group_df.apply(lambda row: self._emigration_object(row), axis=1)
+            immigration_list = group_df.apply(
+                lambda row: self._immigration_object(row), axis=1
+            )
+            emigration_list = group_df.apply(
+                lambda row: self._emigration_object(row), axis=1
+            )
             value = {
                 "year": date,
                 "immigration": self._value_list(immigration_list),
