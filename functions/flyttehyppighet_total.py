@@ -73,7 +73,7 @@ def _agg(values):
 def output_historic(input_df):
     [input_df] = transform.historic(input_df)
     output = Output(
-        values=None, df=input_df, metadata=graph_metadata, template=CustomTemplate()
+        values=None, df=input_df, metadata=graph_metadata, template=HistoricTemplate()
     ).generate_output()
 
     return output
@@ -82,7 +82,7 @@ def output_historic(input_df):
 def output_status(input_df):
     [input_df] = transform.status(input_df)
     output = Output(
-        values=None, df=input_df, metadata=graph_metadata, template=CustomTemplate()
+        values=None, df=input_df, metadata=graph_metadata, template=StatusTemplate()
     ).generate_output()
     return output
 
@@ -109,7 +109,7 @@ class CustomTemplate(Template):
             return []
         return value_collection.tolist()
 
-    def values(self, df, series, column_names=ColumnNames()):
+    def _values(self, df, series, column_names=ColumnNames()):
         value_list = []
         for date, group_df in df.groupby(by=["date"]):
             immigration_list = group_df.apply(
@@ -127,6 +127,24 @@ class CustomTemplate(Template):
 
         return value_list
 
+    def values(self, df, series, column_names: ColumnNames = ColumnNames()):
+        """
+        Method for creating the values used in the output json structure
+        :param df: dataframe
+        :param series: list of columns to use as values
+        """
+        raise NotImplementedError()
+
+
+class HistoricTemplate(CustomTemplate):
+    def values(self, df, series, column_names=ColumnNames()):
+        return self._values(df, series, column_names=ColumnNames())
+
+
+class StatusTemplate(CustomTemplate):
+    def values(self, df, series, column_names=ColumnNames()):
+        return self._values(df, series, column_names=ColumnNames()).pop()
+
 
 if __name__ == "__main__":
     flytting_fra_etter_alder_s3_key = get_latest_edition_of(flytting_fra_etter_alder_id)
@@ -138,7 +156,7 @@ if __name__ == "__main__":
                 flytting_til_etter_alder_id: flytting_til_etter_alder_s3_key,
             },
             "output": "s3/key/or/prefix",
-            "config": {"type": "historisk"},
+            "config": {"type": "status"},
         },
         None,
     )
