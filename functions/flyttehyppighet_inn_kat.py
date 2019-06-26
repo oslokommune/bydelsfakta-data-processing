@@ -3,7 +3,7 @@ import numpy as np
 
 import common.transform as transform
 import common.aws as common_aws
-from common.aggregateV2 import ColumnNames
+from common.aggregateV2 import Aggregate, ColumnNames
 from common.util import get_latest_edition_of
 from common.output import Output, Metadata
 from common.templates import Template
@@ -43,7 +43,10 @@ def handle(event, context):
         output_list = output_status(input_df)
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        import json
+
+        print(json.dumps((output_list)))
+        # common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
     else:
@@ -78,6 +81,8 @@ def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
     flytting_df["delbydel_id"] = np.nan
     flytting_df["delbydel_navn"] = np.nan
 
+    flytting_df = flytting_df.astype({"delbydel_id": object, "delbydel_navn": object})
+
     flytting_df[("utflytting", "total")] = flytting_df[
         [
             ("utflytting", "Innvandrer"),
@@ -94,7 +99,11 @@ def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
         ]
     ].sum(axis=1)
 
-    return flytting_df
+    input_df = Aggregate("sum").aggregate(
+        flytting_df, extra_groupby_columns=[aldersgruppe_col]
+    )
+
+    return input_df
 
 
 def output_historic(input_df):
