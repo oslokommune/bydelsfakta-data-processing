@@ -1,5 +1,6 @@
 from functools import reduce
 import numpy as np
+import pandas as pd
 
 from common import util
 
@@ -36,3 +37,13 @@ def add_district_id(org, district_column=None):
         return df
     else:
         return df[df["district"].str.len() > 0]
+
+
+def pivot_table(df, pivot_column, value_columns):
+    key_columns = list(
+        filter(lambda x: x not in [pivot_column, *value_columns], list(df))
+    )
+    df_pivot = pd.concat(
+        (df[key_columns], df.pivot(columns=pivot_column, values=value_columns)), axis=1
+    )
+    return df_pivot.groupby(key_columns).sum().reset_index()
