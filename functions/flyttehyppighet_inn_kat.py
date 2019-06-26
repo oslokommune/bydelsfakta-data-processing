@@ -3,7 +3,7 @@ import numpy as np
 
 import common.transform as transform
 import common.aws as common_aws
-from common.aggregateV2 import Aggregate, ColumnNames
+from common.aggregateV2 import ColumnNames
 from common.util import get_latest_edition_of
 from common.output import Output, Metadata
 from common.templates import Template
@@ -43,9 +43,7 @@ def handle(event, context):
         output_list = output_status(input_df)
 
     if output_list:
-        import json
-        print(json.dumps(output_list))
-        # common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
     else:
@@ -122,7 +120,7 @@ def _immigration_object(row_data):
         "totalt": row_data[("innflytting", "total")],
         "innvandrer": row_data[("innflytting", "Innvandrer")],
         "norskfødt": row_data[("innflytting", "Norskfødte med innv.foreldre")],
-        "øvrige": row_data[("innflytting", "Øvrige")]
+        "øvrige": row_data[("innflytting", "Øvrige")],
     }
 
 
@@ -132,7 +130,7 @@ def _emigration_object(row_data):
         "totalt": row_data[("utflytting", "total")],
         "innvandrer": row_data[("utflytting", "Innvandrer")],
         "norskfødt": row_data[("utflytting", "Norskfødte med innv.foreldre")],
-        "øvrige": row_data[("utflytting", "Øvrige")]
+        "øvrige": row_data[("utflytting", "Øvrige")],
     }
 
 
