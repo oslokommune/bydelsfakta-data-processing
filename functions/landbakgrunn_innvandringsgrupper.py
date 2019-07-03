@@ -5,14 +5,15 @@ import common.aggregate_dfs as aggregator
 import common.population_utils as population_utils
 from common.aggregateV2 import Aggregate
 from common.output import Metadata
+from common.util import get_latest_edition_of
 
 pd.set_option("display.max_rows", 1000)
 
 graph_metadata = Metadata(
     series=[
+        {"heading": "Totalt", "subheading": ""},
         {"heading": "Innvandrer", "subheading": ""},
         {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
-        {"heading": "Totalt", "subheading": ""},
     ],
     heading="10 største innvandringsgrupper",
 )
@@ -35,7 +36,7 @@ def handle(event, context):
         s3_key=s3_key_befolkning, date_column="aar"
     )
 
-    data_points = ["innvandrer", "norskfodt_med_innvandrerforeldre", "total"]
+    data_points = ["total", "innvandrer", "norskfodt_med_innvandrerforeldre"]
 
     input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, data_points)
 
@@ -187,26 +188,20 @@ def get_top_n_countries(df, n):
 
 
 if __name__ == "__main__":
-    ""
-    # handle(
-    #     {
-    #         "input": {
-    #             "landbakgrunn-storste-innvandringsgrupper": "raw/green/landbakgrunn-storste-innvandringsgrupper/version=1/edition=20190523T211529/Landbakgrunn_storste_innvandringsgrupper(1.1.2008-1.1.2019-v01).csv",
-    #             "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
-    #         },
-    #         "output": "s3/key/or/prefix",
-    #         "config": {"type": "status"}
-    #     },
-    #     None
-    # )
-    # handle(
-    #     {
-    #         "input": {
-    #             "landbakgrunn-storste-innvandringsgrupper": "raw/green/landbakgrunn-storste-innvandringsgrupper/version=1/edition=20190523T211529/Landbakgrunn_storste_innvandringsgrupper(1.1.2008-1.1.2019-v01).csv",
-    #             "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190523T211529/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
-    #         },
-    #         "output": "s3/key/or/prefix",
-    #         "config": {"type": "historic"},
-    #     },
-    #     None,
-    # )
+    landbakgrunn_storste_innvandringsgrupper = get_latest_edition_of(
+        "landbakgrunn-storste-innvandringsgrupper"
+    )
+    befolkning_etter_kjonn_og_alder = get_latest_edition_of(
+        "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
+    )
+    handle(
+        {
+            "input": {
+                "landbakgrunn-storste-innvandringsgrupper": landbakgrunn_storste_innvandringsgrupper,
+                "befolkning-etter-kjonn-og-alder": befolkning_etter_kjonn_og_alder,
+            },
+            "output": "intermediate/green/landbakgrunn-innvandringsgrupper-status/version=1/edition=20190703T102550/",
+            "config": {"type": "status"},
+        },
+        None,
+    )
