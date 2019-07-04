@@ -124,7 +124,7 @@ def start(*, key, dataset_type):
         year_range = list(range(max_year - 9, max_year + 1))
 
         output = Output(
-            values=["population", "change", "change_10y"],
+            values=["population", "change", "change_10y", "date"],
             df=df,
             template=TemplateG(history_columns=year_range),
             metadata=METADATA[dataset_type],
