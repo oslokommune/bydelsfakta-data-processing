@@ -61,7 +61,7 @@ def create_ds(output_key, template, df):
 
     meta = Metadata(heading=heading, series=series)
     jsonl = Output(
-        df=df, template=template, metadata=meta, values=["leier", "selveier", "andel"]
+        df=df, template=template, metadata=meta, values=["leier", "andel", "selveier"]
     ).generate_output()
     common_aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
 
