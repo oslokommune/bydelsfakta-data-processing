@@ -43,10 +43,7 @@ def handle(event, context):
         output_list = output_status(input_df)
 
     if output_list:
-        import json
-
-        print(json.dumps((output_list)))
-        # common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
+        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
         return f"Created {output_key}"
 
     else:
@@ -61,21 +58,19 @@ def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
         s3_key=s3_key_flytting_til_raw, date_column="aar"
     )
 
-    flytting_fra_df["utflytting"] = flytting_fra_df[
-        ["utflytting_fra_oslo", "utflytting_mellom_bydeler"]
-    ].sum(axis=1)
-    flytting_til_df["innflytting"] = flytting_til_df[
-        ["innflytting_til_oslo", "innflytting_mellom_bydeler"]
-    ].sum(axis=1)
-
-    flytting_df = pd.merge(flytting_fra_df, flytting_til_df)[
-        [*key_cols, "innvandringskategori", "utflytting", "innflytting"]
-    ]
+    flytting_df = pd.merge(flytting_fra_df, flytting_til_df)
 
     flytting_df = transform.pivot_table(
         flytting_df,
         pivot_column="innvandringskategori",
-        value_columns=["utflytting", "innflytting"],
+        value_columns=[
+            "utflytting_fra_oslo",
+            "utflytting_innenfor_bydelen",
+            "utflytting_mellom_bydeler",
+            "innflytting_til_oslo",
+            "innflytting_innenfor_bydelen",
+            "innflytting_mellom_bydeler",
+        ],
     )
 
     flytting_df["delbydel_id"] = np.nan
@@ -83,24 +78,10 @@ def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
 
     flytting_df = flytting_df.astype({"delbydel_id": object, "delbydel_navn": object})
 
-    flytting_df[("utflytting", "total")] = flytting_df[
-        [
-            ("utflytting", "Innvandrer"),
-            ("utflytting", "Norskfødte med innv.foreldre"),
-            ("utflytting", "Øvrige"),
-        ]
-    ].sum(axis=1)
-
-    flytting_df[("innflytting", "total")] = flytting_df[
-        [
-            ("innflytting", "Innvandrer"),
-            ("innflytting", "Norskfødte med innv.foreldre"),
-            ("innflytting", "Øvrige"),
-        ]
-    ].sum(axis=1)
-
-    input_df = Aggregate("sum").aggregate(
-        flytting_df, extra_groupby_columns=[aldersgruppe_col]
+    input_df = (
+        Aggregate("sum")
+        .aggregate(flytting_df, extra_groupby_columns=[aldersgruppe_col])
+        .astype({"date": int})
     )
 
     return input_df
@@ -126,21 +107,98 @@ def output_status(input_df):
 def _immigration_object(row_data):
     return {
         "alder": row_data[aldersgruppe_col],
-        "totalt": row_data[("innflytting", "total")],
-        "innvandrer": row_data[("innflytting", "Innvandrer")],
-        "norskfødt": row_data[("innflytting", "Norskfødte med innv.foreldre")],
-        "øvrige": row_data[("innflytting", "Øvrige")],
+        "mellomBydel": {
+            "innvandrer": row_data[("innflytting_mellom_bydeler", "Innvandrer")],
+            "norskfødt": row_data[
+                ("innflytting_mellom_bydeler", "Norskfødte med innv.foreldre")
+            ],
+            "øvrige": row_data[("innflytting_mellom_bydeler", "Øvrige")],
+            "totalt": row_data[
+                [
+                    ("innflytting_mellom_bydeler", "Innvandrer"),
+                    ("innflytting_mellom_bydeler", "Norskfødte med innv.foreldre"),
+                    ("innflytting_mellom_bydeler", "Øvrige"),
+                ]
+            ].sum(),
+        },
+        "tilFraOslo": {
+            "innvandrer": row_data[("innflytting_til_oslo", "Innvandrer")],
+            "norskfødt": row_data[
+                ("innflytting_til_oslo", "Norskfødte med innv.foreldre")
+            ],
+            "øvrige": row_data[("innflytting_til_oslo", "Øvrige")],
+            "totalt": row_data[
+                [
+                    ("innflytting_til_oslo", "Innvandrer"),
+                    ("innflytting_til_oslo", "Norskfødte med innv.foreldre"),
+                    ("innflytting_til_oslo", "Øvrige"),
+                ]
+            ].sum(),
+        },
+        "innenforBydel": {
+            "innvandrer": row_data[("innflytting_innenfor_bydelen", "Innvandrer")],
+            "norskfødt": row_data[
+                ("innflytting_innenfor_bydelen", "Norskfødte med innv.foreldre")
+            ],
+            "øvrige": row_data[("innflytting_innenfor_bydelen", "Øvrige")],
+            "totalt": row_data[
+                [
+                    ("innflytting_innenfor_bydelen", "Innvandrer"),
+                    ("innflytting_innenfor_bydelen", "Norskfødte med innv.foreldre"),
+                    ("innflytting_innenfor_bydelen", "Øvrige"),
+                ]
+            ].sum(),
+        },
     }
 
 
 def _emigration_object(row_data):
-    return {
+    obj = {
         "alder": row_data[aldersgruppe_col],
-        "totalt": row_data[("utflytting", "total")],
-        "innvandrer": row_data[("utflytting", "Innvandrer")],
-        "norskfødt": row_data[("utflytting", "Norskfødte med innv.foreldre")],
-        "øvrige": row_data[("utflytting", "Øvrige")],
+        "mellomBydel": {
+            "innvandrer": row_data[("utflytting_mellom_bydeler", "Innvandrer")],
+            "norskfødt": row_data[
+                ("utflytting_mellom_bydeler", "Norskfødte med innv.foreldre")
+            ],
+            "øvrige": row_data[("utflytting_mellom_bydeler", "Øvrige")],
+            "totalt": row_data[
+                [
+                    ("utflytting_mellom_bydeler", "Innvandrer"),
+                    ("utflytting_mellom_bydeler", "Norskfødte med innv.foreldre"),
+                    ("utflytting_mellom_bydeler", "Øvrige"),
+                ]
+            ].sum(),
+        },
+        "tilFraOslo": {
+            "innvandrer": row_data[("utflytting_fra_oslo", "Innvandrer")],
+            "norskfødt": row_data[
+                ("utflytting_fra_oslo", "Norskfødte med innv.foreldre")
+            ],
+            "øvrige": row_data[("utflytting_fra_oslo", "Øvrige")],
+            "totalt": row_data[
+                [
+                    ("utflytting_fra_oslo", "Innvandrer"),
+                    ("utflytting_fra_oslo", "Norskfødte med innv.foreldre"),
+                    ("utflytting_fra_oslo", "Øvrige"),
+                ]
+            ].sum(),
+        },
+        "innenforBydel": {
+            "innvandrer": row_data[("utflytting_innenfor_bydelen", "Innvandrer")],
+            "norskfødt": row_data[
+                ("utflytting_mellom_bydeler", "Norskfødte med innv.foreldre")
+            ],
+            "øvrige": row_data[("utflytting_mellom_bydeler", "Øvrige")],
+            "totalt": row_data[
+                [
+                    ("utflytting_innenfor_bydelen", "Innvandrer"),
+                    ("utflytting_innenfor_bydelen", "Norskfødte med innv.foreldre"),
+                    ("utflytting_innenfor_bydelen", "Øvrige"),
+                ]
+            ].sum(),
+        },
     }
+    return obj
 
 
 def _value_list(value_collection):
@@ -171,7 +229,8 @@ class HistoricTemplate(Template):
 
 class StatusTemplate(Template):
     def values(self, df, series, column_names=ColumnNames()):
-        return _values(df).pop()
+        [value_list] = _values(df)
+        return value_list
 
 
 if __name__ == "__main__":
