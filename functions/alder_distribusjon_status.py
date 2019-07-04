@@ -53,7 +53,7 @@ if __name__ == "__main__":
             "input": {
                 "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190528T123302/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
             },
-            "output": "intermediate/green/alder-distribusjon-status/version=1/edition=20190528T142500/",
+            "output": "intermediate/green/alder-distribusjon-status/version=1/edition=20190703T142500/",
         },
         {},
     )
