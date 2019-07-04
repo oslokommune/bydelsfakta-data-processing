@@ -110,7 +110,8 @@ class TemplateG(Template):
 
         status_df = df[df[column_names.date] == df[column_names.date].max()]
         status = [status_df[col].item() for col in series]
-        return [*status, history]
+        [date] = [status_df["date"].item()]
+        return [*status, history, date]
 
 
 class TemplateH(TemplateC):
