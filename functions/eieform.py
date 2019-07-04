@@ -69,9 +69,7 @@ def create_ds(output_key, template, df):
 if __name__ == "__main__":
     handle(
         {
-            "input": {
-                "eieform": get_latest_edition_of("eieform"),
-            },
+            "input": {"eieform": get_latest_edition_of("eieform")},
             "output": "intermediate/green/eieform-status/version=1/edition=20190703T102550/",
             "config": {"type": "status"},
         },

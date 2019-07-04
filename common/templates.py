@@ -87,7 +87,9 @@ class TemplateE(Template):
     def _value(self, dict, total, age, date):
         men = dict[1]
         women = dict[2]
-        value = self._custom_object(age=age, men=men, women=women, total=total, date=date)
+        value = self._custom_object(
+            age=age, men=men, women=women, total=total, date=date
+        )
         return value
 
     def values(self, df, series, column_names=ColumnNames()):
