@@ -74,25 +74,29 @@ class TemplateJ(TemplateA):
 
 
 class TemplateE(Template):
-    def _custom_object(self, age, men, women, total):
+    def _custom_object(self, age, men, women, total, date):
         return {
             "age": age,
             "mann": men,
             "kvinne": women,
             "value": men + women,
             "ratio": (men + women) / total,
+            "date": int(date),
         }
 
-    def _value(self, dict, total, age):
+    def _value(self, dict, total, age, date):
         men = dict[1]
         women = dict[2]
-        value = self._custom_object(age=age, men=men, women=women, total=total)
+        value = self._custom_object(
+            age=age, men=men, women=women, total=total, date=date
+        )
         return value
 
     def values(self, df, series, column_names=ColumnNames()):
         total = df["total"].sum()
         ages = df[series + ["kjonn"]].set_index("kjonn")
-        values = ages.apply(lambda x: self._value(x.to_dict(), total, x.name))
+        [date] = df["date"].unique()
+        values = ages.apply(lambda x: self._value(x.to_dict(), total, x.name, date))
         return values.tolist()
 
 

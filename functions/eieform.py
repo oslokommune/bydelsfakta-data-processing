@@ -2,6 +2,7 @@ import common.aws as common_aws
 import common.transform as transform
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC
+from common.util import get_latest_edition_of
 
 
 def handle(event, context):
@@ -53,14 +54,14 @@ def start(key, output_key, type_of_ds):
 def create_ds(output_key, template, df):
     heading = "Husholdninger fordelt etter eie-/leieforhold"
     series = [
+        {"heading": "Leier", "subheading": ""},
         {"heading": "Andels-/aksjeeier", "subheading": ""},
         {"heading": "Selveier", "subheading": ""},
-        {"heading": "Leier", "subheading": ""},
     ]
 
     meta = Metadata(heading=heading, series=series)
     jsonl = Output(
-        df=df, template=template, metadata=meta, values=["selveier", "andel", "leier"]
+        df=df, template=template, metadata=meta, values=["leier", "selveier", "andel"]
     ).generate_output()
     common_aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
 
@@ -68,11 +69,9 @@ def create_ds(output_key, template, df):
 if __name__ == "__main__":
     handle(
         {
-            "input": {
-                "eieform": "raw/green/eieform/version=1/edition=20190527T101424/Eieform(2015-2017-v01).csv"
-            },
-            "output": "intermediate/green/eieform-historisk/version=1/edition=20190529T102550/",
-            "config": {"type": "historisk"},
+            "input": {"eieform": get_latest_edition_of("eieform")},
+            "output": "intermediate/green/eieform-status/version=1/edition=20190703T102550/",
+            "config": {"type": "status"},
         },
         {},
     )
