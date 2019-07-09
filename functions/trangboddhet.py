@@ -36,33 +36,33 @@ METADATA = {
 }
 
 DATA_POINTS = {
-    "0-5-0-9_status": ["personer_per_rom_0_5_til_0_9"],
-    "0-5-0-9_historisk": ["personer_per_rom_0_5_til_0_9"],
-    "1-0-1-9_status": ["personer_per_rom_1_0_til_1_9"],
-    "1-0-1-9_historisk": ["personer_per_rom_1_0_til_1_9"],
-    "over-2_status": ["personer_per_rom_2_0_og_over"],
-    "over-2_historisk": ["personer_per_rom_2_0_og_over"],
-    "under-0-5_status": ["personer_per_rom_under_0_5"],
-    "under-0-5_historisk": ["personer_per_rom_under_0_5"],
+    "0-5-0-9_status": ["rom_per_person_0_5_til_0_9"],
+    "0-5-0-9_historisk": ["rom_per_person_0_5_til_0_9"],
+    "1-0-1-9_status": ["rom_per_person_1_0_til_1_9"],
+    "1-0-1-9_historisk": ["rom_per_person_1_0_til_1_9"],
+    "over-2_status": ["rom_per_person_2_0_og_over"],
+    "over-2_historisk": ["rom_per_person_2_0_og_over"],
+    "under-0-5_status": ["rom_per_person_under_0_5"],
+    "under-0-5_historisk": ["rom_per_person_under_0_5"],
     "alle_status": [
-        "personer_per_rom_under_0_5",
-        "personer_per_rom_0_5_til_0_9",
-        "personer_per_rom_1_0_til_1_9",
-        "personer_per_rom_2_0_og_over",
+        "rom_per_person_under_0_5",
+        "rom_per_person_0_5_til_0_9",
+        "rom_per_person_1_0_til_1_9",
+        "rom_per_person_2_0_og_over",
     ],
     "alle_historisk": [
-        "personer_per_rom_under_0_5",
-        "personer_per_rom_0_5_til_0_9",
-        "personer_per_rom_1_0_til_1_9",
-        "personer_per_rom_2_0_og_over",
+        "rom_per_person_under_0_5",
+        "rom_per_person_0_5_til_0_9",
+        "rom_per_person_1_0_til_1_9",
+        "rom_per_person_2_0_og_over",
     ],
 }
 
 VALUE_POINTS = [
-    "personer_per_rom_under_0_5",
-    "personer_per_rom_0_5_til_0_9",
-    "personer_per_rom_1_0_til_1_9",
-    "personer_per_rom_2_0_og_over",
+    "rom_per_person_under_0_5",
+    "rom_per_person_0_5_til_0_9",
+    "rom_per_person_1_0_til_1_9",
+    "rom_per_person_2_0_og_over",
 ]
 
 
@@ -79,11 +79,11 @@ def start(key, output_key, type_of_ds):
 
     agg = Aggregate(
         {
-            "personer_per_rom_under_0_5": "sum",
-            "personer_per_rom_0_5_til_0_9": "sum",
-            "personer_per_rom_1_0_til_1_9": "sum",
-            "personer_per_rom_2_0_og_over": "sum",
-            "personer_per_rom_i_alt": "sum",
+            "rom_per_person_under_0_5": "sum",
+            "rom_per_person_0_5_til_0_9": "sum",
+            "rom_per_person_1_0_til_1_9": "sum",
+            "rom_per_person_2_0_og_over": "sum",
+            "rom_per_person_i_alt": "sum",
         }
     )
 
