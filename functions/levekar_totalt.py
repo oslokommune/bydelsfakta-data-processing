@@ -31,7 +31,7 @@ graph_metadata = Metadata(
         {"heading": "Fattige barnehusholdninger", "subheading": ""},
         {"heading": "Ikke sysselsatte", "subheading": ""},
         {"heading": "Ikke fullført vgs", "subheading": ""},
-        {"heading": "Dødsfall", "subheading": ""},
+        {"heading": "Dødelighet", "subheading": ""},
         {"heading": "Trangbodde", "subheading": ""},
     ],
 )
