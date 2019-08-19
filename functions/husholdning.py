@@ -74,6 +74,9 @@ def process(source):
         columns=["barn_i_husholdningen"],
         values=["total"],
     )
+
+    household_pivot = household_pivot.fillna(0)
+
     household_pivot.columns = household_pivot.columns.droplevel(0)
     household_pivot = household_pivot.reset_index().rename_axis(None, axis=1)
 
@@ -116,7 +119,8 @@ if __name__ == "__main__":
                     "husholdninger-med-barn"
                 )
             },
-            "config": {"type": "historisk"},
+            "output": "intermediate/green/husholdninger-totalt-status/version=1/edition=20190819T110202/",
+            "config": {"type": "status"},
         },
         {},
     )
