@@ -29,8 +29,10 @@ def handle(event, context):
 
     series = [
         {"heading": "Aleneboende", "subheading": ""},
-        {"heading": "Øvrige husholdninger uten barn", "subheading": ""},
-        {"heading": "Husholdninger med barn", "subheading": ""},
+        {"heading": "Øvrige husholdninger", "subheading": "uten barn"},
+        {"heading": "Husholdninger", "subheading": "med 1 barn"},
+        {"heading": "Husholdninger", "subheading": "med 2 barn"},
+        {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
     ]
 
     metadata = Metadata(heading="Husholdning total", series=series)
@@ -48,7 +50,7 @@ def handle(event, context):
     df = process(df)
     output = Output(
         df=df,
-        values=["single_adult", "no_children", "with_children"],
+        values=["single_adult", "no_children", "one_child", "two_child", "three_or_more"],
         template=template,
         metadata=metadata,
     )
@@ -80,27 +82,22 @@ def process(source):
     household_pivot.columns = household_pivot.columns.droplevel(0)
     household_pivot = household_pivot.reset_index().rename_axis(None, axis=1)
 
-    household_pivot["with_children"] = (
-        household_pivot["1 barn i HH"]
-        + household_pivot["2 barn i HH"]
-        + household_pivot["3 barn i HH"]
-        + household_pivot["4 barn eller mer"]
-    )
+    household_pivot["one_child"] = household_pivot["1 barn i HH"]
+    household_pivot["two_child"] = household_pivot["2 barn i HH"]
+    household_pivot["three_or_more"] = household_pivot["3 barn i HH"] + household_pivot["4 barn eller mer"]
+
     household_pivot = household_pivot.rename(columns={"Ingen barn i HH": "no_children"})
 
     househoulds = household_pivot[
-        column_names.default_groupby_columns() + ["no_children", "with_children"]
+        column_names.default_groupby_columns() + ["no_children", "one_child", "two_child", "three_or_more"]
     ]
     merged = agg.merge_all(loners, househoulds, how="outer")
-
-    merged["with_children"] = merged["with_children"].fillna(0)
-
     aggregated = agg.aggregate(merged)
 
     aggregated = agg.add_ratios(
         aggregated,
-        data_points=["no_children", "single_adult", "with_children"],
-        ratio_of=["no_children", "single_adult", "with_children"],
+        data_points=["no_children", "single_adult", "one_child", "two_child", "three_or_more"],
+        ratio_of=["no_children", "single_adult", "one_child", "two_child", "three_or_more"],
     )
     return aggregated
 
