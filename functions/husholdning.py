@@ -50,7 +50,13 @@ def handle(event, context):
     df = process(df)
     output = Output(
         df=df,
-        values=["single_adult", "no_children", "one_child", "two_child", "three_or_more"],
+        values=[
+            "single_adult",
+            "no_children",
+            "one_child",
+            "two_child",
+            "three_or_more",
+        ],
         template=template,
         metadata=metadata,
     )
@@ -84,20 +90,35 @@ def process(source):
 
     household_pivot["one_child"] = household_pivot["1 barn i HH"]
     household_pivot["two_child"] = household_pivot["2 barn i HH"]
-    household_pivot["three_or_more"] = household_pivot["3 barn i HH"] + household_pivot["4 barn eller mer"]
+    household_pivot["three_or_more"] = (
+        household_pivot["3 barn i HH"] + household_pivot["4 barn eller mer"]
+    )
 
     household_pivot = household_pivot.rename(columns={"Ingen barn i HH": "no_children"})
 
     househoulds = household_pivot[
-        column_names.default_groupby_columns() + ["no_children", "one_child", "two_child", "three_or_more"]
+        column_names.default_groupby_columns()
+        + ["no_children", "one_child", "two_child", "three_or_more"]
     ]
     merged = agg.merge_all(loners, househoulds, how="outer")
     aggregated = agg.aggregate(merged)
 
     aggregated = agg.add_ratios(
         aggregated,
-        data_points=["no_children", "single_adult", "one_child", "two_child", "three_or_more"],
-        ratio_of=["no_children", "single_adult", "one_child", "two_child", "three_or_more"],
+        data_points=[
+            "no_children",
+            "single_adult",
+            "one_child",
+            "two_child",
+            "three_or_more",
+        ],
+        ratio_of=[
+            "no_children",
+            "single_adult",
+            "one_child",
+            "two_child",
+            "three_or_more",
+        ],
     )
     return aggregated
 
