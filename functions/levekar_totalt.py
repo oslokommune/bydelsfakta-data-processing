@@ -26,9 +26,9 @@ graph_metadata = Metadata(
     heading="Personer fra 16 til 66 år med redusert funksjonsevne",
     series=[
         {"heading": "Redusert funksjonsevne", "subheading": ""},
-        {"heading": "Ikke vestlige innvandrere kort botid", "subheading": ""},
+        {"heading": "Innvandrere fra Afrika, Asia mv. med kort botid", "subheading": ""},
         {"heading": "Lav utdanning", "subheading": ""},
-        {"heading": "Fattige barnehusholdninger", "subheading": ""},
+        {"heading": "Lavinntektshusholdninger med barn", "subheading": ""},
         {"heading": "Ikke sysselsatte", "subheading": ""},
         {"heading": "Ikke fullført vgs", "subheading": ""},
         {"heading": "Dødelighet", "subheading": ""},
