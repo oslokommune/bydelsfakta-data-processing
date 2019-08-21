@@ -1,4 +1,4 @@
-frameworkVersion: ">=1.1.0 <2.0.0"
+frameworkVersion: ">=1.50.0 <2.0.0"
 
 service: bydelsfakta-data-processing
 
@@ -15,9 +15,19 @@ provider:
     - arn:aws:iam::aws:policy/AmazonS3FullAccess
   environment:
     BUCKET_NAME: ok-origo-dataplatform-${self:provider.stage}
+    GIT_REV: ${git:branch}:${git:sha1}
+  tags:
+    GIT_REV: ${git:branch}:${git:sha1}
 
 plugins:
   - serverless-python-requirements
+  - serverless-plugin-git-variables
+
+resources:
+  Description: >
+    ${self:service} ${git:branch}:${git:sha1}
+
+    ${git:message}
 
 package:
   exclude:
@@ -35,3 +45,4 @@ custom:
     dockerizePip: non-linux
     layer: true
     usePoetry: false
+  exportGitVariables: false
