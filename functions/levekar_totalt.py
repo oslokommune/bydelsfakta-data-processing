@@ -17,7 +17,7 @@ value_columns = [
     "antall_fattige_barnehusholdninger",
     "antall_ikke_sysselsatte",
     "ikke_fullfort_vgs",
-    "antallet_dode",
+    "dodsrate",
     "antall_trangbodde",
 ]
 
@@ -168,12 +168,10 @@ def generate_trangbodde_input_df(trangbodde_raw, befolkning_raw):
 
 
 def generate_dosrater_df(dodsrater_raw):
-    data_point = "antallet_dode"
+    data_point = "dodsrate"
     df = dodsrater_raw
 
-    df = Aggregate({}).add_ratios(
-        df=df, data_points=[data_point], ratio_of=["antall_personer"]
-    )
+    df[f"{data_point}_ratio"] = df[data_point] / 100
 
     # TODO: Hardcoded removal of wrongly categorized subdistricts
     df.iloc[95:, 1] = np.nan
