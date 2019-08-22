@@ -65,7 +65,6 @@ def process(source):
     loners = loners.groupby(column_names.default_groupby_columns()).sum().reset_index()
     loners = loners.rename(columns={"aleneboende": "single_adult"})
 
-
     rest = source.drop(columns=["aleneboende"])
 
     rest["par_uten_barn"] = rest["par_uten_hjemmeboende_barn"]
@@ -80,7 +79,6 @@ def process(source):
         + rest["flerfamiliehusholdninger_uten_barn_0_til_17_aar"]
     )
 
-
     rest = rest.drop(
         columns=[
             "par_uten_hjemmeboende_barn",
@@ -94,8 +92,6 @@ def process(source):
             "flerfamiliehusholdninger_uten_barn_0_til_17_aar",
         ]
     )
-
-
 
     agg = Aggregate("sum")
     meta = rest[column_names.default_groupby_columns() + ["barn_i_husholdningen"]]
