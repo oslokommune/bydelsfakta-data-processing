@@ -1,5 +1,3 @@
-import pandas as pd
-
 from common import aws, util, transform
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
