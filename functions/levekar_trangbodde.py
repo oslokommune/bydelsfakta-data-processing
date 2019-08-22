@@ -67,7 +67,7 @@ if __name__ == "__main__":
             "output": "intermediate/green/levekar-trangbodde-status/version=1/edition=20190821T124040/",
             "config": {"type": "status"},
         },
-        None,
+        {},
     )
     # handle(
     #     {

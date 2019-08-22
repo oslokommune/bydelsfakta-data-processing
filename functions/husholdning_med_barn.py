@@ -6,15 +6,10 @@ from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC
 
 value_columns = [
-    "enfamiliehusholdninger_med_voksne_barn",
-    "flerfamiliehusholdninger_med_smaa_barn",
-    "flerfamiliehusholdninger_med_store_barn",
-    "flerfamiliehusholdninger_uten_barn_0_til_17_aar",
-    "mor_eller_far_med_smaa_barn",
-    "mor_eller_far_med_store_barn",
-    "par_med_smaa_barn",
-    "par_med_store_barn",
-    "par_uten_hjemmeboende_barn",
+    "par_uten_barn",
+    "par_med_barn",
+    "mor_far_med_barn",
+    "flerfamiliehusholdninger",
 ]
 
 column_names = ColumnNames()
@@ -29,13 +24,13 @@ def handle(event, context):
 
     series = [
         {"heading": "Aleneboende", "subheading": ""},
-        {"heading": "Øvrige husholdninger", "subheading": "uten barn"},
-        {"heading": "Husholdninger", "subheading": "med 1 barn"},
-        {"heading": "Husholdninger", "subheading": "med 2 barn"},
-        {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
+        {"heading": "Par uten barn", "subheading": ""},
+        {"heading": "Par med barn", "subheading": ""},
+        {"heading": "Mor eller far", "subheading": "med barn"},
+        {"heading": "Flerfamiliehusholdninger", "subheading": ""},
     ]
 
-    metadata = Metadata(heading="Husholdninger med barn", series=series)
+    metadata = Metadata(heading="Husholdninger etter husholdningstype", series=series)
 
     if type == "status":
         [df] = transform.status(source)
@@ -70,7 +65,37 @@ def process(source):
     loners = loners.groupby(column_names.default_groupby_columns()).sum().reset_index()
     loners = loners.rename(columns={"aleneboende": "single_adult"})
 
+
     rest = source.drop(columns=["aleneboende"])
+
+    rest["par_uten_barn"] = rest["par_uten_hjemmeboende_barn"]
+    rest["par_med_barn"] = rest["par_med_smaa_barn"] + rest["par_med_store_barn"]
+    rest["mor_far_med_barn"] = (
+        rest["mor_eller_far_med_smaa_barn"] + rest["mor_eller_far_med_store_barn"]
+    )
+    rest["flerfamiliehusholdninger"] = (
+        rest["enfamiliehusholdninger_med_voksne_barn"]
+        + rest["flerfamiliehusholdninger_med_smaa_barn"]
+        + rest["flerfamiliehusholdninger_med_store_barn"]
+        + rest["flerfamiliehusholdninger_uten_barn_0_til_17_aar"]
+    )
+
+
+    rest = rest.drop(
+        columns=[
+            "par_uten_hjemmeboende_barn",
+            "par_med_smaa_barn",
+            "par_med_store_barn",
+            "mor_eller_far_med_smaa_barn",
+            "mor_eller_far_med_store_barn",
+            "enfamiliehusholdninger_med_voksne_barn",
+            "flerfamiliehusholdninger_med_store_barn",
+            "flerfamiliehusholdninger_med_smaa_barn",
+            "flerfamiliehusholdninger_uten_barn_0_til_17_aar",
+        ]
+    )
+
+
 
     agg = Aggregate("sum")
     meta = rest[column_names.default_groupby_columns() + ["barn_i_husholdningen"]]
