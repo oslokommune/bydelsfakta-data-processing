@@ -9,7 +9,7 @@ from common.templates import Template
 
 
 graph_metadata = Metadata(
-    heading="Flytting", series=[{"heading": "Flytting", "subheading": ""}]
+    heading="Flytting etter alder", series=[{"heading": "Flytting", "subheading": ""}]
 )
 
 flytting_fra_etter_alder_id = "flytting-fra-etter-alder"
