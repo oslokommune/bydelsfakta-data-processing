@@ -28,14 +28,13 @@ def handle(event, context):
     source = aws.read_from_s3(s3_key=s3_key)
 
     series = [
-        {"heading": "Aleneboende", "subheading": ""},
         {"heading": "Øvrige husholdninger", "subheading": "uten barn"},
         {"heading": "Husholdninger", "subheading": "med 1 barn"},
         {"heading": "Husholdninger", "subheading": "med 2 barn"},
         {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
     ]
 
-    metadata = Metadata(heading="Husholdning total", series=series)
+    metadata = Metadata(heading="Husholdninger med barn", series=series)
 
     if type == "status":
         [df] = transform.status(source)
@@ -50,13 +49,7 @@ def handle(event, context):
     df = process(df)
     output = Output(
         df=df,
-        values=[
-            "single_adult",
-            "no_children",
-            "one_child",
-            "two_child",
-            "three_or_more",
-        ],
+        values=["no_children", "one_child", "two_child", "three_or_more"],
         template=template,
         metadata=metadata,
     )

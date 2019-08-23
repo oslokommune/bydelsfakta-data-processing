@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-husholdningstyper
+handler: functions/husholdningstyper.handle
+timeout: 60
+layers: ${self:custom.layers}
