@@ -27,8 +27,7 @@ deploy: init format test login-dev
 
 .PHONY: deploy-prod
 deploy-prod: init format is-git-clean test login-prod
-	sls deploy --stage prod --aws-profile $(.PROD_PROFILE) && \
-	sls --stage prod downloadDocumentation --outputFileName swagger.yaml
+	sls deploy --stage prod --aws-profile $(.PROD_PROFILE)
 
 .PHONY: login-dev
 login-dev:
