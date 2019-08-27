@@ -30,7 +30,12 @@ def start(key, output_key, type_of_ds):
 
     metadata = Metadata(
         heading="Dødsrater",
-        series=[{"heading": "Dødelighet (siste 5 år) for personer 55-79 år", "sub-heading": ""}],
+        series=[
+            {
+                "heading": "Dødelighet (siste 5 år) for personer 55-79 år",
+                "sub-heading": "",
+            }
+        ],
     )
     output = Output(values=["dodsrate"], df=df, template=TemplateA(), metadata=metadata)
     jsonl = output.generate_output()

@@ -1,15 +1,52 @@
 import pandas as pd
 
 from common import aws, util, transform
+from common.transform import status, historic
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
-from common.templates import TemplateA, TemplateC
+from common.templates import TemplateA, TemplateB, TemplateC
+
+
+METADATA = {
+    "alle_status": Metadata(
+        heading="Husholdninger med barn",
+        series=[
+            {"heading": "Husholdninger", "subheading": "med 1 barn"},
+            {"heading": "Husholdninger", "subheading": "med 2 barn"},
+            {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
+        ],
+    ),
+    "alle_historisk": Metadata(
+        heading="Husholdninger med barn",
+        series=[
+            {"heading": "Husholdninger", "subheading": "med 1 barn"},
+            {"heading": "Husholdninger", "subheading": "med 2 barn"},
+            {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
+        ],
+    ),
+    "1barn_status": Metadata(heading="Husholdninger med 1 barn", series=[]),
+    "1barn_historisk": Metadata(heading="Husholdninger med 1 barn", series=[]),
+    "2barn_status": Metadata(heading="Husholdninger med 2 barn", series=[]),
+    "2barn_historisk": Metadata(heading="Husholdninger med 2 barn", series=[]),
+    "3barn_status": Metadata(heading="Husholdninger med 3 barn", series=[]),
+    "3barn_historisk": Metadata(heading="Husholdninger med 3 barn", series=[]),
+}
+
+DATA_POINTS = {
+    "alle_status": ["one_child", "two_child", "three_or_more"],
+    "alle_historisk": ["one_child", "two_child", "three_or_more"],
+    "1barn_status": ["one_child"],
+    "1barn_historisk": ["one_child"],
+    "2barn_status": ["two_child"],
+    "2barn_historisk": ["two_child"],
+    "3barn_status": ["three_or_more"],
+    "3barn_historisk": ["three_or_more"],
+}
+
 
 value_columns = [
-    "enfamiliehusholdninger_med_voksne_barn",
     "flerfamiliehusholdninger_med_smaa_barn",
     "flerfamiliehusholdninger_med_store_barn",
-    "flerfamiliehusholdninger_uten_barn_0_til_17_aar",
     "mor_eller_far_med_smaa_barn",
     "mor_eller_far_med_store_barn",
     "par_med_smaa_barn",
@@ -27,37 +64,42 @@ def handle(event, context):
     type = event["config"]["type"]
     source = aws.read_from_s3(s3_key=s3_key)
 
-    series = [
-        {"heading": "Husholdninger", "subheading": "med 1 barn"},
-        {"heading": "Husholdninger", "subheading": "med 2 barn"},
-        {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
-    ]
+    df = process(source)
 
-    metadata = Metadata(heading="Husholdninger med barn", series=series)
-
-    if type == "status":
-        [df] = transform.status(source)
-        template = TemplateA()
-
-    elif type == "historisk":
-        [df] = transform.historic(source)
-        template = TemplateC()
+    if type == "alle_status":
+        create_ds(output_key, TemplateA(), type, *status(df))
+    elif type == "alle_historisk":
+        create_ds(output_key, TemplateC(), type, *historic(df))
+    elif type == "1barn_status":
+        create_ds(output_key, TemplateA(), type, *status(df))
+    elif type == "1barn_historisk":
+        create_ds(output_key, TemplateB(), type, *historic(df))
+    elif type == "2barn_status":
+        create_ds(output_key, TemplateA(), type, *status(df))
+    elif type == "2barn_historisk":
+        create_ds(output_key, TemplateB(), type, *historic(df))
+    elif type == "3barn_status":
+        create_ds(output_key, TemplateA(), type, *status(df))
+    elif type == "3barn_historisk":
+        create_ds(output_key, TemplateB(), type, *historic(df))
     else:
         raise Exception("Wrong dataset type")
 
-    df = process(df)
-    output = Output(
-        df=df,
-        values=["one_child", "two_child", "three_or_more"],
-        template=template,
-        metadata=metadata,
-    )
-
-    write(output=output, output_key=output_key)
     return f"Complete: {output_key}"
 
 
+def create_ds(output_key, template, type_of_ds, df):
+    jsonl = Output(
+        df=df,
+        template=template,
+        metadata=METADATA[type_of_ds],
+        values=DATA_POINTS[type_of_ds],
+    ).generate_output()
+    aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
+
+
 def process(source):
+    source = source.fillna(0)
     loners = source[column_names.default_groupby_columns() + ["aleneboende"]]
     loners = loners.groupby(column_names.default_groupby_columns()).sum().reset_index()
     loners = loners.rename(columns={"aleneboende": "single_adult"})
@@ -130,7 +172,7 @@ if __name__ == "__main__":
                 )
             },
             "output": "intermediate/green/husholdninger-totalt-status/version=1/edition=20190819T110202/",
-            "config": {"type": "status"},
+            "config": {"type": "1barn_historisk"},
         },
         {},
     )

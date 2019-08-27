@@ -23,10 +23,10 @@ def handle(event, context):
 
     series = [
         {"heading": "Aleneboende", "subheading": ""},
+        {"heading": "Flerfamiliehusholdninger", "subheading": ""},
         {"heading": "Par uten barn", "subheading": ""},
         {"heading": "Par med barn", "subheading": ""},
         {"heading": "Mor eller far", "subheading": "med barn"},
-        {"heading": "Flerfamiliehusholdninger", "subheading": ""},
     ]
 
     metadata = Metadata(heading="Husholdninger etter husholdningstype", series=series)

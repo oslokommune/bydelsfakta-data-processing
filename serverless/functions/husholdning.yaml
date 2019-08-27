@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-husholdning
-handler: functions/husholdning.handle
-timeout: 60
-layers: ${self:custom.layers}
