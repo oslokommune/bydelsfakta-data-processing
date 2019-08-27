@@ -64,6 +64,8 @@ def handle(event, context):
     type = event["config"]["type"]
     source = aws.read_from_s3(s3_key=s3_key)
 
+    source = source.dropna(subset=["bydel_id"])
+
     df = process(source)
 
     if type == "alle_status":
