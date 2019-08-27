@@ -10,7 +10,7 @@ levekar_trangbodde: ${file(serverless/functions/levekar_trangbodde.yaml)}
 landbakgrunn_innvandringsgrupper: ${file(serverless/functions/landbakgrunn_innvandringsgrupper.yaml)}
 bygningstyper: ${file(serverless/functions/bygningstyper.yaml)}
 levekar_ikke_sysselsatte: ${file(serverless/functions/levekar_ikke_sysselsatte.yaml)}
-husholdning: ${file(serverless/functions/husholdning.yaml)}
+husholdning_med_barn: ${file(serverless/functions/husholdning_med_barn.yaml)}
 fattige_barnehusholdninger: ${file(serverless/functions/fattige_barnehusholdninger.yaml)}
 trangboddhet: ${file(serverless/functions/trangboddhet.yaml)}
 folkemengde: ${file(serverless/functions/folkemengde.yaml)}
@@ -18,7 +18,6 @@ botid_ikke_vestlige: ${file(serverless/functions/botid_ikke_vestlige.yaml)}
 levekar_lav_utdanning: ${file(serverless/functions/levekar_lav_utdanning.yaml)}
 levekar_redusert_funksjonsevne: ${file(serverless/functions/levekar_redusert_funksjonsevne.yaml)}
 innvandring_under16: ${file(serverless/functions/innvandring_under16.yaml)}
-husholdning123barn: ${file(serverless/functions/husholdning123barn.yaml)}
 levekar_totalt: ${file(serverless/functions/levekar_totalt.yaml)}
 flyttehyppighet_totalt: ${file(serverless/functions/flyttehyppighet_totalt.yaml)}
 flyttehyppighet_inn_kat: ${file(serverless/functions/flyttehyppighet_inn_kat.yaml)}
