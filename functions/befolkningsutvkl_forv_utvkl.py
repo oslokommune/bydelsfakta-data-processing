@@ -207,12 +207,6 @@ if __name__ == "__main__":
                 "flytting-til-etter-alder": common.util.get_latest_edition_of(
                     "flytting-til-etter-alder"
                 ),
-                "flytting-til-etter-inn-kat": common.util.get_latest_edition_of(
-                    "flytting-til-etter-inn-kat"
-                ),
-                "flytting-fra-etter-inn-kat": common.util.get_latest_edition_of(
-                    "flytting-fra-etter-inn-kat"
-                ),
                 "befolkningsframskrivninger": common.util.get_latest_edition_of(
                     "befolkningsframskrivninger"
                 ),
