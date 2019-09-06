@@ -123,10 +123,9 @@ def handler(event, context):
     metadata = Metadata(
         heading="Innvandring befolkning",
         series=[
-            {"heading": "Norskfødt", "subheading": "med en utenlandskfødt forelder"},
-            {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
             {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
             {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
+            {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
         ],
     )
 
@@ -143,7 +142,7 @@ def handler(event, context):
 
     generated = generate(*dataframe)
     output = Output(
-        values=["one_parent", "two_parents", "short", "long"],
+        values=["short", "long", "two_parents"],
         df=generated,
         template=TemplateA() if dataset_type == "status" else TemplateC(),
         metadata=metadata,

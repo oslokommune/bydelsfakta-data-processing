@@ -26,17 +26,11 @@ def handler(event, context):
     born = event["input"]["fodte"]
     born = common.aws.read_from_s3(born)
 
-    immigration_sub_district = event["input"]["flytting-til-etter-alder"]
-    immigration_sub_district = common.aws.read_from_s3(immigration_sub_district)
+    immigration = event["input"]["flytting-til-etter-alder"]
+    immigration = common.aws.read_from_s3(immigration)
 
-    emigration_sub_district = event["input"]["flytting-fra-etter-alder"]
-    emigration_sub_district = common.aws.read_from_s3(emigration_sub_district)
-
-    immigration_district = event["input"]["flytting-til-etter-inn-kat"]
-    immigration_district = common.aws.read_from_s3(immigration_district)
-
-    emigration_district = event["input"]["flytting-fra-etter-inn-kat"]
-    emigration_district = common.aws.read_from_s3(emigration_district)
+    emigration = event["input"]["flytting-fra-etter-alder"]
+    emigration = common.aws.read_from_s3(emigration)
 
     pop_extrapolation = event["input"]["befolkningsframskrivninger"]
     pop_extrapolation = common.aws.read_from_s3(pop_extrapolation)
@@ -44,15 +38,7 @@ def handler(event, context):
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
     if type_of_ds == "historisk":
-        dfs = transform.historic(
-            population,
-            dead,
-            born,
-            immigration_sub_district,
-            emigration_sub_district,
-            immigration_district,
-            emigration_district,
-        )
+        dfs = transform.historic(population, dead, born, immigration, emigration)
     else:
         raise Exception("Type should be historisk")
 
@@ -107,35 +93,33 @@ def process_born(born):
     return sum.aggregate(born)
 
 
-def process_immigration(sub_district, district):
-    to_oslo = "innflytting_til_oslo"
-    between_districts = "innflytting_mellom_bydeler"
-    between_sub_districts = "innflytting_mellom_delbydeler"
-
-    immigration = join_to_migration(
-        district_df=district,
-        sub_district_df=sub_district,
-        oslo=to_oslo,
-        between_districts=between_districts,
-        between_sub_districts=between_sub_districts,
-        output_label="immigration",
+def process_migration(df, oslo, between_districts, output_label):
+    district = (
+        df.groupby(
+            [column_names.date, column_names.district_id, column_names.district_name]
+        )[oslo, between_districts]
+        .sum()
+        .reset_index()
     )
-    return immigration
+    district[output_label] = district[oslo] + district[between_districts]
+    district[column_names.sub_district_id] = numpy.nan
+    district[column_names.sub_district_name] = numpy.nan
 
-
-def process_emigration(sub_district, district):
-    from_oslo = "utflytting_fra_oslo"
-    between_districts = "utflytting_mellom_bydeler"
-    between_sub_districts = "utflytting_mellom_delbydeler"
-
-    return join_to_migration(
-        district_df=district,
-        sub_district_df=sub_district,
-        oslo=from_oslo,
-        between_districts=between_districts,
-        between_sub_districts=between_sub_districts,
-        output_label="emigration",
+    district = district.astype(
+        {"delbydel_id": object, "delbydel_navn": object, "date": int}
     )
+
+    oslo = district.groupby([column_names.date])[output_label].sum().reset_index()
+    oslo[column_names.sub_district_id] = numpy.nan
+    oslo[column_names.sub_district_name] = numpy.nan
+    oslo[column_names.district_name] = "Oslo i alt"
+    oslo[column_names.district_id] = "00"
+
+    aggregated = pandas.concat([oslo, district])[
+        column_names.default_groupby_columns() + [output_label]
+    ]
+
+    return aggregated
 
 
 def process_pop_extrapolation(pop_extrapolation):
@@ -153,64 +137,22 @@ def process_pop_extrapolation(pop_extrapolation):
     return meta
 
 
-def join_to_migration(
-    district_df,
-    sub_district_df,
-    oslo,
-    between_districts,
-    between_sub_districts,
-    output_label,
-):
-
-    sub_district = (
-        sub_district_df.groupby(column_names.default_groupby_columns())[
-            oslo, between_sub_districts
-        ]
-        .sum()
-        .reset_index()
-    )
-    sub_district[output_label] = (
-        sub_district[oslo] + sub_district[between_sub_districts]
-    )
-
-    district = (
-        district_df.groupby(
-            [column_names.date, column_names.district_id, column_names.district_name]
-        )[oslo, between_districts]
-        .sum()
-        .reset_index()
-    )
-    district[output_label] = district[oslo] + district[between_districts]
-    district[column_names.sub_district_id] = numpy.nan
-    district[column_names.sub_district_name] = numpy.nan
-
-    oslo = district.groupby([column_names.date])[output_label].sum().reset_index()
-    oslo[column_names.sub_district_id] = numpy.nan
-    oslo[column_names.sub_district_name] = numpy.nan
-    oslo[column_names.district_name] = "Oslo i alt"
-    oslo[column_names.district_id] = "00"
-
-    aggregated = pandas.concat([district, oslo, sub_district])[
-        column_names.default_groupby_columns() + [output_label]
-    ]
-    return aggregated
-
-
-def generate(
-    population,
-    dead,
-    born,
-    immigration_sub_district,
-    emigration_sub_district,
-    immigration_district,
-    emigration_district,
-    pop_extrapolation,
-):
+def generate(population, dead, born, immigration, emigration, pop_extrapolation):
     population = process_population(population)
     dead = process_dead(dead)
     born = process_born(born)
-    immigration = process_immigration(immigration_sub_district, immigration_district)
-    emigration = process_emigration(emigration_sub_district, emigration_district)
+    immigration = process_migration(
+        df=immigration,
+        oslo="innflytting_til_oslo",
+        between_districts="innflytting_mellom_bydeler",
+        output_label="immigration",
+    )
+    emigration = process_migration(
+        df=emigration,
+        oslo="utflytting_fra_oslo",
+        between_districts="utflytting_mellom_bydeler",
+        output_label="emigration",
+    )
     pop_extrapolation = process_pop_extrapolation(pop_extrapolation)
 
     agg = Aggregate({})
