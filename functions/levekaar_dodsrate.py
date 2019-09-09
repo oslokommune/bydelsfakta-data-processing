@@ -25,7 +25,7 @@ def start(key, output_key, type_of_ds):
         df = transform.status(df)[0]
 
     metadata = Metadata(
-        heading="Dødelighet (siste 5 år) for personer 55-79 år", series=[]
+        heading="Dødelighet (gj.snitt siste 7 år) for personer 55–79 år", series=[]
     )
     output = Output(values=["dodsrate"], df=df, template=TemplateA(), metadata=metadata)
     jsonl = output.generate_output()
