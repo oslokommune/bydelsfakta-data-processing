@@ -4,7 +4,6 @@ import common.transform_output
 import common.util
 from common.util import get_latest_edition_of
 from common import transform
-import numpy as np
 
 from common.output import Output, Metadata
 from common.templates import TemplateA
@@ -22,20 +21,11 @@ def start(key, output_key, type_of_ds):
 
     df["dodsrate_ratio"] = df["dodsrate"] / 100
 
-    # TODO: Hardcoded removal of wrongly categorized subdistricts
-    df.iloc[95:, 1] = np.nan
-    df.iloc[95:, 2] = np.nan
     if type_of_ds == "status":
         df = transform.status(df)[0]
 
     metadata = Metadata(
-        heading="Dødsrater",
-        series=[
-            {
-                "heading": "Dødelighet (siste 5 år) for personer 55-79 år",
-                "sub-heading": "",
-            }
-        ],
+        heading="Dødelighet (gj.snitt siste 7 år) for personer 55–79 år", series=[]
     )
     output = Output(values=["dodsrate"], df=df, template=TemplateA(), metadata=metadata)
     jsonl = output.generate_output()
@@ -48,7 +38,7 @@ if __name__ == "__main__":
         {
             "input": {"dodsrater": get_latest_edition_of("dodsrater")},
             "output": "intermediate/green/dodsrater-status/version=1/edition=20190822T144000/",
-            "config": {"type": "historisk"},
+            "config": {"type": "status"},
         },
         {},
     )

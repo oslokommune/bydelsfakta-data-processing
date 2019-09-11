@@ -8,18 +8,18 @@ from common.util import get_latest_edition_of
 
 METADATA = {
     "en-innvandrer_historisk": Metadata(
-        heading="Andel (under 16) med én innvandrerforelder", series=[]
+        heading="Personer (under 16) med én innvandrerforelder", series=[]
     ),
     "en-innvandrer_status": Metadata(
-        heading="Andel (under 16) med én innvandrerforelder", series=[]
+        heading="Personer (under 16) med én innvandrerforelder", series=[]
     ),
     "to-innvandrer_historisk": Metadata(
-        heading="Andel (under 16) med to innvandrerforeldre", series=[]
+        heading="Personer (under 16) med to innvandrerforeldre", series=[]
     ),
     "to-innvandrer_status": Metadata(
-        heading="Andel (under 16) med to innvandrerforeldre", series=[]
+        heading="Personer (under 16) med to innvandrerforeldre", series=[]
     ),
-    "innvandrer_status": Metadata(heading="Andel innvandrere (under 16)", series=[]),
+    "innvandrer_status": Metadata(heading="Innvandrere (under 16)", series=[]),
     "innvandrer_historisk": Metadata(heading="Andel innvandrere (under 16)", series=[]),
 }
 

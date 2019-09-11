@@ -1,5 +1,4 @@
 import pandas as pd
-import numpy as np
 
 import common.transform as transform
 import common.aws as common_aws
@@ -172,10 +171,6 @@ def generate_dosrater_df(dodsrater_raw):
     df = dodsrater_raw
 
     df[f"{data_point}_ratio"] = df[data_point] / 100
-
-    # TODO: Hardcoded removal of wrongly categorized subdistricts
-    df.iloc[95:, 1] = np.nan
-    df.iloc[95:, 2] = np.nan
 
     return add_relative_ratio(df, f"{data_point}_ratio")
 
