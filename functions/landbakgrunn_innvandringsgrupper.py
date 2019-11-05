@@ -36,6 +36,7 @@ def handle(event, context):
         s3_key=s3_key_befolkning, date_column="aar"
     )
 
+    data_points_status = ["innvandrer", "norskfodt_med_innvandrerforeldre"]
     data_points = ["total", "innvandrer", "norskfodt_med_innvandrerforeldre"]
 
     input_df = generate_input_df(landbakgrunn_raw, befolkning_raw, data_points)
@@ -43,7 +44,7 @@ def handle(event, context):
     output_list = []
 
     if type_of_ds == "status":
-        output_list = output_list_status(input_df, data_points, top_n=10)
+        output_list = output_list_status(input_df, data_points_status, top_n=10)
     elif type_of_ds == "historisk":
         output_list = output_list_historic(input_df, data_points, top_n=10)
 

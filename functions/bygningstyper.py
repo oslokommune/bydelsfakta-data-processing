@@ -12,7 +12,7 @@ METADATA = {
     "blokk_historisk": Metadata(heading="Blokker og leiegårder", series=[]),
     "enebolig_historisk": Metadata(heading="Eneboliger", series=[]),
     "rekkehus_historisk": Metadata(heading="Rekkehus/tomannsboliger", series=[]),
-    "totalt_status": Metadata(
+    "alle_status": Metadata(
         heading="Boliger etter bygningstype",
         series=[
             {"heading": "Blokk, leiegård o.l", "subheading": ""},
@@ -20,14 +20,17 @@ METADATA = {
             {"heading": "Enebolig", "subheading": ""},
         ],
     ),
-    "totalt_historisk": Metadata(
+    "alle_historisk": Metadata(
         heading="Boliger etter bygningstype",
         series=[
             {"heading": "Blokk, leiegård o.l", "subheading": ""},
             {"heading": "Rekkehus, tomannsboliger o.l", "subheading": ""},
             {"heading": "Enebolig", "subheading": ""},
+            {"heading": "Totalt", "subheading": ""},
         ],
     ),
+    "totalt_status": Metadata(heading="Totalt", series=[]),
+    "totalt_historisk": Metadata(heading="Totalt", series=[])
 }
 
 
@@ -60,12 +63,12 @@ def start(key, output_key, type_of_ds):
     )
 
     df = agg.aggregate(df)
-    df = agg.add_ratios(df, ["rekkehus", "blokk", "enebolig"], ["total"])
+    df = agg.add_ratios(df, ["rekkehus", "blokk", "enebolig", "total"], ["total"])
 
     df_status = status(df)
     df_historic = historic(df)
 
-    if type_of_ds == "totalt_status":
+    if type_of_ds == "alle_status":
         create_ds(
             output_key,
             TemplateA(),
@@ -73,11 +76,11 @@ def start(key, output_key, type_of_ds):
             METADATA[type_of_ds],
             *df_status,
         )
-    elif type_of_ds == "totalt_historisk":
+    elif type_of_ds == "alle_historisk":
         create_ds(
             output_key,
             TemplateC(),
-            ["blokk", "rekkehus", "enebolig"],
+            ["blokk", "rekkehus", "enebolig", "total"],
             METADATA[type_of_ds],
             *df_historic,
         )
@@ -103,6 +106,10 @@ def start(key, output_key, type_of_ds):
         create_ds(
             output_key, TemplateB(), ["rekkehus"], METADATA[type_of_ds], *df_historic
         )
+    elif type_of_ds == "totalt_status":
+        create_ds(output_key, TemplateA(), ["total"], METADATA[type_of_ds], *df_status)
+    elif type_of_ds == "totalt_historisk":
+        create_ds(output_key, TemplateB(), ["total"], METADATA[type_of_ds], *df_historic)
 
 
 def create_ds(output_key, template, values, metadata, df):
