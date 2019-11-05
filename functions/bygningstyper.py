@@ -30,7 +30,7 @@ METADATA = {
         ],
     ),
     "totalt_status": Metadata(heading="Totalt", series=[]),
-    "totalt_historisk": Metadata(heading="Totalt", series=[])
+    "totalt_historisk": Metadata(heading="Totalt", series=[]),
 }
 
 
@@ -109,7 +109,9 @@ def start(key, output_key, type_of_ds):
     elif type_of_ds == "totalt_status":
         create_ds(output_key, TemplateA(), ["total"], METADATA[type_of_ds], *df_status)
     elif type_of_ds == "totalt_historisk":
-        create_ds(output_key, TemplateB(), ["total"], METADATA[type_of_ds], *df_historic)
+        create_ds(
+            output_key, TemplateB(), ["total"], METADATA[type_of_ds], *df_historic
+        )
 
 
 def create_ds(output_key, template, values, metadata, df):
