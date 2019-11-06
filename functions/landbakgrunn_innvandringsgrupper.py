@@ -9,20 +9,6 @@ from common.util import get_latest_edition_of
 
 pd.set_option("display.max_rows", 1000)
 
-graph_metadata = Metadata(
-    series=[
-        {"heading": "Totalt", "subheading": ""},
-        {"heading": "Innvandrer", "subheading": ""},
-        {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
-    ],
-    heading="10 største innvandringsgrupper",
-)
-
-graph_metadata_as_dict = {
-    "series": graph_metadata.series,
-    "heading": graph_metadata.heading,
-}
-
 
 def handle(event, context):
     s3_key_landbakgrunn = event["input"]["landbakgrunn-storste-innvandringsgrupper"]
@@ -78,21 +64,43 @@ def generate_input_df(landbakgrunn_raw, befolkning_raw, data_points):
 
 
 def output_list_historic(input_df, data_points, top_n):
+    graph_metadata = Metadata(
+        series=[
+            {"heading": "Totalt", "subheading": ""},
+            {"heading": "Innvandrer", "subheading": ""},
+            {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
+        ],
+        heading="10 største innvandringsgrupper",
+    )
+
     output_list = generate_output_list(
-        input_df, data_points, top_n=top_n, template_fun=generate_geo_obj_historic
+        input_df, data_points, top_n=top_n, template_fun=generate_geo_obj_historic, graph_metadata=graph_metadata
     )
     return output_list
 
 
 def output_list_status(input_df, data_points, top_n):
+    graph_metadata = Metadata(
+        series=[
+            {"heading": "Innvandrer", "subheading": ""},
+            {"heading": "Norskfødt med innvandrerforeldre", "subheading": ""},
+        ],
+        heading="10 største innvandringsgrupper",
+    )
+
     input_df_status = input_df[input_df["date"] == input_df["date"].max()]
     output_list = generate_output_list(
-        input_df_status, data_points, top_n=top_n, template_fun=generate_geo_obj_status
+        input_df_status, data_points, top_n=top_n, template_fun=generate_geo_obj_status, graph_metadata=graph_metadata
     )
     return output_list
 
 
-def generate_output_list(input_df, data_points, top_n, template_fun):
+def generate_output_list(input_df, data_points, top_n, template_fun, graph_metadata):
+    graph_metadata_as_dict = {
+        "series": graph_metadata.series,
+        "heading": graph_metadata.heading,
+    }
+
     top_n_countries = get_top_n_countries(input_df, top_n)
 
     district_list = [

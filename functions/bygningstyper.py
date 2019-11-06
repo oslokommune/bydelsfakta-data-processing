@@ -29,8 +29,8 @@ METADATA = {
             {"heading": "Totalt", "subheading": ""},
         ],
     ),
-    "totalt_status": Metadata(heading="Totalt", series=[]),
-    "totalt_historisk": Metadata(heading="Totalt", series=[]),
+    "totalt_status": Metadata(heading="Antall boliger", series=[]),
+    "totalt_historisk": Metadata(heading="Antall boliger", series=[]),
 }
 
 
@@ -129,8 +129,8 @@ if __name__ == "__main__":
                     "boligmengde-etter-boligtype"
                 )
             },
-            "output": "intermediate/green/bygningstyper_rekkehus_status/version=1/edition=20190531T105555/",
-            "config": {"type": "rekkehus_status"},
+            "output": "intermediate/green/bygningstyper_alle_status/version=1/edition=20191106T105555/",
+            "config": {"type": "alle_status"},
         },
         {},
     )

@@ -3,7 +3,7 @@ from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC
 
-DATA_POINTS = [
+DATA_POINTS_ALL = [
     "aleneboende",
     "par_uten_barn",
     "par_med_barn",
@@ -73,11 +73,12 @@ def handle(event, context):
 
     source = agg.aggregate(source)
 
-    aggregated = agg.add_ratios(source, data_points=DATA_POINTS, ratio_of=["total"])
+    aggregated = agg.add_ratios(source, data_points=DATA_POINTS_ALL, ratio_of=["total"])
 
     if type == "status":
         [df] = transform.status(aggregated)
         template = TemplateA()
+        DATA_POINTS = DATA_POINTS_STATUS
         series = [
             {"heading": "Aleneboende", "subheading": ""},
             {"heading": "Par uten barn", "subheading": ""},
@@ -89,6 +90,7 @@ def handle(event, context):
     elif type == "historisk":
         [df] = transform.historic(aggregated)
         template = TemplateC()
+        DATA_POINTS = DATA_POINTS_ALL
         series = [
             {"heading": "Aleneboende", "subheading": ""},
             {"heading": "Par uten barn", "subheading": ""},
@@ -120,7 +122,7 @@ if __name__ == "__main__":
                 )
             },
             "output": "intermediate/green/husholdningstyper-status/version=1/edition=20190822T170202/",
-            "config": {"type": "historisk"},
+            "config": {"type": "status"},
         },
         {},
     )
