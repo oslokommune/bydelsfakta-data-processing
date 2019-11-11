@@ -74,7 +74,11 @@ def output_list_historic(input_df, data_points, top_n):
     )
 
     output_list = generate_output_list(
-        input_df, data_points, top_n=top_n, template_fun=generate_geo_obj_historic, graph_metadata=graph_metadata
+        input_df,
+        data_points,
+        top_n=top_n,
+        template_fun=generate_geo_obj_historic,
+        graph_metadata=graph_metadata,
     )
     return output_list
 
@@ -90,7 +94,11 @@ def output_list_status(input_df, data_points, top_n):
 
     input_df_status = input_df[input_df["date"] == input_df["date"].max()]
     output_list = generate_output_list(
-        input_df_status, data_points, top_n=top_n, template_fun=generate_geo_obj_status, graph_metadata=graph_metadata
+        input_df_status,
+        data_points,
+        top_n=top_n,
+        template_fun=generate_geo_obj_status,
+        graph_metadata=graph_metadata,
     )
     return output_list
 
