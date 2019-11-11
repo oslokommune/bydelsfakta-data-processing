@@ -26,16 +26,16 @@ METADATA = {
             {"heading": "Total", "subheading": ""}
         ],
     ),
-    "short_status": Metadata(heading="Innvandrer med kort botid (<=5 år)", series=[]),
-    "short_historisk": Metadata(
+    "kort_status": Metadata(heading="Innvandrer med kort botid (<=5 år)", series=[]),
+    "kort_historisk": Metadata(
         heading="Innvandrer med kort botid (<=5 år)", series=[]
     ),
-    "long_status": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
+    "lang_status": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
     "long_historisk": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
-    "two_parents_status": Metadata(
+    "to_foreldre_status": Metadata(
         heading="Norskfødt med innvandrerforeldre", series=[]
     ),
-    "two_parents_historisk": Metadata(
+    "to_foreldre_historisk": Metadata(
         heading="Norskfødt med innvandrerforeldre", series=[]
     ),
 }
@@ -43,12 +43,12 @@ METADATA = {
 DATA_POITNS = {
     "alle_status": ["short", "long", "two_parents"],
     "alle_historisk": ["short", "long", "two_parents", "total_cat"],
-    "short_status": ["short"],
-    "short_historisk": ["short"],
-    "long_status": ["long"],
+    "kort_status": ["short"],
+    "kort_historisk": ["short"],
+    "lang_status": ["long"],
     "long_historisk": ["long"],
-    "two_parents_status": ["two_parents"],
-    "two_parents_historisk": ["two_parents"]
+    "to_foreldre_status": ["two_parents"],
+    "to_foreldre_historisk": ["two_parents"]
 }
 
 
@@ -194,21 +194,21 @@ def handler(event, context):
             template=TemplateC(),
             type_of_ds=dataset_type,
         )
-    elif dataset_type == "short_status":
+    elif dataset_type == "kort_status":
         create_ds(
             output_s3_key,
             df=generated_status,
             template=TemplateA(),
             type_of_ds=dataset_type,
         )
-    elif dataset_type == "short_historisk":
+    elif dataset_type == "kort_historisk":
         create_ds(
             output_s3_key,
             df=generated_historic,
             template=TemplateB(),
             type_of_ds=dataset_type,
         )
-    elif dataset_type == "long_status":
+    elif dataset_type == "lang_status":
         create_ds(
             output_s3_key,
             df=generated_status,
@@ -222,14 +222,14 @@ def handler(event, context):
             template=TemplateB(),
             type_of_ds=dataset_type,
         )
-    elif dataset_type == "two_parents_status":
+    elif dataset_type == "to_foreldre_status":
         create_ds(
             output_s3_key,
             df=generated_status,
             template=TemplateA(),
             type_of_ds=dataset_type,
         )
-    elif dataset_type == "two_parents_historisk":
+    elif dataset_type == "to_foreldre_historisk":
         create_ds(
             output_s3_key,
             df=generated_historic,
@@ -259,7 +259,7 @@ if __name__ == "__main__":
                 "innvandrer-befolkningen-0-15-ar": "raw/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190523T211529/Landbakgrunn_etter_alder(1.1.2008-1.1.2019-v01).csv",
             },
             "output": "intermediate/green/innvandrer-befolkningen-historisk/version=1/edition=20190525T143000/",
-            "config": {"type": "two_parents_historisk"},
+            "config": {"type": "to_foreldre_historisk"},
         },
         {},
     )
