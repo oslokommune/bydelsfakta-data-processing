@@ -31,7 +31,7 @@ METADATA = {
         heading="Innvandrer med kort botid (<=5 år)", series=[]
     ),
     "lang_status": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
-    "long_historisk": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
+    "lang_historisk": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
     "to_foreldre_status": Metadata(
         heading="Norskfødt med innvandrerforeldre", series=[]
     ),
@@ -46,7 +46,7 @@ DATA_POITNS = {
     "kort_status": ["short"],
     "kort_historisk": ["short"],
     "lang_status": ["long"],
-    "long_historisk": ["long"],
+    "lang_historisk": ["long"],
     "to_foreldre_status": ["two_parents"],
     "to_foreldre_historisk": ["two_parents"]
 }
@@ -215,7 +215,7 @@ def handler(event, context):
             template=TemplateA(),
             type_of_ds=dataset_type,
         )
-    elif dataset_type == "long_historisk":
+    elif dataset_type == "lang_historisk":
         create_ds(
             output_s3_key,
             df=generated_historic,
