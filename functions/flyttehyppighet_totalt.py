@@ -16,7 +16,7 @@ graph_metadata = Metadata(
 flytting_fra_etter_alder_id = "flytting-fra-etter-alder"
 flytting_til_etter_alder_id = "flytting-til-etter-alder"
 
-aldersgruppe_col = "aldersgruppe_10_aar"
+aldersgruppe_col = "aldersgruppe_5_aar"
 
 
 def handle(event, context):
@@ -56,7 +56,7 @@ def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
     flytting_df = pd.merge(
         flytting_fra_raw,
         flytting_til_raw,
-        on=["date", "bydel_navn", "bydel_id", "aldersgruppe_10_aar"],
+        on=["date", "bydel_navn", "bydel_id", "aldersgruppe_5_aar"],
     )
 
     flytting_df["delbydel_id"] = np.nan

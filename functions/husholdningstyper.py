@@ -25,7 +25,7 @@ column_names = ColumnNames()
 
 def handle(event, context):
     """ Assuming we recieve a complete s3 key"""
-    s3_key = event["input"]["husholdninger-med-barn"]
+    s3_key = event["input"]["husholdningstyper"]
     output_key = event["output"]
     type = event["config"]["type"]
     source = aws.read_from_s3(s3_key=s3_key)
@@ -53,7 +53,6 @@ def handle(event, context):
             "flerfamiliehusholdninger_med_store_barn",
             "flerfamiliehusholdninger_med_smaa_barn",
             "flerfamiliehusholdninger_uten_barn_0_til_17_aar",
-            "barn_i_husholdningen",
         ]
     )
 
@@ -117,9 +116,7 @@ if __name__ == "__main__":
     handle(
         {
             "input": {
-                "husholdninger-med-barn": util.get_latest_edition_of(
-                    "husholdninger-med-barn"
-                )
+                "husholdningstyper": util.get_latest_edition_of("husholdningstyper")
             },
             "output": "intermediate/green/husholdningstyper-status/version=1/edition=20190822T170202/",
             "config": {"type": "status"},

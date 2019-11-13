@@ -23,13 +23,11 @@ METADATA = {
             {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
             {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
             {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
-            {"heading": "Total", "subheading": ""}
+            {"heading": "Total", "subheading": ""},
         ],
     ),
     "kort_status": Metadata(heading="Innvandrer med kort botid (<=5 år)", series=[]),
-    "kort_historisk": Metadata(
-        heading="Innvandrer med kort botid (<=5 år)", series=[]
-    ),
+    "kort_historisk": Metadata(heading="Innvandrer med kort botid (<=5 år)", series=[]),
     "lang_status": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
     "lang_historisk": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
     "to_foreldre_status": Metadata(
@@ -48,7 +46,7 @@ DATA_POITNS = {
     "lang_status": ["long"],
     "lang_historisk": ["long"],
     "to_foreldre_status": ["two_parents"],
-    "to_foreldre_historisk": ["two_parents"]
+    "to_foreldre_historisk": ["two_parents"],
 }
 
 
