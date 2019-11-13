@@ -23,7 +23,7 @@ METADATA = {
             {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
             {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
             {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
-            {"heading": "Total", "subheading": ""},
+            {"heading": "Totalt", "subheading": ""},
         ],
     ),
     "kort_status": Metadata(heading="Innvandrer med kort botid (<=5 år)", series=[]),

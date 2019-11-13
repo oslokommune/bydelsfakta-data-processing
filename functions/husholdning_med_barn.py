@@ -20,7 +20,7 @@ METADATA = {
             {"heading": "Husholdninger", "subheading": "med 1 barn"},
             {"heading": "Husholdninger", "subheading": "med 2 barn"},
             {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
-            {"heading": "Total", "subheading": ""},
+            {"heading": "Totalt", "subheading": ""},
         ],
     ),
     "1barn_status": Metadata(heading="Husholdninger med 1 barn", series=[]),
