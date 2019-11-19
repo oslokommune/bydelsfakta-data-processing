@@ -75,3 +75,23 @@ def get_latest_edition_of(dataset_id, confidentiality="green"):
         f"raw/{confidentiality}/{dataset_id}/version=1/edition={edition}/{file_name}"
     )
     return s3_key
+
+
+def get_min_max_values_and_ratios(df, column):
+    min_value, min_ratio, max_value, max_ratio = 0, 0, 0, 0
+    ignore_districts = ["16", "17", "99"]
+
+    for id in ignore_districts:
+        df = df.drop(df[df.bydel_id == id].index)
+
+    if f"{column}_ratio" in df:
+        min_ratio = df.groupby([df.date == df.date.max()])[f"{column}_ratio"].min()[1]
+        max_ratio = df.groupby([df.date == df.date.max()])[f"{column}_ratio"].max()[1]
+    if column in df:
+        min_value = df.groupby([df.date == df.date.max()])[column].min()[1]
+        max_value = df.groupby([df.date == df.date.max()])[column].max()[1]
+
+    return {
+        "value": [float(min_value), float(max_value)],
+        "ratio": [float(min_ratio), float(max_ratio)],
+    }

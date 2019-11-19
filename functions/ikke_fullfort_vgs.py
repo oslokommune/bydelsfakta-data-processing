@@ -5,7 +5,7 @@ import common.transform_output
 from common.aggregateV2 import ColumnNames
 from common.output import Metadata, Output
 from common.templates import TemplateB, TemplateA
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
 
 column_names = ColumnNames()
 
@@ -36,6 +36,7 @@ def process(df, type):
         template = TemplateB()
     elif type == "status":
         [df] = common.transform.status(df)
+        metadata.add_scale(get_min_max_values_and_ratios(df, ikke_fullfort_antall))
         template = TemplateA()
     else:
         raise Exception("type must be status or historisk")
@@ -48,7 +49,6 @@ def process(df, type):
 
 
 def write(output, s3_key):
-    print(output)
     common.aws.write_to_intermediate(output_list=output, output_key=s3_key)
     return s3_key
 

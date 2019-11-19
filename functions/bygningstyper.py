@@ -3,7 +3,7 @@ from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
 
 METADATA = {
     "blokk_status": Metadata(heading="Blokker og leiegårder", series=[]),
@@ -12,7 +12,7 @@ METADATA = {
     "blokk_historisk": Metadata(heading="Blokker og leiegårder", series=[]),
     "enebolig_historisk": Metadata(heading="Eneboliger", series=[]),
     "rekkehus_historisk": Metadata(heading="Rekkehus/tomannsboliger", series=[]),
-    "totalt_status": Metadata(
+    "alle_status": Metadata(
         heading="Boliger etter bygningstype",
         series=[
             {"heading": "Blokk, leiegård o.l", "subheading": ""},
@@ -20,14 +20,17 @@ METADATA = {
             {"heading": "Enebolig", "subheading": ""},
         ],
     ),
-    "totalt_historisk": Metadata(
+    "alle_historisk": Metadata(
         heading="Boliger etter bygningstype",
         series=[
             {"heading": "Blokk, leiegård o.l", "subheading": ""},
             {"heading": "Rekkehus, tomannsboliger o.l", "subheading": ""},
             {"heading": "Enebolig", "subheading": ""},
+            {"heading": "Totalt", "subheading": ""},
         ],
     ),
+    "totalt_status": Metadata(heading="Antall boliger", series=[]),
+    "totalt_historisk": Metadata(heading="Antall boliger", series=[]),
 }
 
 
@@ -60,12 +63,12 @@ def start(key, output_key, type_of_ds):
     )
 
     df = agg.aggregate(df)
-    df = agg.add_ratios(df, ["rekkehus", "blokk", "enebolig"], ["total"])
+    df = agg.add_ratios(df, ["rekkehus", "blokk", "enebolig", "total"], ["total"])
 
     df_status = status(df)
     df_historic = historic(df)
 
-    if type_of_ds == "totalt_status":
+    if type_of_ds == "alle_status":
         create_ds(
             output_key,
             TemplateA(),
@@ -73,21 +76,23 @@ def start(key, output_key, type_of_ds):
             METADATA[type_of_ds],
             *df_status,
         )
-    elif type_of_ds == "totalt_historisk":
+    elif type_of_ds == "alle_historisk":
         create_ds(
             output_key,
             TemplateC(),
-            ["blokk", "rekkehus", "enebolig"],
+            ["blokk", "rekkehus", "enebolig", "total"],
             METADATA[type_of_ds],
             *df_historic,
         )
     elif type_of_ds == "blokk_status":
+        METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "blokk"))
         create_ds(output_key, TemplateA(), ["blokk"], METADATA[type_of_ds], *df_status)
     elif type_of_ds == "blokk_historisk":
         create_ds(
             output_key, TemplateB(), ["blokk"], METADATA[type_of_ds], *df_historic
         )
     elif type_of_ds == "enebolig_status":
+        METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "enebolig"))
         create_ds(
             output_key, TemplateA(), ["enebolig"], METADATA[type_of_ds], *df_status
         )
@@ -96,12 +101,20 @@ def start(key, output_key, type_of_ds):
             output_key, TemplateB(), ["enebolig"], METADATA[type_of_ds], *df_historic
         )
     elif type_of_ds == "rekkehus_status":
+        METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "rekkehus"))
         create_ds(
             output_key, TemplateA(), ["rekkehus"], METADATA[type_of_ds], *df_status
         )
     elif type_of_ds == "rekkehus_historisk":
         create_ds(
             output_key, TemplateB(), ["rekkehus"], METADATA[type_of_ds], *df_historic
+        )
+    elif type_of_ds == "totalt_status":
+        METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "totalt"))
+        create_ds(output_key, TemplateA(), ["total"], METADATA[type_of_ds], *df_status)
+    elif type_of_ds == "totalt_historisk":
+        create_ds(
+            output_key, TemplateB(), ["total"], METADATA[type_of_ds], *df_historic
         )
 
 
@@ -120,8 +133,8 @@ if __name__ == "__main__":
                     "boligmengde-etter-boligtype"
                 )
             },
-            "output": "intermediate/green/bygningstyper_rekkehus_status/version=1/edition=20190531T105555/",
-            "config": {"type": "rekkehus_status"},
+            "output": "intermediate/green/bygningstyper_alle_status/version=1/edition=20191106T105555/",
+            "config": {"type": "blokk_status"},
         },
         {},
     )

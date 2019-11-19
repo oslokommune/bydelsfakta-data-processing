@@ -1,5 +1,5 @@
 import datetime
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 
 import pandas
 
@@ -14,6 +14,10 @@ class Metadata:
     publishedDate: str = str(datetime.date.today())
     help: str = "Dette er en beskrivelse for hvordan dataene leses"
     scope: str = "bydel"
+    scale: list = field(default_factory=list)
+
+    def add_scale(self, scale):
+        self.scale = scale
 
 
 @dataclass

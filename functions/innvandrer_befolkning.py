@@ -1,11 +1,54 @@
 import pandas as pd
 
-import common.aws
-import common.transform
+from common.aws import write_to_intermediate
 import common.transform_output
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
-from common.templates import TemplateA, TemplateC
+from common.templates import TemplateA, TemplateC, TemplateB
+from common.transform import status, historic
+from common.util import get_min_max_values_and_ratios
+
+
+METADATA = {
+    "alle_status": Metadata(
+        heading="Innvandring befolkning",
+        series=[
+            {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
+            {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
+            {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
+        ],
+    ),
+    "alle_historisk": Metadata(
+        heading="Innvandring befolkning",
+        series=[
+            {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
+            {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
+            {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
+            {"heading": "Totalt", "subheading": ""},
+        ],
+    ),
+    "kort_status": Metadata(heading="Innvandrer med kort botid (<=5 år)", series=[]),
+    "kort_historisk": Metadata(heading="Innvandrer med kort botid (<=5 år)", series=[]),
+    "lang_status": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
+    "lang_historisk": Metadata(heading="Innvandrer med lang botid (>5 år)", series=[]),
+    "to_foreldre_status": Metadata(
+        heading="Norskfødt med innvandrerforeldre", series=[]
+    ),
+    "to_foreldre_historisk": Metadata(
+        heading="Norskfødt med innvandrerforeldre", series=[]
+    ),
+}
+
+DATA_POITNS = {
+    "alle_status": ["short", "long", "two_parents"],
+    "alle_historisk": ["short", "long", "two_parents", "total_cat"],
+    "kort_status": ["short"],
+    "kort_historisk": ["short"],
+    "lang_status": ["long"],
+    "lang_historisk": ["long"],
+    "to_foreldre_status": ["two_parents"],
+    "to_foreldre_historisk": ["two_parents"],
+}
 
 
 def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
@@ -100,8 +143,12 @@ def generate(origin_by_age_df, livage_df, population_df):
 
     aggregated = agg_class.aggregate(sub_districts)
 
+    aggregated["total_cat"] = (
+        aggregated["two_parents"] + aggregated["short"] + aggregated["long"]
+    )
+
     with_ratios = agg_class.add_ratios(
-        aggregated, ["one_parent", "two_parents", "short", "long"], ["total"]
+        aggregated, ["two_parents", "short", "long", "total_cat"], ["total_cat"]
     )
     result = with_ratios.drop(columns=["total"])
     return result
@@ -116,18 +163,8 @@ def handler(event, context):
     botid_not_western = event["input"]["botid-ikke-vestlige"]
     origin_by_age_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
     print("# Handeling event #")
-    print(event)
     dataset_type = event["config"]["type"]
     output_s3_key = event["output"]
-
-    metadata = Metadata(
-        heading="Innvandring befolkning",
-        series=[
-            {"heading": "Innvandrer", "subheading": "kort botid (<=5 år)"},
-            {"heading": "Innvandrer", "subheading": "lang botid (>5 år)"},
-            {"heading": "Norskfødt", "subheading": "med innvandrerforeldre"},
-        ],
-    )
 
     source = read_from_s3(
         origin_by_age_key=origin_by_age_key,
@@ -135,21 +172,89 @@ def handler(event, context):
         befolkning_key=befolkning_key,
     )
 
-    if dataset_type == "status":
-        dataframe = common.transform.status(*source)
-    else:
-        dataframe = common.transform.historic(*source)
+    df_status = status(*source)
+    df_historic = historic(*source)
 
-    generated = generate(*dataframe)
-    output = Output(
-        values=["short", "long", "two_parents"],
-        df=generated,
-        template=TemplateA() if dataset_type == "status" else TemplateC(),
-        metadata=metadata,
-    ).generate_output()
+    generated_status = generate(*df_status)
+    generated_historic = generate(*df_historic)
 
-    write(output, output_key=output_s3_key)
+    if dataset_type == "alle_status":
+        create_ds(
+            output_s3_key,
+            df=generated_status,
+            template=TemplateA(),
+            type_of_ds=dataset_type,
+        )
+    elif dataset_type == "alle_historisk":
+        create_ds(
+            output_s3_key,
+            df=generated_historic,
+            template=TemplateC(),
+            type_of_ds=dataset_type,
+        )
+    elif dataset_type == "kort_status":
+        METADATA[dataset_type].add_scale(
+            get_min_max_values_and_ratios(generated_status, "short")
+        )
+        create_ds(
+            output_s3_key,
+            df=generated_status,
+            template=TemplateA(),
+            type_of_ds=dataset_type,
+        )
+    elif dataset_type == "kort_historisk":
+        create_ds(
+            output_s3_key,
+            df=generated_historic,
+            template=TemplateB(),
+            type_of_ds=dataset_type,
+        )
+    elif dataset_type == "lang_status":
+        METADATA[dataset_type].add_scale(
+            get_min_max_values_and_ratios(generated_status, "long")
+        )
+        create_ds(
+            output_s3_key,
+            df=generated_status,
+            template=TemplateA(),
+            type_of_ds=dataset_type,
+        )
+    elif dataset_type == "lang_historisk":
+        create_ds(
+            output_s3_key,
+            df=generated_historic,
+            template=TemplateB(),
+            type_of_ds=dataset_type,
+        )
+    elif dataset_type == "to_foreldre_status":
+        METADATA[dataset_type].add_scale(
+            get_min_max_values_and_ratios(generated_status, "two_parents")
+        )
+        create_ds(
+            output_s3_key,
+            df=generated_status,
+            template=TemplateA(),
+            type_of_ds=dataset_type,
+        )
+    elif dataset_type == "to_foreldre_historisk":
+        create_ds(
+            output_s3_key,
+            df=generated_historic,
+            template=TemplateB(),
+            type_of_ds=dataset_type,
+        )
+
     return f"Complete: {output_s3_key}"
+
+
+def create_ds(output_key, template, type_of_ds, df):
+    jsonl = Output(
+        df=df,
+        template=template,
+        metadata=METADATA[type_of_ds],
+        values=DATA_POITNS[type_of_ds],
+    ).generate_output()
+    write_to_intermediate(output_key=output_key, output_list=jsonl)
 
 
 if __name__ == "__main__":
@@ -160,8 +265,8 @@ if __name__ == "__main__":
                 "botid-ikke-vestlige": "raw/green/botid-ikke-vestlige/version=1/edition=20190524T094012/Botid_ikke_vestlige(1.1.2008-1.1.2019-v01).csv",
                 "innvandrer-befolkningen-0-15-ar": "raw/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190523T211529/Landbakgrunn_etter_alder(1.1.2008-1.1.2019-v01).csv",
             },
-            "output": "intermediate/green/innvandrer-befolkningen-status/version=1/edition=20190525T143000/",
-            "config": {"type": "historisk"},
+            "output": "intermediate/green/innvandrer-befolkningen-historisk/version=1/edition=20190525T143000/",
+            "config": {"type": "to_foreldre_status"},
         },
         {},
     )

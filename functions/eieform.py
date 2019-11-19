@@ -2,7 +2,16 @@ import common.aws as common_aws
 import common.transform as transform
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+
+METADATA = Metadata(
+    heading="Husholdninger fordelt etter eie-/leieforhold",
+    series=[
+        {"heading": "Leier", "subheading": ""},
+        {"heading": "Andels-/aksjeeier", "subheading": ""},
+        {"heading": "Selveier", "subheading": ""},
+    ],
+)
 
 
 def handle(event, context):
@@ -48,20 +57,16 @@ def start(key, output_key, type_of_ds):
     if type_of_ds == "historisk":
         create_ds(output_key, TemplateC(), *historic)
     elif type_of_ds == "status":
+        METADATA.add_scale(get_min_max_values_and_ratios(df, "leier"))
         create_ds(output_key, TemplateA(), *status)
 
 
 def create_ds(output_key, template, df):
-    heading = "Husholdninger fordelt etter eie-/leieforhold"
-    series = [
-        {"heading": "Leier", "subheading": ""},
-        {"heading": "Andels-/aksjeeier", "subheading": ""},
-        {"heading": "Selveier", "subheading": ""},
-    ]
-
-    meta = Metadata(heading=heading, series=series)
     jsonl = Output(
-        df=df, template=template, metadata=meta, values=["leier", "andel", "selveier"]
+        df=df,
+        template=template,
+        metadata=METADATA,
+        values=["leier", "andel", "selveier"],
     ).generate_output()
     common_aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
 
@@ -71,7 +76,7 @@ if __name__ == "__main__":
         {
             "input": {"eieform": get_latest_edition_of("eieform")},
             "output": "intermediate/green/eieform-status/version=1/edition=20190703T102550/",
-            "config": {"type": "status"},
+            "config": {"type": "historisk"},
         },
         {},
     )

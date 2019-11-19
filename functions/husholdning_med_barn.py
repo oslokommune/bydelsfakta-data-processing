@@ -1,10 +1,9 @@
-import pandas as pd
-
 from common import aws, util
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB, TemplateC
+from common.util import get_min_max_values_and_ratios
 
 
 METADATA = {
@@ -22,6 +21,7 @@ METADATA = {
             {"heading": "Husholdninger", "subheading": "med 1 barn"},
             {"heading": "Husholdninger", "subheading": "med 2 barn"},
             {"heading": "Husholdninger", "subheading": "med 3 barn eller flere"},
+            {"heading": "Totalt", "subheading": ""},
         ],
     ),
     "1barn_status": Metadata(heading="Husholdninger med 1 barn", series=[]),
@@ -32,9 +32,9 @@ METADATA = {
     "3barn_historisk": Metadata(heading="Husholdninger med 3 barn", series=[]),
 }
 
-DATA_POINTS = {
+VALUE_CATEGORY = {
     "alle_status": ["one_child", "two_child", "three_or_more"],
-    "alle_historisk": ["one_child", "two_child", "three_or_more"],
+    "alle_historisk": ["one_child", "two_child", "three_or_more", "total"],
     "1barn_status": ["one_child"],
     "1barn_historisk": ["one_child"],
     "2barn_status": ["two_child"],
@@ -43,16 +43,7 @@ DATA_POINTS = {
     "3barn_historisk": ["three_or_more"],
 }
 
-
-value_columns = [
-    "flerfamiliehusholdninger_med_smaa_barn",
-    "flerfamiliehusholdninger_med_store_barn",
-    "mor_eller_far_med_smaa_barn",
-    "mor_eller_far_med_store_barn",
-    "par_med_smaa_barn",
-    "par_med_store_barn",
-    "par_uten_hjemmeboende_barn",
-]
+DATA_POINTS = ["one_child", "two_child", "three_or_more", "no_children", "total"]
 
 column_names = ColumnNames()
 
@@ -64,23 +55,50 @@ def handle(event, context):
     type = event["config"]["type"]
     source = aws.read_from_s3(s3_key=s3_key)
 
-    source = source.dropna(subset=["bydel_id"])
+    source["one_child"] = source["ett_barn_i_hh"]
+    source["two_child"] = source["to_barn_i_hh"]
+    source["three_or_more"] = source["tre_barn_i_hh"] + source["fire_barn_eller_mer"]
+    source["no_children"] = source["ingen_barn_i_hh"]
 
-    df = process(source)
+    source = source.drop(
+        columns=[
+            "ett_barn_i_hh",
+            "to_barn_i_hh",
+            "tre_barn_i_hh",
+            "fire_barn_eller_mer",
+            "ingen_barn_i_hh",
+        ]
+    )
+
+    source["total"] = (
+        source["one_child"]
+        + source["two_child"]
+        + source["three_or_more"]
+        + source["no_children"]
+    )
+
+    agg = Aggregate("sum")
+
+    source = agg.aggregate(source)
+
+    df = agg.add_ratios(source, data_points=DATA_POINTS, ratio_of=["total"])
 
     if type == "alle_status":
         create_ds(output_key, TemplateA(), type, *status(df))
     elif type == "alle_historisk":
         create_ds(output_key, TemplateC(), type, *historic(df))
     elif type == "1barn_status":
+        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "one_child"))
         create_ds(output_key, TemplateA(), type, *status(df))
     elif type == "1barn_historisk":
         create_ds(output_key, TemplateB(), type, *historic(df))
     elif type == "2barn_status":
+        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "two_child"))
         create_ds(output_key, TemplateA(), type, *status(df))
     elif type == "2barn_historisk":
         create_ds(output_key, TemplateB(), type, *historic(df))
     elif type == "3barn_status":
+        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "three_or_more"))
         create_ds(output_key, TemplateA(), type, *status(df))
     elif type == "3barn_historisk":
         create_ds(output_key, TemplateB(), type, *historic(df))
@@ -95,74 +113,9 @@ def create_ds(output_key, template, type_of_ds, df):
         df=df,
         template=template,
         metadata=METADATA[type_of_ds],
-        values=DATA_POINTS[type_of_ds],
+        values=VALUE_CATEGORY[type_of_ds],
     ).generate_output()
     aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
-
-
-def process(source):
-    source = source.fillna(0)
-    loners = source[column_names.default_groupby_columns() + ["aleneboende"]]
-    loners = loners.groupby(column_names.default_groupby_columns()).sum().reset_index()
-    loners = loners.rename(columns={"aleneboende": "single_adult"})
-
-    rest = source.drop(columns=["aleneboende"])
-
-    agg = Aggregate("sum")
-    meta = rest[column_names.default_groupby_columns() + ["barn_i_husholdningen"]]
-    meta["total"] = rest[value_columns].sum(axis=1)
-
-    household_pivot = pd.pivot_table(
-        meta,
-        index=column_names.default_groupby_columns(),
-        columns=["barn_i_husholdningen"],
-        values=["total"],
-    )
-
-    household_pivot = household_pivot.fillna(0)
-
-    household_pivot.columns = household_pivot.columns.droplevel(0)
-    household_pivot = household_pivot.reset_index().rename_axis(None, axis=1)
-
-    household_pivot["one_child"] = household_pivot["1 barn i HH"]
-    household_pivot["two_child"] = household_pivot["2 barn i HH"]
-    household_pivot["three_or_more"] = (
-        household_pivot["3 barn i HH"] + household_pivot["4 barn eller mer"]
-    )
-
-    household_pivot = household_pivot.rename(columns={"Ingen barn i HH": "no_children"})
-
-    househoulds = household_pivot[
-        column_names.default_groupby_columns()
-        + ["no_children", "one_child", "two_child", "three_or_more"]
-    ]
-    merged = agg.merge_all(loners, househoulds, how="outer")
-    aggregated = agg.aggregate(merged)
-
-    aggregated = agg.add_ratios(
-        aggregated,
-        data_points=[
-            "no_children",
-            "single_adult",
-            "one_child",
-            "two_child",
-            "three_or_more",
-        ],
-        ratio_of=[
-            "no_children",
-            "single_adult",
-            "one_child",
-            "two_child",
-            "three_or_more",
-        ],
-    )
-    return aggregated
-
-
-def write(output: Output, output_key):
-    aws.write_to_intermediate(
-        output_list=output.generate_output(), output_key=output_key
-    )
 
 
 if __name__ == "__main__":
@@ -174,7 +127,7 @@ if __name__ == "__main__":
                 )
             },
             "output": "intermediate/green/husholdninger-totalt-status/version=1/edition=20190819T110202/",
-            "config": {"type": "1barn_historisk"},
+            "config": {"type": "3barn_status"},
         },
         {},
     )

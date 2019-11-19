@@ -1,6 +1,6 @@
 import common.transform as transform
 import common.aws as common_aws
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
 
@@ -52,6 +52,11 @@ def output_historic(input_df, data_points):
 
 def output_status(input_df, data_points):
     [input_df] = transform.status(input_df)
+    graph_metadata.add_scale(
+        get_min_max_values_and_ratios(
+            input_df, "antall_personer_med_redusert_funksjonsevne"
+        )
+    )
     output = Output(
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
@@ -63,7 +68,7 @@ if __name__ == "__main__":
     handle(
         {
             "input": {"redusert-funksjonsevne": redusert_funksjonsevne_s3_key},
-            "output": "s3/key/or/prefix",
+            "output": "intermediate/green/levekar-redusert-funksjonsevne-status/version=1/edition=20191111T144000/",
             "config": {"type": "status"},
         },
         None,
