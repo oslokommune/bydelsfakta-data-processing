@@ -43,8 +43,6 @@ def generate(df, ds_type):
     ]
     scale = get_min_max_values_and_ratios(df, "value")
 
-    print(scale)
-
     # To json : convert df to list of json objects
     jsonl = Output(
         df=df[~df["value"].isna()],

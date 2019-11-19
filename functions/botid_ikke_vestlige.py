@@ -49,7 +49,6 @@ def start(s3_key_botid, s3_key_befolkning, output_key, type_of_ds):
         create_ds(output_key, TemplateB(), [data_point], graph_metadata, *historic)
     elif type_of_ds == "status":
         graph_metadata.add_scale(get_min_max_values_and_ratios(df, data_point))
-        print(graph_metadata)
         status = common.transform.status(df)
         create_ds(output_key, TemplateA(), [data_point], graph_metadata, *status)
 

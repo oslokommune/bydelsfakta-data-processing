@@ -86,7 +86,6 @@ def start(key, output_key, type_of_ds):
         )
     elif type_of_ds == "blokk_status":
         METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "blokk"))
-        print(METADATA[type_of_ds])
         create_ds(output_key, TemplateA(), ["blokk"], METADATA[type_of_ds], *df_status)
     elif type_of_ds == "blokk_historisk":
         create_ds(
