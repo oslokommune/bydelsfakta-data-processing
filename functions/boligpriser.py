@@ -4,6 +4,7 @@ import common.transform_output
 import common.util
 from common.output import Output, Metadata
 from common.templates import TemplateA
+from common.util import get_min_max_values_and_ratios
 
 
 def handler(event, context):
@@ -40,12 +41,16 @@ def generate(df, ds_type):
     series = [
         {"heading": "Gjennomsnittpris (kr) pr kvm for blokkleilighet", "subheading": ""}
     ]
+    scale = get_min_max_values_and_ratios(df, "value")
+
+    print(scale)
+
     # To json : convert df to list of json objects
     jsonl = Output(
         df=df[~df["value"].isna()],
         values=["value"],
         template=TemplateA(),
-        metadata=Metadata(heading=heading, series=series),
+        metadata=Metadata(heading=heading, series=series, scale=scale),
     ).generate_output()
     return jsonl
 
@@ -54,10 +59,10 @@ if __name__ == "__main__":
     handler(
         {
             "input": {
-                "boligpriser-blokkleiligheter": "raw/green/boligpriser-blokkleiligheter/version=1/edition=20190523T211529/Boligpriser(2004-2017-v01).csv"
+                "boligpriser-blokkleiligheter": "raw/green/boligpriser-blokkleiligheter/version=1/edition=20190904T112733/Boligpriser(2004-2018-v02).csv"
             },
-            "output": "intermediate/green/boligpriser-blokkleiligheter-status/version=1/edition=20190422T211529/",
-            "config": {"type": "historisk"},
+            "output": "intermediate/green/boligpriser-blokkleiligheter-status/version=1/edition=20191004T211529/",
+            "config": {"type": "status"},
         },
         {},
     )

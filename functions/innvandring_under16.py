@@ -3,7 +3,7 @@ from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
 
 
 METADATA = {
@@ -76,14 +76,23 @@ def start(key, output_key, type_of_ds):
     if type_of_ds == "en-innvandrer_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "en-innvandrer_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
+        )
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "to-innvandrer_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "to-innvandrer_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
+        )
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "innvandrer_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "innvandrer_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
+        )
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
 
 

@@ -1,9 +1,9 @@
-from pprint import pprint
 from common.aws import read_from_s3, write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
+from common.util import get_min_max_values_and_ratios
 
 
 METADATA = {
@@ -47,6 +47,9 @@ def start(*, dataset_type, municipal_key, housing_key):
         template = TemplateB()
 
     df = generate(*dfs)
+    METADATA[dataset_type].add_scale(
+        get_min_max_values_and_ratios(df, "antall_boliger")
+    )
     return Output(
         values=["antall_boliger"],
         df=df,
@@ -71,4 +74,3 @@ if __name__ == "__main__":
         municipal_key="raw/green/kommunale-boliger/version=1/edition=20190523T211529/Kommunale_boliger(1.1.2017-1.1.2019-v01).csv",
         housing_key="raw/green/boligmengde-etter-boligtype/version=1/edition=20190524T105717/Boligmengde_etter_boligtype(2011-2017-v01).csv",
     )
-    pprint(data)

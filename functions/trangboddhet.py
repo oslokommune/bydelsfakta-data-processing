@@ -3,7 +3,7 @@ from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB, TemplateJ
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
 
 
 METADATA = {
@@ -92,18 +92,30 @@ def start(key, output_key, type_of_ds):
     df = agg.add_ratios(df, VALUE_POINTS, VALUE_POINTS)
 
     if type_of_ds == "0-5-0-9_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
+        )
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "0-5-0-9_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "1-0-1-9_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
+        )
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "1-0-1-9_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "over-2_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
+        )
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "over-2_historisk":
         create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "under-0-5_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
+        )
         create_ds(output_key, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "under-0-5_historisk":
         create_ds(output_key, TemplateA(), type_of_ds, *historic(df))
@@ -132,7 +144,7 @@ if __name__ == "__main__":
                 )
             },
             "output": "intermediate/green/trangboddhet/version=1/edition=20190601T093045/",
-            "config": {"type": "alle_status"},
+            "config": {"type": "over-2_status"},
         },
         {},
     )

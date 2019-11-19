@@ -2,6 +2,7 @@ from common import aws, util, transform
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC
+from common.util import get_min_max_values_and_ratios
 
 DATA_POINTS_ALL = [
     "aleneboende",
@@ -74,6 +75,8 @@ def handle(event, context):
 
     aggregated = agg.add_ratios(source, data_points=DATA_POINTS_ALL, ratio_of=["total"])
 
+    scale = get_min_max_values_and_ratios(aggregated, "aleneboende")
+
     if type == "status":
         [df] = transform.status(aggregated)
         template = TemplateA()
@@ -102,7 +105,9 @@ def handle(event, context):
     else:
         raise Exception("Wrong dataset type")
 
-    metadata = Metadata(heading="Husholdninger etter husholdningstype", series=series)
+    metadata = Metadata(
+        heading="Husholdninger etter husholdningstype", series=series, scale=scale
+    )
 
     output = Output(
         df=df, values=DATA_POINTS, template=template, metadata=metadata
@@ -119,7 +124,7 @@ if __name__ == "__main__":
                 "husholdningstyper": util.get_latest_edition_of("husholdningstyper")
             },
             "output": "intermediate/green/husholdningstyper-status/version=1/edition=20190822T170202/",
-            "config": {"type": "status"},
+            "config": {"type": "historisk"},
         },
         {},
     )

@@ -8,6 +8,7 @@ from common.templates import TemplateA, TemplateB
 from common.aggregateV2 import Aggregate
 from common.output import Metadata, Output
 from common.population_utils import generate_population_df
+from common.util import get_min_max_values_and_ratios
 
 pd.set_option("display.max_rows", 1000)
 
@@ -15,7 +16,7 @@ graph_metadata = Metadata(
     heading="Ikke-vestlige innvandrere korttid",
     series=[
         {
-            "heading": "Ikke-vestlige innvandrere som har bodd kortere tid enn 5 år per bydel og delbydel i Oslo.",
+            "heading": "Innvandrere fra Asia, Afrika, Latin-Amerika og Øst-Europa utenfor EU med botid kortere enn fem år",
             "subheading": "",
         }
     ],
@@ -47,6 +48,8 @@ def start(s3_key_botid, s3_key_befolkning, output_key, type_of_ds):
         historic = common.transform.historic(df)
         create_ds(output_key, TemplateB(), [data_point], graph_metadata, *historic)
     elif type_of_ds == "status":
+        graph_metadata.add_scale(get_min_max_values_and_ratios(df, data_point))
+        print(graph_metadata)
         status = common.transform.status(df)
         create_ds(output_key, TemplateA(), [data_point], graph_metadata, *status)
 

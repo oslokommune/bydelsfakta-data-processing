@@ -3,6 +3,7 @@ from common.transform import status, historic
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB, TemplateC
+from common.util import get_min_max_values_and_ratios
 
 
 METADATA = {
@@ -87,14 +88,17 @@ def handle(event, context):
     elif type == "alle_historisk":
         create_ds(output_key, TemplateC(), type, *historic(df))
     elif type == "1barn_status":
+        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "one_child"))
         create_ds(output_key, TemplateA(), type, *status(df))
     elif type == "1barn_historisk":
         create_ds(output_key, TemplateB(), type, *historic(df))
     elif type == "2barn_status":
+        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "two_child"))
         create_ds(output_key, TemplateA(), type, *status(df))
     elif type == "2barn_historisk":
         create_ds(output_key, TemplateB(), type, *historic(df))
     elif type == "3barn_status":
+        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "three_or_more"))
         create_ds(output_key, TemplateA(), type, *status(df))
     elif type == "3barn_historisk":
         create_ds(output_key, TemplateB(), type, *historic(df))
@@ -123,7 +127,7 @@ if __name__ == "__main__":
                 )
             },
             "output": "intermediate/green/husholdninger-totalt-status/version=1/edition=20190819T110202/",
-            "config": {"type": "alle_historisk"},
+            "config": {"type": "3barn_status"},
         },
         {},
     )

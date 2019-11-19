@@ -1,7 +1,7 @@
 import common.transform as transform
 import common.aws as common_aws
 from common.aggregateV2 import Aggregate
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
 
@@ -33,6 +33,7 @@ def handle(event, context):
         output_list = output_historic(input_df, [data_point])
 
     elif type_of_ds == "status":
+        graph_metadata.add_scale(get_min_max_values_and_ratios(input_df, data_point))
         output_list = output_status(input_df, [data_point])
 
     if output_list:
@@ -86,11 +87,11 @@ def output_status(input_df, data_points):
 
 if __name__ == "__main__":
     lav_utdanning_s3_key = get_latest_edition_of("lav-utdanning")
-    # handle(
-    #     {
-    #         "input": {"lav-utdanning": lav_utdanning_s3_key},
-    #         "output": "s3/key/or/prefix",
-    #         "config": {"type": "historisk"},
-    #     },
-    #     None,
-    # )
+    handle(
+        {
+            "input": {"lav-utdanning": lav_utdanning_s3_key},
+            "output": "intermediate/green/levekar-lav-utdanning-status/version=1/edition=20191111T144000/",
+            "config": {"type": "status"},
+        },
+        None,
+    )

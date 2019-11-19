@@ -6,6 +6,7 @@ from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB
 from common.transform import status, historic
+from common.util import get_min_max_values_and_ratios
 
 
 METADATA = {
@@ -162,7 +163,6 @@ def handler(event, context):
     botid_not_western = event["input"]["botid-ikke-vestlige"]
     origin_by_age_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
     print("# Handeling event #")
-    print(event)
     dataset_type = event["config"]["type"]
     output_s3_key = event["output"]
 
@@ -193,6 +193,9 @@ def handler(event, context):
             type_of_ds=dataset_type,
         )
     elif dataset_type == "kort_status":
+        METADATA[dataset_type].add_scale(
+            get_min_max_values_and_ratios(generated_status, "short")
+        )
         create_ds(
             output_s3_key,
             df=generated_status,
@@ -207,6 +210,9 @@ def handler(event, context):
             type_of_ds=dataset_type,
         )
     elif dataset_type == "lang_status":
+        METADATA[dataset_type].add_scale(
+            get_min_max_values_and_ratios(generated_status, "long")
+        )
         create_ds(
             output_s3_key,
             df=generated_status,
@@ -221,6 +227,9 @@ def handler(event, context):
             type_of_ds=dataset_type,
         )
     elif dataset_type == "to_foreldre_status":
+        METADATA[dataset_type].add_scale(
+            get_min_max_values_and_ratios(generated_status, "two_parents")
+        )
         create_ds(
             output_s3_key,
             df=generated_status,
@@ -257,7 +266,7 @@ if __name__ == "__main__":
                 "innvandrer-befolkningen-0-15-ar": "raw/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190523T211529/Landbakgrunn_etter_alder(1.1.2008-1.1.2019-v01).csv",
             },
             "output": "intermediate/green/innvandrer-befolkningen-historisk/version=1/edition=20190525T143000/",
-            "config": {"type": "to_foreldre_historisk"},
+            "config": {"type": "to_foreldre_status"},
         },
         {},
     )

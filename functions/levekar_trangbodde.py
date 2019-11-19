@@ -4,7 +4,7 @@ import common.aws as common_aws
 import common.transform as transform
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
-from common.util import get_latest_edition_of
+from common.util import get_latest_edition_of, get_min_max_values_and_ratios
 
 
 pd.set_option("display.max_rows", 1000)
@@ -54,6 +54,9 @@ def output_historic(input_df, data_points):
 
 def output_status(input_df, data_points):
     [input_df] = transform.status(input_df)
+    graph_metadata.add_scale(
+        get_min_max_values_and_ratios(input_df, "antall_som_bor_trangt")
+    )
     output = Output(
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
