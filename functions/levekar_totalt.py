@@ -233,7 +233,9 @@ def generate_fattige_barnehusholdninger_df(fattige_husholdninger_raw):
     data_point_ratio = f"{data_point}_ratio"
     df = fattige_husholdninger_raw
 
-    df[data_point_ratio] = df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
+    df[data_point_ratio] = (
+        df["husholdninger_med_barn_under_18_aar_eu_skala_andel"] / 100
+    )
     return add_relative_ratio(df, data_point_ratio)
 
 

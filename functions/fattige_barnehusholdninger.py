@@ -29,11 +29,14 @@ def handle(event, context):
 def start(key, output_key, type_of_ds):
     df = read_from_s3(s3_key=key, date_column="aar")
 
-    df = df[df["husholdninger_med_barn_under_18_aar"].notnull()]
-    df = df[df["husholdninger_med_barn_under_18_aar_eu_skala"].notnull()]
+    df = df[df["husholdninger_med_barn_under_18_aar_eu_skala_antall"].notnull()]
+    df = df[df["husholdninger_med_barn_under_18_aar_eu_skala_andel"].notnull()]
 
-    df["husholdninger_med_barn_under_18_aar_ratio"] = (
-        df["husholdninger_med_barn_under_18_aar_eu_skala"] / 100
+    df["husholdninger_med_barn_under_18_aar_eu_skala"] = df[
+        "husholdninger_med_barn_under_18_aar_eu_skala_antall"
+    ]
+    df["husholdninger_med_barn_under_18_aar_eu_skala_ratio"] = (
+        df["husholdninger_med_barn_under_18_aar_eu_skala_andel"] / 100
     )
 
     if type_of_ds == "historisk":
@@ -42,7 +45,9 @@ def start(key, output_key, type_of_ds):
     elif type_of_ds == "status":
         df_status = status(df)
         METADATA[type_of_ds].add_scale(
-            get_min_max_values_and_ratios(df, "husholdninger_med_barn_under_18_aar")
+            get_min_max_values_and_ratios(
+                df, "husholdninger_med_barn_under_18_aar_eu_skala"
+            )
         )
         create_ds(output_key, TemplateA(), type_of_ds, *df_status)
 
@@ -52,7 +57,7 @@ def create_ds(output_key, template, type_of_ds, df):
         df=df,
         template=template,
         metadata=METADATA[type_of_ds],
-        values=["husholdninger_med_barn_under_18_aar"],
+        values=["husholdninger_med_barn_under_18_aar_eu_skala"],
     ).generate_output()
     write_to_intermediate(output_key=output_key, output_list=jsonl)
 
@@ -63,7 +68,7 @@ if __name__ == "__main__":
             "input": {
                 "fattige-husholdninger": get_latest_edition_of("fattige-husholdninger")
             },
-            "output": "intermediate/green/fattige-barnehusholdninger-status/version=1/edition=20191111T181010/",
+            "output": "intermediate/green/fattige-barnehusholdninger-status/version=1/edition=20200106T181010/",
             "config": {"type": "status"},
         },
         {},
