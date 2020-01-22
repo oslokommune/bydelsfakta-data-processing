@@ -82,7 +82,7 @@ def handle(event, context):
         template = TemplateA()
         DATA_POINTS = DATA_POINTS_STATUS
         series = [
-            {"heading": "Aleneboende", "subheading": ""},
+            {"heading": "Énpersonshusholdninger", "subheading": ""},
             {"heading": "Par uten barn", "subheading": ""},
             {"heading": "Par med barn", "subheading": ""},
             {"heading": "Mor eller far", "subheading": "med barn"},
@@ -94,7 +94,7 @@ def handle(event, context):
         template = TemplateC()
         DATA_POINTS = DATA_POINTS_ALL
         series = [
-            {"heading": "Aleneboende", "subheading": ""},
+            {"heading": "Énpersonshusholdninger", "subheading": ""},
             {"heading": "Par uten barn", "subheading": ""},
             {"heading": "Par med barn", "subheading": ""},
             {"heading": "Mor eller far", "subheading": "med barn"},
