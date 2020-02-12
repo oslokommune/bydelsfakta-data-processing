@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-levekar-totalt-ng
+handler: functions/levekar_totalt._start
+timeout: 60
+layers: ${self:custom.layers}

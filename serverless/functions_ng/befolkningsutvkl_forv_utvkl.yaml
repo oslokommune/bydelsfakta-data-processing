@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-befolkningsutvkl-forv-utvkl-ng
+handler: functions/befolkningsutvkl_forv_utvkl._start
+timeout: 60
+layers: ${self:custom.layers}

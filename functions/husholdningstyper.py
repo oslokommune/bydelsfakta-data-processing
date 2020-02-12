@@ -1,8 +1,14 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 from common import aws, util, transform
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC
 from common.util import get_min_max_values_and_ratios
+from common.event import event_handler
+
+patch_all()
 
 DATA_POINTS_ALL = [
     "aleneboende",
@@ -24,13 +30,25 @@ DATA_POINTS_STATUS = [
 column_names = ColumnNames()
 
 
-def handle(event, context):
-    """ Assuming we recieve a complete s3 key"""
+@logging_wrapper("husholdningstyper__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     s3_key = event["input"]["husholdningstyper"]
     output_key = event["output"]
     type = event["config"]["type"]
     source = aws.read_from_s3(s3_key=s3_key)
+    start(source, output_key, type)
+    return "OK"
 
+
+@logging_wrapper("husholdningstyper")
+@xray_recorder.capture("event_handler")
+@event_handler(source="husholdningstyper")
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(source, output_prefix, type_of_ds):
     source["par_uten_barn"] = source["par_uten_hjemmeboende_barn"]
     source["par_med_barn"] = source["par_med_smaa_barn"] + source["par_med_store_barn"]
     source["mor_far_med_barn"] = (
@@ -77,7 +95,7 @@ def handle(event, context):
 
     scale = get_min_max_values_and_ratios(aggregated, "aleneboende")
 
-    if type == "status":
+    if type_of_ds == "status":
         [df] = transform.status(aggregated)
         template = TemplateA()
         DATA_POINTS = DATA_POINTS_STATUS
@@ -89,7 +107,7 @@ def handle(event, context):
             {"heading": "Flerfamiliehusholdninger", "subheading": ""},
         ]
 
-    elif type == "historisk":
+    elif type_of_ds == "historisk":
         [df] = transform.historic(aggregated)
         template = TemplateC()
         DATA_POINTS = DATA_POINTS_ALL
@@ -113,12 +131,11 @@ def handle(event, context):
         df=df, values=DATA_POINTS, template=template, metadata=metadata
     ).generate_output()
 
-    aws.write_to_intermediate(output_key=output_key, output_list=output)
-    return f"Complete: {output_key}"
+    aws.write_to_intermediate(output_key=output_prefix, output_list=output)
 
 
 if __name__ == "__main__":
-    handle(
+    handler_old(
         {
             "input": {
                 "husholdningstyper": util.get_latest_edition_of("husholdningstyper")

@@ -1,9 +1,9 @@
-from setuptools import setup
+import setuptools
 
 with open("README.md", encoding="utf-8") as f:
     long_description = f.read()
 
-setup(
+setuptools.setup(
     name="bydelsfakta-data-processing",
     version="0.0.1",
     author="Origo Dataplattform",
@@ -12,7 +12,7 @@ setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/oslokommune/bydelsfakta-data-processing",
-    py_modules=["common", "functions"],
+    packages=setuptools.find_packages(),
     install_requires=[
         "numpy",
         "pandas",
@@ -22,5 +22,5 @@ setup(
         "requests",
         "structlog",
     ],
-    extras_require={"testing": ["pytest", "moto"],},
+    extras_require={"testing": ["pytest", "pytest-mock", "moto"],},
 )

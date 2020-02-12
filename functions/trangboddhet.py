@@ -1,10 +1,15 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 from common.aws import read_from_s3, write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB, TemplateJ
 from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.event import event_handler
 
+patch_all()
 
 METADATA = {
     "0-5-0-9_status": Metadata(heading="0,5–0,9 rom per person", series=[]),
@@ -66,17 +71,25 @@ VALUE_POINTS = [
 ]
 
 
-def handle(event, context):
+@logging_wrapper("trangboddhet__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     s3_key = event["input"]["husholdninger-etter-rom-per-person"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
-    start(s3_key, output_key, type_of_ds)
+    df = read_from_s3(s3_key=s3_key, date_column="aar")
+    start(df, output_key, type_of_ds)
     return "OK"
 
 
-def start(key, output_key, type_of_ds):
-    df = read_from_s3(s3_key=key, date_column="aar")
+@logging_wrapper("trangboddhet")
+@xray_recorder.capture("event_handler")
+@event_handler(df="husholdninger-etter-rom-per-person")
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
 
+
+def start(df, output_prefix, type_of_ds):
     agg = Aggregate(
         {
             "rom_per_person_under_0_5": "sum",
@@ -95,34 +108,34 @@ def start(key, output_key, type_of_ds):
         METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
         )
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "0-5-0-9_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "1-0-1-9_status":
         METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
         )
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "1-0-1-9_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "over-2_status":
         METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
         )
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "over-2_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "under-0-5_status":
         METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
         )
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "under-0-5_historisk":
-        create_ds(output_key, TemplateA(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *historic(df))
     elif type_of_ds == "alle_status":
-        create_ds(output_key, TemplateJ(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateJ(), type_of_ds, *status(df))
     elif type_of_ds == "alle_historisk":
-        create_ds(output_key, TemplateC(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateC(), type_of_ds, *historic(df))
 
 
 def create_ds(output_key, template, type_of_ds, df):
@@ -136,7 +149,7 @@ def create_ds(output_key, template, type_of_ds, df):
 
 
 if __name__ == "__main__":
-    handle(
+    handler_old(
         {
             "input": {
                 "husholdninger-etter-rom-per-person": get_latest_edition_of(

@@ -1,4 +1,6 @@
 import pandas as pd
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.transform
 import common.util as util
@@ -9,6 +11,9 @@ from common.aggregateV2 import Aggregate
 from common.output import Metadata, Output
 from common.population_utils import generate_population_df
 from common.util import get_min_max_values_and_ratios
+from common.event import event_handler
+
+patch_all()
 
 pd.set_option("display.max_rows", 1000)
 
@@ -23,21 +28,32 @@ graph_metadata = Metadata(
 )
 
 
-def handler(event, context):
-    """ Assuming we recieve a complete s3 key"""
+@logging_wrapper("botid_ikke_vestlige__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     s3_key_botid = event["input"]["botid-ikke-vestlige"]
     s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
-    start(s3_key_botid, s3_key_befolkning, output_key, type_of_ds)
+
+    botid_ikke_vestlige_raw = read_from_s3(s3_key=s3_key_botid, date_column="aar")
+    befolkning_raw = read_from_s3(s3_key=s3_key_befolkning, date_column="aar")
+
+    start(botid_ikke_vestlige_raw, befolkning_raw, output_key, type_of_ds)
     return "OK"
 
 
-def start(s3_key_botid, s3_key_befolkning, output_key, type_of_ds):
-    botid_ikke_vestlige_raw = read_from_s3(s3_key=s3_key_botid, date_column="aar")
+@logging_wrapper("botid_ikke_vestlige")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    botid_ikke_vestlige_raw="botid-ikke-vestlige",
+    befolkning_raw="befolkning-etter-kjonn-og-alder",
+)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
 
-    befolkning_raw = read_from_s3(s3_key=s3_key_befolkning, date_column="aar")
 
+def start(botid_ikke_vestlige_raw, befolkning_raw, output_key, type_of_ds):
     data_point = "ikke_vestlig_kort"
 
     df = generate_ikke_vestlig_innvandrer_kort_botid_df(
@@ -102,7 +118,7 @@ def create_ds(output_key, template, values, metadata, df):
 
 
 if __name__ == "__main__":
-    handler(
+    handler_old(
         {
             "input": {
                 "botid-ikke-vestlige": util.get_latest_edition_of(

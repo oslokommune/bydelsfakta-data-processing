@@ -1,10 +1,15 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 from common.aws import read_from_s3, write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
 from common.util import get_min_max_values_and_ratios
+from common.event import event_handler
 
+patch_all()
 
 METADATA = {
     "status": Metadata(heading="Kommunale boliger av boligmassen i alt", series=[]),
@@ -35,10 +40,7 @@ def generate(df_municipal, df_housing):
     return df
 
 
-def start(*, dataset_type, municipal_key, housing_key):
-    df_municipal = read_from_s3(municipal_key)
-    df_housing = housing(housing_key)
-
+def start(df_municipal, df_housing, output_prefix, dataset_type):
     if dataset_type == "status":
         dfs = status(df_municipal, df_housing)
         template = TemplateA()
@@ -50,27 +52,34 @@ def start(*, dataset_type, municipal_key, housing_key):
     METADATA[dataset_type].add_scale(
         get_min_max_values_and_ratios(df, "antall_boliger")
     )
-    return Output(
+    jsonl = Output(
         values=["antall_boliger"],
         df=df,
         template=template,
         metadata=METADATA[dataset_type],
     ).generate_output()
+    write_to_intermediate(output_key=output_prefix, output_list=jsonl)
 
 
-def handle(event, context):
+@logging_wrapper("kommunale_boliger__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     dataset_type = event["config"]["type"]
-    jsonl = start(
-        dataset_type=dataset_type,
-        municipal_key=event["input"]["kommunale-boliger"],
-        housing_key=event["input"]["boligmengde-etter-boligtype"],
-    )
-    write_to_intermediate(output_key=event["output"], output_list=jsonl)
+    output_key = event["output"]
+    municipal_key = event["input"]["kommunale-boliger"]
+    housing_key = event["input"]["boligmengde-etter-boligtype"]
+
+    df_municipal = read_from_s3(municipal_key)
+    df_housing = housing(housing_key)
+
+    start(df_municipal, df_housing, output_key, dataset_type)
+    return "OK"
 
 
-if __name__ == "__main__":
-    data = start(
-        dataset_type="status",
-        municipal_key="raw/green/kommunale-boliger/version=1/edition=20190523T211529/Kommunale_boliger(1.1.2017-1.1.2019-v01).csv",
-        housing_key="raw/green/boligmengde-etter-boligtype/version=1/edition=20190524T105717/Boligmengde_etter_boligtype(2011-2017-v01).csv",
-    )
+@logging_wrapper("kommunale_boliger")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    df_municipal="kommunale-boliger", df_housing="boligmengde-etter-boligtype"
+)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)

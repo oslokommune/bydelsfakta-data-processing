@@ -1,9 +1,17 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 from common.aws import read_from_s3, write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB
 from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.event import event_handler
+
+patch_all()
+
+S3_KEY = "boligmengde-etter-boligtype"
 
 METADATA = {
     "blokk_status": Metadata(heading="Blokker og leiegårder", series=[]),
@@ -34,16 +42,26 @@ METADATA = {
 }
 
 
-def handle(event, context):
-    s3_key = event["input"]["boligmengde-etter-boligtype"]
+@logging_wrapper("bygningstyper__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
+    s3_key = event["input"][S3_KEY]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
-    start(s3_key, output_key, type_of_ds)
+    df = read_from_s3(s3_key=s3_key, date_column="aar")
+    start(df, output_key, type_of_ds)
     return "OK"
 
 
-def start(key, output_key, type_of_ds):
-    df = read_from_s3(s3_key=key, date_column="aar").rename(
+@logging_wrapper("bygningstyper")
+@xray_recorder.capture("event_handler")
+@event_handler(df=S3_KEY)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(df, output_prefix, type_of_ds):
+    df = df.rename(
         columns={
             "frittliggende_enebolig_eller_vaaningshus": "enebolig",
             "horisontaldelt_tomannsbolig_eller_annet_boligbygg_med_mindre_enn_3_etasjer": "rekkehus_horisontal",
@@ -70,7 +88,7 @@ def start(key, output_key, type_of_ds):
 
     if type_of_ds == "alle_status":
         create_ds(
-            output_key,
+            output_prefix,
             TemplateA(),
             ["blokk", "rekkehus", "enebolig"],
             METADATA[type_of_ds],
@@ -78,7 +96,7 @@ def start(key, output_key, type_of_ds):
         )
     elif type_of_ds == "alle_historisk":
         create_ds(
-            output_key,
+            output_prefix,
             TemplateC(),
             ["blokk", "rekkehus", "enebolig", "total"],
             METADATA[type_of_ds],
@@ -86,35 +104,39 @@ def start(key, output_key, type_of_ds):
         )
     elif type_of_ds == "blokk_status":
         METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "blokk"))
-        create_ds(output_key, TemplateA(), ["blokk"], METADATA[type_of_ds], *df_status)
+        create_ds(
+            output_prefix, TemplateA(), ["blokk"], METADATA[type_of_ds], *df_status
+        )
     elif type_of_ds == "blokk_historisk":
         create_ds(
-            output_key, TemplateB(), ["blokk"], METADATA[type_of_ds], *df_historic
+            output_prefix, TemplateB(), ["blokk"], METADATA[type_of_ds], *df_historic
         )
     elif type_of_ds == "enebolig_status":
         METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "enebolig"))
         create_ds(
-            output_key, TemplateA(), ["enebolig"], METADATA[type_of_ds], *df_status
+            output_prefix, TemplateA(), ["enebolig"], METADATA[type_of_ds], *df_status
         )
     elif type_of_ds == "enebolig_historisk":
         create_ds(
-            output_key, TemplateB(), ["enebolig"], METADATA[type_of_ds], *df_historic
+            output_prefix, TemplateB(), ["enebolig"], METADATA[type_of_ds], *df_historic
         )
     elif type_of_ds == "rekkehus_status":
         METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "rekkehus"))
         create_ds(
-            output_key, TemplateA(), ["rekkehus"], METADATA[type_of_ds], *df_status
+            output_prefix, TemplateA(), ["rekkehus"], METADATA[type_of_ds], *df_status
         )
     elif type_of_ds == "rekkehus_historisk":
         create_ds(
-            output_key, TemplateB(), ["rekkehus"], METADATA[type_of_ds], *df_historic
+            output_prefix, TemplateB(), ["rekkehus"], METADATA[type_of_ds], *df_historic
         )
     elif type_of_ds == "totalt_status":
         METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "totalt"))
-        create_ds(output_key, TemplateA(), ["total"], METADATA[type_of_ds], *df_status)
+        create_ds(
+            output_prefix, TemplateA(), ["total"], METADATA[type_of_ds], *df_status
+        )
     elif type_of_ds == "totalt_historisk":
         create_ds(
-            output_key, TemplateB(), ["total"], METADATA[type_of_ds], *df_historic
+            output_prefix, TemplateB(), ["total"], METADATA[type_of_ds], *df_historic
         )
 
 
@@ -126,7 +148,7 @@ def create_ds(output_key, template, values, metadata, df):
 
 
 if __name__ == "__main__":
-    handle(
+    handler_old(
         {
             "input": {
                 "boligmengde-etter-boligtype": get_latest_edition_of(

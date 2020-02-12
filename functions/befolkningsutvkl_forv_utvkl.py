@@ -1,5 +1,7 @@
 import numpy
 import pandas
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.aws
 import common.population_utils
@@ -10,12 +12,17 @@ from common import transform
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateH
+from common.event import event_handler
+
+patch_all()
 
 column_names = ColumnNames()
 sum = Aggregate("sum")
 
 
-def handler(event, context):
+@logging_wrapper("befolkningsutvkl_forv_utvkl__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     """ Assuming we recieve a complete s3 key"""
     population = event["input"]["befolkning-etter-kjonn-og-alder"]
     population = common.aws.read_from_s3(population)
@@ -37,14 +44,52 @@ def handler(event, context):
 
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
+
+    start(
+        population,
+        dead,
+        born,
+        immigration,
+        emigration,
+        pop_extrapolation,
+        output_key,
+        type_of_ds,
+    )
+
+    return f"Complete: {output_key}"
+
+
+@logging_wrapper("befolkningsutvkl_forv_utvkl")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    population="befolkning-etter-kjonn-og-alder",
+    dead="dode",
+    born="fodte",
+    immigration="flytting-til-etter-alder",
+    emigration="flytting-fra-etter-alder",
+    pop_extrapolation="befolkningsframskrivninger",
+)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(
+    population,
+    dead,
+    born,
+    immigration,
+    emigration,
+    pop_extrapolation,
+    output_prefix,
+    type_of_ds,
+):
     if type_of_ds == "historisk":
         dfs = transform.historic(population, dead, born, immigration, emigration)
     else:
         raise Exception("Type should be historisk")
 
     df = generate(*dfs, pop_extrapolation)
-    write(df, output_key)
-    return f"Complete: {output_key}"
+    write(df, output_prefix)
 
 
 def process_population(population):
@@ -193,7 +238,7 @@ def write(df, output_key):
 
 
 if __name__ == "__main__":
-    handler(
+    handler_old(
         {
             "input": {
                 "befolkning-etter-kjonn-og-alder": common.util.get_latest_edition_of(

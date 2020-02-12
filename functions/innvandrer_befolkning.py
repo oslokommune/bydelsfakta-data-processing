@@ -1,4 +1,6 @@
 import pandas as pd
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 from common.aws import write_to_intermediate
 import common.transform_output
@@ -7,7 +9,9 @@ from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB
 from common.transform import status, historic
 from common.util import get_min_max_values_and_ratios
+from common.event import event_handler
 
+patch_all()
 
 METADATA = {
     "alle_status": Metadata(
@@ -158,19 +162,43 @@ def write(output_list, output_key):
     common.aws.write_to_intermediate(output_key=output_key, output_list=output_list)
 
 
-def handler(event, context):
+@logging_wrapper("innvandrer_befolkning__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     befolkning_key = event["input"]["befolkning-etter-kjonn-og-alder"]
     botid_not_western = event["input"]["botid-ikke-vestlige"]
     origin_by_age_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
-    print("# Handeling event #")
     dataset_type = event["config"]["type"]
     output_s3_key = event["output"]
 
-    source = read_from_s3(
-        origin_by_age_key=origin_by_age_key,
-        botid_key=botid_not_western,
-        befolkning_key=befolkning_key,
-    )
+    origin_by_age = common.aws.read_from_s3(origin_by_age_key)
+    livage = common.aws.read_from_s3(botid_not_western)
+    population_df = common.aws.read_from_s3(befolkning_key)
+
+    start(origin_by_age, livage, population_df, output_s3_key, dataset_type)
+    return "OK"
+
+
+@logging_wrapper("innvandrer_befolkning")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    origin_by_age="befolkning-etter-kjonn-og-alder",
+    livage="botid-ikke-vestlige",
+    population_df="innvandrer-befolkningen-0-15-ar",
+)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(origin_by_age, livage, population_df, output_prefix, type_of_ds):
+    origin_by_age = origin_by_age[origin_by_age["delbydel_id"].notnull()]
+    livage = livage[livage["delbydel_id"].notnull()]
+
+    population_df = population_df[population_df["delbydel_id"].notnull()]
+    population_total = population_df.loc[:, "date":"kjonn"]
+    population_total["total"] = population_df.loc[:, "0":].sum(axis=1)
+
+    source = [origin_by_age, livage, population_total]
 
     df_status = status(*source)
     df_historic = historic(*source)
@@ -178,73 +206,71 @@ def handler(event, context):
     generated_status = generate(*df_status)
     generated_historic = generate(*df_historic)
 
-    if dataset_type == "alle_status":
+    if type_of_ds == "alle_status":
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_status,
             template=TemplateA(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-    elif dataset_type == "alle_historisk":
+    elif type_of_ds == "alle_historisk":
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_historic,
             template=TemplateC(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-    elif dataset_type == "kort_status":
-        METADATA[dataset_type].add_scale(
+    elif type_of_ds == "kort_status":
+        METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(generated_status, "short")
         )
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_status,
             template=TemplateA(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-    elif dataset_type == "kort_historisk":
+    elif type_of_ds == "kort_historisk":
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_historic,
             template=TemplateB(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-    elif dataset_type == "lang_status":
-        METADATA[dataset_type].add_scale(
+    elif type_of_ds == "lang_status":
+        METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(generated_status, "long")
         )
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_status,
             template=TemplateA(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-    elif dataset_type == "lang_historisk":
+    elif type_of_ds == "lang_historisk":
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_historic,
             template=TemplateB(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-    elif dataset_type == "to_foreldre_status":
-        METADATA[dataset_type].add_scale(
+    elif type_of_ds == "to_foreldre_status":
+        METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(generated_status, "two_parents")
         )
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_status,
             template=TemplateA(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-    elif dataset_type == "to_foreldre_historisk":
+    elif type_of_ds == "to_foreldre_historisk":
         create_ds(
-            output_s3_key,
+            output_prefix,
             df=generated_historic,
             template=TemplateB(),
-            type_of_ds=dataset_type,
+            type_of_ds=type_of_ds,
         )
-
-    return f"Complete: {output_s3_key}"
 
 
 def create_ds(output_key, template, type_of_ds, df):
@@ -258,7 +284,7 @@ def create_ds(output_key, template, type_of_ds, df):
 
 
 if __name__ == "__main__":
-    handler(
+    handler_old(
         {
             "input": {
                 "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190524T133230/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",

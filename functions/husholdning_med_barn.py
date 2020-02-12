@@ -1,10 +1,15 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 from common import aws, util
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB, TemplateC
 from common.util import get_min_max_values_and_ratios
+from common.event import event_handler
 
+patch_all()
 
 METADATA = {
     "alle_status": Metadata(
@@ -48,13 +53,25 @@ DATA_POINTS = ["one_child", "two_child", "three_or_more", "no_children", "total"
 column_names = ColumnNames()
 
 
-def handle(event, context):
-    """ Assuming we recieve a complete s3 key"""
+@logging_wrapper("husholdning_med_barn__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     s3_key = event["input"]["husholdninger-med-barn"]
     output_key = event["output"]
     type = event["config"]["type"]
     source = aws.read_from_s3(s3_key=s3_key)
+    start(source, output_key, type)
+    return "OK"
 
+
+@logging_wrapper("husholdning_med_barn")
+@xray_recorder.capture("event_handler")
+@event_handler(source="husholdninger-med-barn")
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(source, output_prefix, type_of_ds):
     source["one_child"] = source["ett_barn_i_hh"]
     source["two_child"] = source["to_barn_i_hh"]
     source["three_or_more"] = source["tre_barn_i_hh"] + source["fire_barn_eller_mer"]
@@ -83,29 +100,29 @@ def handle(event, context):
 
     df = agg.add_ratios(source, data_points=DATA_POINTS, ratio_of=["total"])
 
-    if type == "alle_status":
-        create_ds(output_key, TemplateA(), type, *status(df))
-    elif type == "alle_historisk":
-        create_ds(output_key, TemplateC(), type, *historic(df))
-    elif type == "1barn_status":
-        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "one_child"))
-        create_ds(output_key, TemplateA(), type, *status(df))
-    elif type == "1barn_historisk":
-        create_ds(output_key, TemplateB(), type, *historic(df))
-    elif type == "2barn_status":
-        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "two_child"))
-        create_ds(output_key, TemplateA(), type, *status(df))
-    elif type == "2barn_historisk":
-        create_ds(output_key, TemplateB(), type, *historic(df))
-    elif type == "3barn_status":
-        METADATA[type].add_scale(get_min_max_values_and_ratios(df, "three_or_more"))
-        create_ds(output_key, TemplateA(), type, *status(df))
-    elif type == "3barn_historisk":
-        create_ds(output_key, TemplateB(), type, *historic(df))
+    if type_of_ds == "alle_status":
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "alle_historisk":
+        create_ds(output_prefix, TemplateC(), type_of_ds, *historic(df))
+    elif type_of_ds == "1barn_status":
+        METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "one_child"))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "1barn_historisk":
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
+    elif type_of_ds == "2barn_status":
+        METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "two_child"))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "2barn_historisk":
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
+    elif type_of_ds == "3barn_status":
+        METADATA[type_of_ds].add_scale(
+            get_min_max_values_and_ratios(df, "three_or_more")
+        )
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
+    elif type_of_ds == "3barn_historisk":
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
     else:
         raise Exception("Wrong dataset type")
-
-    return f"Complete: {output_key}"
 
 
 def create_ds(output_key, template, type_of_ds, df):
@@ -119,7 +136,7 @@ def create_ds(output_key, template, type_of_ds, df):
 
 
 if __name__ == "__main__":
-    handle(
+    handler_old(
         {
             "input": {
                 "husholdninger-med-barn": util.get_latest_edition_of(

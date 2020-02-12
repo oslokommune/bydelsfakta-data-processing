@@ -1,5 +1,7 @@
 import pandas as pd
 import numpy as np
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.transform as transform
 import common.aws as common_aws
@@ -7,7 +9,9 @@ from common.aggregateV2 import Aggregate, ColumnNames
 from common.util import get_latest_edition_of
 from common.output import Output, Metadata
 from common.templates import Template
+from common.event import event_handler
 
+patch_all()
 
 graph_metadata = Metadata(
     heading="Flytting etter alder", series=[{"heading": "Flytting", "subheading": ""}]
@@ -19,40 +23,52 @@ flytting_til_etter_alder_id = "flytting-til-etter-alder"
 aldersgruppe_col = "aldersgruppe_5_aar"
 
 
-def handle(event, context):
+@logging_wrapper("flyttehyppighet_totalt__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     s3_key_flytting_fra_etter_alder_raw = event["input"][flytting_fra_etter_alder_id]
     s3_key_flytting_til_etter_alder_raw = event["input"][flytting_til_etter_alder_id]
 
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
 
-    input_df = generate_input_df(
-        s3_key_flytting_fra_etter_alder_raw, s3_key_flytting_til_etter_alder_raw
+    flytting_fra_raw = common_aws.read_from_s3(
+        s3_key=s3_key_flytting_fra_etter_alder_raw, date_column="aar"
     )
+    flytting_til_raw = common_aws.read_from_s3(
+        s3_key=s3_key_flytting_til_etter_alder_raw, date_column="aar"
+    )
+
+    start(flytting_fra_raw, flytting_til_raw, output_key, type_of_ds)
+    return "OK"
+
+
+@logging_wrapper("flyttehyppighet_totalt")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    flytting_fra_raw=flytting_fra_etter_alder_id,
+    flytting_til_raw=flytting_til_etter_alder_id,
+)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(flytting_fra_raw, flytting_til_raw, output_prefix, type_of_ds):
+    input_df = generate_input_df(flytting_fra_raw, flytting_til_raw)
 
     output_list = []
     if type_of_ds == "historisk":
         output_list = output_historic(input_df)
-
     elif type_of_ds == "status":
         output_list = output_status(input_df)
 
-    if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        return f"Created {output_key}"
-
-    else:
+    if not output_list:
         raise Exception("No data in outputlist")
 
+    common_aws.write_to_intermediate(output_key=output_prefix, output_list=output_list)
 
-def generate_input_df(s3_key_flytting_fra_raw, s3_key_flytting_til_raw):
-    flytting_fra_raw = common_aws.read_from_s3(
-        s3_key=s3_key_flytting_fra_raw, date_column="aar"
-    )
-    flytting_til_raw = common_aws.read_from_s3(
-        s3_key=s3_key_flytting_til_raw, date_column="aar"
-    )
 
+def generate_input_df(flytting_fra_raw, flytting_til_raw):
     flytting_df = pd.merge(
         flytting_fra_raw,
         flytting_til_raw,
@@ -141,7 +157,7 @@ class StatusTemplate(Template):
 if __name__ == "__main__":
     flytting_fra_etter_alder_s3_key = get_latest_edition_of(flytting_fra_etter_alder_id)
     flytting_til_etter_alder_s3_key = get_latest_edition_of(flytting_til_etter_alder_id)
-    handle(
+    handler_old(
         {
             "input": {
                 flytting_fra_etter_alder_id: flytting_fra_etter_alder_s3_key,

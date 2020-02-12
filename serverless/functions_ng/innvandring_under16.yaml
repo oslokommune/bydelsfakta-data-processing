@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-innvandring-under16-ng
+handler: functions/innvandring_under16._start
+timeout: 60
+layers: ${self:custom.layers}

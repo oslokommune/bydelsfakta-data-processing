@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-levekar-ikke-sysselsatte-ng
+handler: functions/levekar_ikke_sysselsatte._start
+timeout: 60
+layers: ${self:custom.layers}

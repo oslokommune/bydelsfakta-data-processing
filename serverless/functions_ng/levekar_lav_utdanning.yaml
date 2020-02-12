@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-levekar-lav-utdanning-ng
+handler: functions/levekar_lav_utdanning._start
+timeout: 60
+layers: ${self:custom.layers}

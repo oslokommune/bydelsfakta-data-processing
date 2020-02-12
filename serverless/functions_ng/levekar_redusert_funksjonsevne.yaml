@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-levekar-redusert-funksjonsevne-ng
+handler: functions/levekar_redusert_funksjonsevne._start
+timeout: 60
+layers: ${self:custom.layers}

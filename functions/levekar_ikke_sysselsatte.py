@@ -1,4 +1,6 @@
 import pandas as pd
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.aws as common_aws
 import common.transform as transform
@@ -7,6 +9,9 @@ from common.population_utils import generate_population_df
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
 from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.event import event_handler
+
+patch_all()
 
 pd.set_option("display.max_rows", 1000)
 
@@ -16,13 +21,13 @@ graph_metadata = Metadata(
 )
 
 
-def handle(event, context):
+@logging_wrapper("levekar_ikke_sysselsatte__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     s3_key_sysselsatte = event["input"]["sysselsatte"]
     s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
     output_key = event["output"]
     type_of_ds = event["config"]["type"]
-
-    data_point = "antall_ikke_sysselsatte"
 
     sysselsatte_raw = common_aws.read_from_s3(
         s3_key=s3_key_sysselsatte, date_column="aar"
@@ -30,6 +35,22 @@ def handle(event, context):
     befolkning_raw = common_aws.read_from_s3(
         s3_key=s3_key_befolkning, date_column="aar"
     )
+    start(sysselsatte_raw, befolkning_raw, output_key, type_of_ds)
+    return f"Created {output_key}"
+
+
+@logging_wrapper("levekar_ikke_sysselsatte")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    sysselsatte_raw="sysselsatte", befolkning_raw="befolkning-etter-kjonn-og-alder"
+)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(sysselsatte_raw, befolkning_raw, output_prefix, type_of_ds):
+    data_point = "antall_ikke_sysselsatte"
+
     input_df = generate_input_df(sysselsatte_raw, befolkning_raw, data_point)
 
     output_list = []
@@ -41,9 +62,9 @@ def handle(event, context):
         output_list = output_status(input_df, [data_point])
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        return f"Created {output_key}"
-
+        common_aws.write_to_intermediate(
+            output_key=output_prefix, output_list=output_list
+        )
     else:
         raise Exception("No data in outputlist")
 
@@ -112,7 +133,7 @@ if __name__ == "__main__":
     befolkning_s3_key = get_latest_edition_of(
         "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
     )
-    handle(
+    handler_old(
         {
             "input": {
                 "sysselsatte": sysselsatte_s3_key,

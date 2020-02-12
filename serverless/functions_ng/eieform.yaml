@@ -1,0 +1,4 @@
+name: bydelsfakta-data-processing-eieform-ng
+handler: functions/eieform._start
+timeout: 60
+layers: ${self:custom.layers}

@@ -1,4 +1,6 @@
 import pandas as pd
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.aws as common_aws
 import common.aggregate_dfs as aggregator
@@ -6,11 +8,15 @@ import common.population_utils as population_utils
 from common.aggregateV2 import Aggregate
 from common.output import Metadata
 from common.util import get_latest_edition_of
+from common.event import event_handler
 
+patch_all()
 pd.set_option("display.max_rows", 1000)
 
 
-def handle(event, context):
+@logging_wrapper("landbakgrunn_innvandringsgrupper__old")
+@xray_recorder.capture("handler_old")
+def handler_old(event, context):
     s3_key_landbakgrunn = event["input"]["landbakgrunn-storste-innvandringsgrupper"]
     s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
     output_key = event["output"]
@@ -21,7 +27,21 @@ def handle(event, context):
     befolkning_raw = common_aws.read_from_s3(
         s3_key=s3_key_befolkning, date_column="aar"
     )
+    start(landbakgrunn_raw, befolkning_raw, output_key, type_of_ds)
+    return f"Created {output_key}"
 
+
+@logging_wrapper("landbakgrunn_innvandringsgrupper")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    landbakgrunn_raw="landbakgrunn-storste-innvandringsgrupper",
+    befolkning_raw="befolkning-etter-kjonn-og-alder",
+)
+def _start(*args, **kwargs):
+    start(*args, **kwargs)
+
+
+def start(landbakgrunn_raw, befolkning_raw, output_prefix, type_of_ds):
     data_points_status = ["innvandrer", "norskfodt_med_innvandrerforeldre"]
     data_points = ["total", "innvandrer", "norskfodt_med_innvandrerforeldre"]
 
@@ -35,9 +55,9 @@ def handle(event, context):
         output_list = output_list_historic(input_df, data_points, top_n=10)
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        return f"Created {output_key}"
-
+        common_aws.write_to_intermediate(
+            output_key=output_prefix, output_list=output_list
+        )
     else:
         raise Exception("No data in outputlist")
 
@@ -211,7 +231,7 @@ if __name__ == "__main__":
     befolkning_etter_kjonn_og_alder = get_latest_edition_of(
         "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
     )
-    handle(
+    handler_old(
         {
             "input": {
                 "landbakgrunn-storste-innvandringsgrupper": landbakgrunn_storste_innvandringsgrupper,
