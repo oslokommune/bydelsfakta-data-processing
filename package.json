@@ -2,12 +2,11 @@
   "name": "bydelsfakta-data-processing",
   "description": "",
   "version": "0.1.0",
-  "dependencies": {
-    "serverless": "^1.44.1",
-    "serverless-plugin-existing-s3": "^2.3.0"
-  },
+  "private": true,
+  "dependencies": {},
   "devDependencies": {
-    "serverless-python-requirements": "^4.3.0",
-    "serverless-plugin-git-variables": "^3.3.2"
+    "serverless-plugin-existing-s3": "^2.4.0",
+    "serverless-plugin-git-variables": "^3.4.0",
+    "serverless-python-requirements": "^5.1.0"
   }
 }

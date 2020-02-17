@@ -16,9 +16,11 @@ setup(
     install_requires=[
         "numpy",
         "pandas",
+        "boto3",
         "s3fs",
+        "aws-xray-sdk",
         "requests",
-        "boto3==1.9.91",
-        "botocore==1.12.91",
+        "structlog",
     ],
+    extras_require={"testing": ["pytest", "moto"],},
 )
