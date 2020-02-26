@@ -8,7 +8,6 @@ from tests.template_helper import (
     values_structure,
     count_values,
     test_df,
-    column_names,
 )
 from tests.transform_output_test_data import output_list
 
