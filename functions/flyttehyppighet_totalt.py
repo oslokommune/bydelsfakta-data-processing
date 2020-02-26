@@ -6,7 +6,6 @@ from dataplatform.awslambda.logging import logging_wrapper
 import common.transform as transform
 import common.aws as common_aws
 from common.aggregateV2 import Aggregate, ColumnNames
-from common.util import get_latest_edition_of
 from common.output import Output, Metadata
 from common.templates import Template
 from common.event import event_handler
@@ -23,36 +22,12 @@ flytting_til_etter_alder_id = "flytting-til-etter-alder"
 aldersgruppe_col = "aldersgruppe_5_aar"
 
 
-@logging_wrapper("flyttehyppighet_totalt__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key_flytting_fra_etter_alder_raw = event["input"][flytting_fra_etter_alder_id]
-    s3_key_flytting_til_etter_alder_raw = event["input"][flytting_til_etter_alder_id]
-
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-
-    flytting_fra_raw = common_aws.read_from_s3(
-        s3_key=s3_key_flytting_fra_etter_alder_raw, date_column="aar"
-    )
-    flytting_til_raw = common_aws.read_from_s3(
-        s3_key=s3_key_flytting_til_etter_alder_raw, date_column="aar"
-    )
-
-    start(flytting_fra_raw, flytting_til_raw, output_key, type_of_ds)
-    return "OK"
-
-
 @logging_wrapper("flyttehyppighet_totalt")
 @xray_recorder.capture("event_handler")
 @event_handler(
     flytting_fra_raw=flytting_fra_etter_alder_id,
     flytting_til_raw=flytting_til_etter_alder_id,
 )
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(flytting_fra_raw, flytting_til_raw, output_prefix, type_of_ds):
     input_df = generate_input_df(flytting_fra_raw, flytting_til_raw)
 
@@ -152,19 +127,3 @@ class HistoricTemplate(Template):
 class StatusTemplate(Template):
     def values(self, df, series, column_names=ColumnNames()):
         return _values(df).pop()
-
-
-if __name__ == "__main__":
-    flytting_fra_etter_alder_s3_key = get_latest_edition_of(flytting_fra_etter_alder_id)
-    flytting_til_etter_alder_s3_key = get_latest_edition_of(flytting_til_etter_alder_id)
-    handler_old(
-        {
-            "input": {
-                flytting_fra_etter_alder_id: flytting_fra_etter_alder_s3_key,
-                flytting_til_etter_alder_id: flytting_til_etter_alder_s3_key,
-            },
-            "output": "s3/key/or/prefix",
-            "config": {"type": "status"},
-        },
-        None,
-    )

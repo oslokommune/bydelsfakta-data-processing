@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-flyttehyppighet-inn-kat
-handler: functions/flyttehyppighet_inn_kat.handle
+handler: functions/flyttehyppighet_inn_kat.start
 timeout: 60
 layers: ${self:custom.layers}

@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-trangboddhet-ng
-handler: functions/trangboddhet._start
-timeout: 60
-layers: ${self:custom.layers}

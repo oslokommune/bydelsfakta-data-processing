@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-boligpriser
-handler: functions/boligpriser.handler
+handler: functions/boligpriser.start
 timeout: 60
 layers: ${self:custom.layers}

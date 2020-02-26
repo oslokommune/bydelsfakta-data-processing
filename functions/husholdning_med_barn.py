@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import patch_all, xray_recorder
 from dataplatform.awslambda.logging import logging_wrapper
 
-from common import aws, util
+from common import aws
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
@@ -53,24 +53,9 @@ DATA_POINTS = ["one_child", "two_child", "three_or_more", "no_children", "total"
 column_names = ColumnNames()
 
 
-@logging_wrapper("husholdning_med_barn__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key = event["input"]["husholdninger-med-barn"]
-    output_key = event["output"]
-    type = event["config"]["type"]
-    source = aws.read_from_s3(s3_key=s3_key)
-    start(source, output_key, type)
-    return "OK"
-
-
 @logging_wrapper("husholdning_med_barn")
 @xray_recorder.capture("event_handler")
 @event_handler(source="husholdninger-med-barn")
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(source, output_prefix, type_of_ds):
     source["one_child"] = source["ett_barn_i_hh"]
     source["two_child"] = source["to_barn_i_hh"]
@@ -133,18 +118,3 @@ def create_ds(output_key, template, type_of_ds, df):
         values=VALUE_CATEGORY[type_of_ds],
     ).generate_output()
     aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
-
-
-if __name__ == "__main__":
-    handler_old(
-        {
-            "input": {
-                "husholdninger-med-barn": util.get_latest_edition_of(
-                    "husholdninger-med-barn"
-                )
-            },
-            "output": "intermediate/green/husholdninger-totalt-status/version=1/edition=20190819T110202/",
-            "config": {"type": "3barn_status"},
-        },
-        {},
-    )

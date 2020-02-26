@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-bygningstyper-ng
-handler: functions/bygningstyper._start
-timeout: 60
-layers: ${self:custom.layers}

@@ -1,12 +1,12 @@
 from aws_xray_sdk.core import patch_all, xray_recorder
 from dataplatform.awslambda.logging import logging_wrapper
 
-from common.aws import read_from_s3, write_to_intermediate
+from common.aws import write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC, TemplateB
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
 from common.event import event_handler
 
 patch_all()
@@ -42,24 +42,9 @@ METADATA = {
 }
 
 
-@logging_wrapper("bygningstyper__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key = event["input"][S3_KEY]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-    df = read_from_s3(s3_key=s3_key, date_column="aar")
-    start(df, output_key, type_of_ds)
-    return "OK"
-
-
 @logging_wrapper("bygningstyper")
 @xray_recorder.capture("event_handler")
 @event_handler(df=S3_KEY)
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(df, output_prefix, type_of_ds):
     df = df.rename(
         columns={
@@ -145,18 +130,3 @@ def create_ds(output_key, template, values, metadata, df):
         df=df, template=template, metadata=metadata, values=values
     ).generate_output()
     write_to_intermediate(output_key=output_key, output_list=jsonl)
-
-
-if __name__ == "__main__":
-    handler_old(
-        {
-            "input": {
-                "boligmengde-etter-boligtype": get_latest_edition_of(
-                    "boligmengde-etter-boligtype"
-                )
-            },
-            "output": "intermediate/green/bygningstyper_alle_status/version=1/edition=20191106T105555/",
-            "config": {"type": "blokk_status"},
-        },
-        {},
-    )

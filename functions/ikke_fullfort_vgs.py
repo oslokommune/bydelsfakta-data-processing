@@ -8,7 +8,7 @@ import common.transform_output
 from common.aggregateV2 import ColumnNames
 from common.output import Metadata, Output
 from common.templates import TemplateB, TemplateA
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
 from common.event import event_handler
 
 patch_all()
@@ -54,35 +54,9 @@ def write(output, s3_key):
     return s3_key
 
 
-@logging_wrapper("ikke_fullfort_vgs__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key = event["input"]["ikke-fullfort-vgs"]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-    df = common.aws.read_from_s3(s3_key)
-    start(df, output_key, type_of_ds)
-    return output_key
-
-
 @logging_wrapper("ikke_fullfort_vgs")
 @xray_recorder.capture("event_handler")
 @event_handler(df="ikke-fullfort-vgs")
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(df, output_prefix, type_of_ds):
     output = process(df, type_of_ds)
     write(output, output_prefix)
-
-
-if __name__ == "__main__":
-    handler_old(
-        {
-            "input": {"ikke-fullfort-vgs": get_latest_edition_of("ikke-fullfort-vgs")},
-            "output": "intermediate/green/ikke-fullfort-vgs-status/version=1/edition=20110531T102550/",
-            "config": {"type": "status"},
-        },
-        {},
-    )

@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-levekar-totalt
-handler: functions/levekar_totalt.handle
+handler: functions/levekar_totalt.start
 timeout: 60
 layers: ${self:custom.layers}

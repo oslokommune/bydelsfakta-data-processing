@@ -40,6 +40,11 @@ def generate(df_municipal, df_housing):
     return df
 
 
+@logging_wrapper("kommunale_boliger")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    df_municipal="kommunale-boliger", df_housing="boligmengde-etter-boligtype"
+)
 def start(df_municipal, df_housing, output_prefix, dataset_type):
     if dataset_type == "status":
         dfs = status(df_municipal, df_housing)
@@ -59,27 +64,3 @@ def start(df_municipal, df_housing, output_prefix, dataset_type):
         metadata=METADATA[dataset_type],
     ).generate_output()
     write_to_intermediate(output_key=output_prefix, output_list=jsonl)
-
-
-@logging_wrapper("kommunale_boliger__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    dataset_type = event["config"]["type"]
-    output_key = event["output"]
-    municipal_key = event["input"]["kommunale-boliger"]
-    housing_key = event["input"]["boligmengde-etter-boligtype"]
-
-    df_municipal = read_from_s3(municipal_key)
-    df_housing = housing(housing_key)
-
-    start(df_municipal, df_housing, output_key, dataset_type)
-    return "OK"
-
-
-@logging_wrapper("kommunale_boliger")
-@xray_recorder.capture("event_handler")
-@event_handler(
-    df_municipal="kommunale-boliger", df_housing="boligmengde-etter-boligtype"
-)
-def _start(*args, **kwargs):
-    start(*args, **kwargs)

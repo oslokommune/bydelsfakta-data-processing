@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-levekar-ikke-sysselsatte
-handler: functions/levekar_ikke_sysselsatte.handle
+handler: functions/levekar_ikke_sysselsatte.start
 timeout: 60
 layers: ${self:custom.layers}

@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-flyttehyppighet-totalt-ng
-handler: functions/flyttehyppighet_totalt._start
-timeout: 60
-layers: ${self:custom.layers}

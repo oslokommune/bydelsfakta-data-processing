@@ -162,23 +162,6 @@ def write(output_list, output_key):
     common.aws.write_to_intermediate(output_key=output_key, output_list=output_list)
 
 
-@logging_wrapper("innvandrer_befolkning__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    befolkning_key = event["input"]["befolkning-etter-kjonn-og-alder"]
-    botid_not_western = event["input"]["botid-ikke-vestlige"]
-    origin_by_age_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
-    dataset_type = event["config"]["type"]
-    output_s3_key = event["output"]
-
-    origin_by_age = common.aws.read_from_s3(origin_by_age_key)
-    livage = common.aws.read_from_s3(botid_not_western)
-    population_df = common.aws.read_from_s3(befolkning_key)
-
-    start(origin_by_age, livage, population_df, output_s3_key, dataset_type)
-    return "OK"
-
-
 @logging_wrapper("innvandrer_befolkning")
 @xray_recorder.capture("event_handler")
 @event_handler(
@@ -186,10 +169,6 @@ def handler_old(event, context):
     livage="botid-ikke-vestlige",
     population_df="innvandrer-befolkningen-0-15-ar",
 )
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(origin_by_age, livage, population_df, output_prefix, type_of_ds):
     origin_by_age = origin_by_age[origin_by_age["delbydel_id"].notnull()]
     livage = livage[livage["delbydel_id"].notnull()]
@@ -281,18 +260,3 @@ def create_ds(output_key, template, type_of_ds, df):
         values=DATA_POITNS[type_of_ds],
     ).generate_output()
     write_to_intermediate(output_key=output_key, output_list=jsonl)
-
-
-if __name__ == "__main__":
-    handler_old(
-        {
-            "input": {
-                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190524T133230/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
-                "botid-ikke-vestlige": "raw/green/botid-ikke-vestlige/version=1/edition=20190524T094012/Botid_ikke_vestlige(1.1.2008-1.1.2019-v01).csv",
-                "innvandrer-befolkningen-0-15-ar": "raw/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190523T211529/Landbakgrunn_etter_alder(1.1.2008-1.1.2019-v01).csv",
-            },
-            "output": "intermediate/green/innvandrer-befolkningen-historisk/version=1/edition=20190525T143000/",
-            "config": {"type": "to_foreldre_status"},
-        },
-        {},
-    )

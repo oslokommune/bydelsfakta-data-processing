@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-husholdningstyper-ng
-handler: functions/husholdningstyper._start
-timeout: 60
-layers: ${self:custom.layers}

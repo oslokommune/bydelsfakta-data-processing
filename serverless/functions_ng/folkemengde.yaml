@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-folkemengde-ng
-handler: functions/folkemengde._start
-timeout: 60
-layers: ${self:custom.layers}

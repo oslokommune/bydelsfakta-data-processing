@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-husholdning123barn-ng
-handler: functions/husholdning123barn._start
-timeout: 60
-layers: ${self:custom.layers}

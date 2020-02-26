@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import patch_all, xray_recorder
 from dataplatform.awslambda.logging import logging_wrapper
 
-from common import aws, util, transform
+from common import aws, transform
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateC
@@ -30,24 +30,9 @@ DATA_POINTS_STATUS = [
 column_names = ColumnNames()
 
 
-@logging_wrapper("husholdningstyper__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key = event["input"]["husholdningstyper"]
-    output_key = event["output"]
-    type = event["config"]["type"]
-    source = aws.read_from_s3(s3_key=s3_key)
-    start(source, output_key, type)
-    return "OK"
-
-
 @logging_wrapper("husholdningstyper")
 @xray_recorder.capture("event_handler")
 @event_handler(source="husholdningstyper")
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(source, output_prefix, type_of_ds):
     source["par_uten_barn"] = source["par_uten_hjemmeboende_barn"]
     source["par_med_barn"] = source["par_med_smaa_barn"] + source["par_med_store_barn"]
@@ -132,16 +117,3 @@ def start(source, output_prefix, type_of_ds):
     ).generate_output()
 
     aws.write_to_intermediate(output_key=output_prefix, output_list=output)
-
-
-if __name__ == "__main__":
-    handler_old(
-        {
-            "input": {
-                "husholdningstyper": util.get_latest_edition_of("husholdningstyper")
-            },
-            "output": "intermediate/green/husholdningstyper-status/version=1/edition=20190822T170202/",
-            "config": {"type": "historisk"},
-        },
-        {},
-    )

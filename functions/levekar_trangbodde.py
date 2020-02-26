@@ -6,7 +6,7 @@ import common.aws as common_aws
 import common.transform as transform
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
 from common.event import event_handler
 
 patch_all()
@@ -18,27 +18,9 @@ graph_metadata = Metadata(
 )
 
 
-@logging_wrapper("levekar_trangbodde__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key_trangbodde = event["input"]["trangbodde"]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-
-    trangbodde_raw = common_aws.read_from_s3(
-        s3_key=s3_key_trangbodde, date_column="aar"
-    )
-    start(trangbodde_raw, output_key, type_of_ds)
-    return f"Created {output_key}"
-
-
 @logging_wrapper("levekar_trangbodde")
 @xray_recorder.capture("event_handler")
 @event_handler(trangbodde_raw="trangbodde")
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(trangbodde_raw, output_prefix, type_of_ds):
     datapoint = "antall_som_bor_trangt"
 
@@ -79,14 +61,3 @@ def output_status(input_df, data_points):
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
     return output
-
-
-if __name__ == "__main__":
-    handler_old(
-        {
-            "input": {"trangbodde": get_latest_edition_of("trangbodde")},
-            "output": "intermediate/green/levekar-trangbodde-status/version=1/edition=20190821T124040/",
-            "config": {"type": "status"},
-        },
-        {},
-    )

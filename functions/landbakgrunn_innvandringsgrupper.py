@@ -7,28 +7,10 @@ import common.aggregate_dfs as aggregator
 import common.population_utils as population_utils
 from common.aggregateV2 import Aggregate
 from common.output import Metadata
-from common.util import get_latest_edition_of
 from common.event import event_handler
 
 patch_all()
 pd.set_option("display.max_rows", 1000)
-
-
-@logging_wrapper("landbakgrunn_innvandringsgrupper__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key_landbakgrunn = event["input"]["landbakgrunn-storste-innvandringsgrupper"]
-    s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-    landbakgrunn_raw = common_aws.read_from_s3(
-        s3_key=s3_key_landbakgrunn, date_column="aar"
-    )
-    befolkning_raw = common_aws.read_from_s3(
-        s3_key=s3_key_befolkning, date_column="aar"
-    )
-    start(landbakgrunn_raw, befolkning_raw, output_key, type_of_ds)
-    return f"Created {output_key}"
 
 
 @logging_wrapper("landbakgrunn_innvandringsgrupper")
@@ -37,10 +19,6 @@ def handler_old(event, context):
     landbakgrunn_raw="landbakgrunn-storste-innvandringsgrupper",
     befolkning_raw="befolkning-etter-kjonn-og-alder",
 )
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(landbakgrunn_raw, befolkning_raw, output_prefix, type_of_ds):
     data_points_status = ["innvandrer", "norskfodt_med_innvandrerforeldre"]
     data_points = ["total", "innvandrer", "norskfodt_med_innvandrerforeldre"]
@@ -222,23 +200,3 @@ def get_top_n_countries(df, n):
         district_df = district_df.nlargest(n, "total")
         top_n[district] = district_df["landbakgrunn"].tolist()
     return top_n
-
-
-if __name__ == "__main__":
-    landbakgrunn_storste_innvandringsgrupper = get_latest_edition_of(
-        "landbakgrunn-storste-innvandringsgrupper"
-    )
-    befolkning_etter_kjonn_og_alder = get_latest_edition_of(
-        "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
-    )
-    handler_old(
-        {
-            "input": {
-                "landbakgrunn-storste-innvandringsgrupper": landbakgrunn_storste_innvandringsgrupper,
-                "befolkning-etter-kjonn-og-alder": befolkning_etter_kjonn_og_alder,
-            },
-            "output": "intermediate/green/landbakgrunn-innvandringsgrupper-status/version=1/edition=20190703T102550/",
-            "config": {"type": "status"},
-        },
-        None,
-    )

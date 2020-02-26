@@ -1,12 +1,12 @@
 from aws_xray_sdk.core import patch_all, xray_recorder
 from dataplatform.awslambda.logging import logging_wrapper
 
-from common.aws import read_from_s3, write_to_intermediate
+from common.aws import write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
 from common.event import event_handler
 
 patch_all()
@@ -41,24 +41,9 @@ DATA_POINTS = {
 VALUE_POINTS = ["to_foreldre", "en_forelder", "innvandrer"]
 
 
-@logging_wrapper("innvandring_under16__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key = event["input"][S3_KEY]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-    df = read_from_s3(s3_key)
-    start(df, output_key, type_of_ds)
-    return "OK"
-
-
 @logging_wrapper("innvandring_under16")
 @xray_recorder.capture("event_handler")
 @event_handler(df=S3_KEY)
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(df, output_prefix, type_of_ds):
     df = df[df["alder"] == "0-15 år"].reset_index()
     df["en_forelder"] = (
@@ -118,18 +103,3 @@ def create_ds(output_key, template, type_of_ds, df):
         values=DATA_POINTS[type_of_ds],
     ).generate_output()
     write_to_intermediate(output_key=output_key, output_list=jsonl)
-
-
-if __name__ == "__main__":
-    handler_old(
-        {
-            "input": {
-                "innvandrer-befolkningen-0-15-ar": get_latest_edition_of(
-                    "innvandrer-befolkningen-0-15-ar"
-                )
-            },
-            "output": "intermediate/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190604T164725/",
-            "config": {"type": "innvandrer_status"},
-        },
-        {},
-    )

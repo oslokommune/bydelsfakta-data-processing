@@ -6,7 +6,6 @@ from dataplatform.awslambda.logging import logging_wrapper
 import common.transform as transform
 import common.aws as common_aws
 from common.aggregateV2 import Aggregate, ColumnNames
-from common.util import get_latest_edition_of
 from common.output import Output, Metadata
 from common.templates import Template
 from common.event import event_handler
@@ -25,40 +24,12 @@ aldersgruppe_col = "aldersgruppe_5_aar"
 key_cols = ["date", "bydel_id", "bydel_navn", aldersgruppe_col]
 
 
-@logging_wrapper("flyttehyppighet_inn_kat__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    s3_key_flytting_fra_etter_inn_kat_raw = event["input"][
-        flytting_fra_etter_inn_kat_id
-    ]
-    s3_key_flytting_til_etter_inn_kat_raw = event["input"][
-        flytting_til_etter_inn_kat_id
-    ]
-
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-
-    flytting_fra_df = common_aws.read_from_s3(
-        s3_key=s3_key_flytting_fra_etter_inn_kat_raw, date_column="aar"
-    )
-    flytting_til_df = common_aws.read_from_s3(
-        s3_key=s3_key_flytting_til_etter_inn_kat_raw, date_column="aar"
-    )
-
-    start(flytting_fra_df, flytting_til_df, output_key, type_of_ds)
-    return "OK"
-
-
 @logging_wrapper("flyttehyppighet_inn_kat")
 @xray_recorder.capture("event_handler")
 @event_handler(
     flytting_fra_df=flytting_fra_etter_inn_kat_id,
     flytting_til_df=flytting_til_etter_inn_kat_id,
 )
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
 def start(flytting_fra_df, flytting_til_df, output_prefix, type_of_ds):
     input_df = generate_input_df(flytting_fra_df, flytting_til_df)
 
@@ -259,23 +230,3 @@ class StatusTemplate(Template):
     def values(self, df, series, column_names=ColumnNames()):
         [value_list] = _values(df)
         return value_list
-
-
-if __name__ == "__main__":
-    flytting_fra_etter_inn_kat_s3_key = get_latest_edition_of(
-        flytting_fra_etter_inn_kat_id
-    )
-    flytting_til_etter_inn_kat_s3_key = get_latest_edition_of(
-        flytting_til_etter_inn_kat_id
-    )
-    handler_old(
-        {
-            "input": {
-                flytting_fra_etter_inn_kat_id: flytting_fra_etter_inn_kat_s3_key,
-                flytting_til_etter_inn_kat_id: flytting_til_etter_inn_kat_s3_key,
-            },
-            "output": "s3/key/or/prefix",
-            "config": {"type": "historisk"},
-        },
-        None,
-    )

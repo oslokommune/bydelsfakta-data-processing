@@ -2,10 +2,9 @@ import numpy as np
 import pandas as pd
 from aws_xray_sdk.core import patch_all, xray_recorder
 from dataplatform.awslambda.logging import logging_wrapper
-from pprint import pprint
 from enum import Enum
 
-from common.aws import read_from_s3, write_to_intermediate
+from common.aws import write_to_intermediate
 from common.output import Output, Metadata
 from common.templates import TemplateB, TemplateG
 from common.population_utils import generate_population_df
@@ -103,6 +102,9 @@ def generate_keynumbers(df):
     return pd.merge(status_df, growth_df, how="outer", on=["bydel_id", "delbydel_id"])
 
 
+@logging_wrapper("folkemengde")
+@xray_recorder.capture("event_handler")
+@event_handler(df="befolkning-etter-kjonn-og-alder")
 def start(df, output_prefix, dataset_type):
     [df] = historic(df)
     df = generate(df)
@@ -137,26 +139,3 @@ def start(df, output_prefix, dataset_type):
 
     jsonl = output.generate_output()
     write_to_intermediate(output_key=output_prefix, output_list=jsonl)
-
-
-@logging_wrapper("folkemengde__old")
-@xray_recorder.capture("handler_old")
-def handler_old(event, context):
-    dataset_type = DatasetType(event["config"]["type"])
-    df = read_from_s3(event["input"]["befolkning-etter-kjonn-og-alder"])
-    start(df, event["output"], dataset_type)
-
-
-@logging_wrapper("folkemengde")
-@xray_recorder.capture("event_handler")
-@event_handler(df="befolkning-etter-kjonn-og-alder")
-def _start(*args, **kwargs):
-    start(*args, **kwargs)
-
-
-if __name__ == "__main__":
-    data = start(
-        key="raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190529T082603/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
-        dataset_type=DatasetType.KEYNUMBERS,
-    )
-    pprint(data)

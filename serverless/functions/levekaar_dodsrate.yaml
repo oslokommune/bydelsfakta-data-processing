@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-levekaar-dodsrate
-handler: functions/levekaar_dodsrate.handler
+handler: functions/levekaar_dodsrate.start
 timeout: 60
 layers: ${self:custom.layers}

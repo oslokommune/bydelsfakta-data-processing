@@ -1,4 +1,0 @@
-name: bydelsfakta-data-processing-landbakgrunn-innvandringsgrupper-ng
-handler: functions/landbakgrunn_innvandringsgrupper._start
-timeout: 60
-layers: ${self:custom.layers}
