@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-botid-ikke-vestlige
-handler: functions/botid_ikke_vestlige.handler
+handler: functions/botid_ikke_vestlige.start
 timeout: 60
 layers: ${self:custom.layers}

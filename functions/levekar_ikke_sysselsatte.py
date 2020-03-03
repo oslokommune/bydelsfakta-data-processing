@@ -1,4 +1,6 @@
 import pandas as pd
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.aws as common_aws
 import common.transform as transform
@@ -6,7 +8,10 @@ from common.aggregateV2 import Aggregate
 from common.population_utils import generate_population_df
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
+from common.event import event_handler
+
+patch_all()
 
 pd.set_option("display.max_rows", 1000)
 
@@ -16,20 +21,14 @@ graph_metadata = Metadata(
 )
 
 
-def handle(event, context):
-    s3_key_sysselsatte = event["input"]["sysselsatte"]
-    s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-
+@logging_wrapper("levekar_ikke_sysselsatte")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    sysselsatte_raw="sysselsatte", befolkning_raw="befolkning-etter-kjonn-og-alder"
+)
+def start(sysselsatte_raw, befolkning_raw, output_prefix, type_of_ds):
     data_point = "antall_ikke_sysselsatte"
 
-    sysselsatte_raw = common_aws.read_from_s3(
-        s3_key=s3_key_sysselsatte, date_column="aar"
-    )
-    befolkning_raw = common_aws.read_from_s3(
-        s3_key=s3_key_befolkning, date_column="aar"
-    )
     input_df = generate_input_df(sysselsatte_raw, befolkning_raw, data_point)
 
     output_list = []
@@ -41,9 +40,9 @@ def handle(event, context):
         output_list = output_status(input_df, [data_point])
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        return f"Created {output_key}"
-
+        common_aws.write_to_intermediate(
+            output_key=output_prefix, output_list=output_list
+        )
     else:
         raise Exception("No data in outputlist")
 
@@ -105,32 +104,3 @@ def output_status(input_df, data_points):
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
     return output
-
-
-if __name__ == "__main__":
-    sysselsatte_s3_key = get_latest_edition_of("sysselsatte")
-    befolkning_s3_key = get_latest_edition_of(
-        "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
-    )
-    handle(
-        {
-            "input": {
-                "sysselsatte": sysselsatte_s3_key,
-                "befolkning-etter-kjonn-og-alder": befolkning_s3_key,
-            },
-            "output": "intermediate/green/levekar-ikke-sysselsatte-status/version=1/edition=20191111T144000/",
-            "config": {"type": "status"},
-        },
-        None,
-    )
-    # handle(
-    #     {
-    #         "input": {
-    #             "sysselsatte": sysselsatte_s3_key,
-    #             "befolkning-etter-kjonn-og-alder": befolkning_s3_key,
-    #         },
-    #         "output": "s3/key/or/prefix",
-    #         "config": {"type": "historisk"},
-    #     },
-    #     None,
-    # )

@@ -6,7 +6,6 @@ from tests.template_helper import (
     values_structure,
     count_values,
     test_df,
-    column_names,
 )
 
 template = TemplateB()

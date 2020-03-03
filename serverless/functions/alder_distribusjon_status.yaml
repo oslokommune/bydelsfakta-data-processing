@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-alder-distribusjon-status
-handler: functions/alder_distribusjon_status.handler
+handler: functions/alder_distribusjon_status.start
 timeout: 60
 layers: ${self:custom.layers}

@@ -1,10 +1,15 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 import common.transform as transform
 import common.aws as common_aws
 from common.aggregateV2 import Aggregate
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
+from common.event import event_handler
 
+patch_all()
 
 graph_metadata = Metadata(
     heading="Personer mellom 30-59 år med lav utdanning",
@@ -14,17 +19,11 @@ graph_metadata = Metadata(
 )
 
 
-def handle(event, context):
-    """ Assuming we recieve a complete s3 key"""
-    s3_key_lav_utdanning = event["input"]["lav-utdanning"]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-
+@logging_wrapper("levekaar_lav_utdanning")
+@xray_recorder.capture("event_handler")
+@event_handler(lav_utdanning_raw="lav-utdanning")
+def start(lav_utdanning_raw, output_prefix, type_of_ds):
     data_point = "lav_utdanning"
-
-    lav_utdanning_raw = common_aws.read_from_s3(
-        s3_key=s3_key_lav_utdanning, date_column="aar"
-    )
 
     input_df = generate_input_df(lav_utdanning_raw, data_point)
 
@@ -37,9 +36,9 @@ def handle(event, context):
         output_list = output_status(input_df, [data_point])
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        return f"Created {output_key}"
-
+        common_aws.write_to_intermediate(
+            output_key=output_prefix, output_list=output_list
+        )
     else:
         raise Exception("No data in outputlist")
 
@@ -83,15 +82,3 @@ def output_status(input_df, data_points):
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
     return output
-
-
-if __name__ == "__main__":
-    lav_utdanning_s3_key = get_latest_edition_of("lav-utdanning")
-    handle(
-        {
-            "input": {"lav-utdanning": lav_utdanning_s3_key},
-            "output": "intermediate/green/levekar-lav-utdanning-status/version=1/edition=20191111T144000/",
-            "config": {"type": "status"},
-        },
-        None,
-    )

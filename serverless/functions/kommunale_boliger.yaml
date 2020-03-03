@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-kommunale-boliger
-handler: functions/kommunale_boliger.handle
+handler: functions/kommunale_boliger.start
 timeout: 60
 layers: ${self:custom.layers}

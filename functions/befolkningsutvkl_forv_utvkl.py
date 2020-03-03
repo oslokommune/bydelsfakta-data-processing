@@ -1,5 +1,7 @@
 import numpy
 import pandas
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.aws
 import common.population_utils
@@ -10,41 +12,41 @@ from common import transform
 from common.aggregateV2 import Aggregate, ColumnNames
 from common.output import Output, Metadata
 from common.templates import TemplateH
+from common.event import event_handler
+
+patch_all()
 
 column_names = ColumnNames()
 sum = Aggregate("sum")
 
 
-def handler(event, context):
-    """ Assuming we recieve a complete s3 key"""
-    population = event["input"]["befolkning-etter-kjonn-og-alder"]
-    population = common.aws.read_from_s3(population)
-
-    dead = event["input"]["dode"]
-    dead = common.aws.read_from_s3(dead)
-
-    born = event["input"]["fodte"]
-    born = common.aws.read_from_s3(born)
-
-    immigration = event["input"]["flytting-til-etter-alder"]
-    immigration = common.aws.read_from_s3(immigration)
-
-    emigration = event["input"]["flytting-fra-etter-alder"]
-    emigration = common.aws.read_from_s3(emigration)
-
-    pop_extrapolation = event["input"]["befolkningsframskrivninger"]
-    pop_extrapolation = common.aws.read_from_s3(pop_extrapolation)
-
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
+@logging_wrapper("befolkningsutvkl_forv_utvkl")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    population="befolkning-etter-kjonn-og-alder",
+    dead="dode",
+    born="fodte",
+    immigration="flytting-til-etter-alder",
+    emigration="flytting-fra-etter-alder",
+    pop_extrapolation="befolkningsframskrivninger",
+)
+def start(
+    population,
+    dead,
+    born,
+    immigration,
+    emigration,
+    pop_extrapolation,
+    output_prefix,
+    type_of_ds,
+):
     if type_of_ds == "historisk":
         dfs = transform.historic(population, dead, born, immigration, emigration)
     else:
         raise Exception("Type should be historisk")
 
     df = generate(*dfs, pop_extrapolation)
-    write(df, output_key)
-    return f"Complete: {output_key}"
+    write(df, output_prefix)
 
 
 def process_population(population):
@@ -190,29 +192,3 @@ def write(df, output_key):
 
     common.aws.write_to_intermediate(output_key=output_key, output_list=jsonl)
     return output_key
-
-
-if __name__ == "__main__":
-    handler(
-        {
-            "input": {
-                "befolkning-etter-kjonn-og-alder": common.util.get_latest_edition_of(
-                    "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
-                ),
-                "dode": common.util.get_latest_edition_of("dode"),
-                "fodte": common.util.get_latest_edition_of("fodte"),
-                "flytting-fra-etter-alder": common.util.get_latest_edition_of(
-                    "flytting-fra-etter-alder"
-                ),
-                "flytting-til-etter-alder": common.util.get_latest_edition_of(
-                    "flytting-til-etter-alder"
-                ),
-                "befolkningsframskrivninger": common.util.get_latest_edition_of(
-                    "befolkningsframskrivninger"
-                ),
-            },
-            "output": "intermediate/green/befolkningsutvikling_og_forventet_utvikling/version=1/edition=20190422T211529/",
-            "config": {"type": "historisk"},
-        },
-        {},
-    )

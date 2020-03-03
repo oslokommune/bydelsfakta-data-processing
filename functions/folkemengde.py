@@ -1,14 +1,19 @@
 import numpy as np
 import pandas as pd
-from pprint import pprint
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 from enum import Enum
-from common.aws import read_from_s3, write_to_intermediate
+
+from common.aws import write_to_intermediate
 from common.output import Output, Metadata
 from common.templates import TemplateB, TemplateG
 from common.population_utils import generate_population_df
 from common.transform import historic, status
 from common.aggregateV2 import Aggregate
 from common.aggregation import sum_nans
+from common.event import event_handler
+
+patch_all()
 
 
 class DatasetType(Enum):
@@ -97,8 +102,10 @@ def generate_keynumbers(df):
     return pd.merge(status_df, growth_df, how="outer", on=["bydel_id", "delbydel_id"])
 
 
-def start(*, key, dataset_type):
-    df = read_from_s3(key)
+@logging_wrapper("folkemengde")
+@xray_recorder.capture("event_handler")
+@event_handler(df="befolkning-etter-kjonn-og-alder")
+def start(df, output_prefix, dataset_type):
     [df] = historic(df)
     df = generate(df)
 
@@ -130,21 +137,5 @@ def start(*, key, dataset_type):
             metadata=METADATA[dataset_type],
         )
 
-    return output.generate_output()
-
-
-def handle(event, context):
-    dataset_type = DatasetType(event["config"]["type"])
-
-    jsonl = start(
-        key=event["input"]["befolkning-etter-kjonn-og-alder"], dataset_type=dataset_type
-    )
-    write_to_intermediate(output_key=event["output"], output_list=jsonl)
-
-
-if __name__ == "__main__":
-    data = start(
-        key="raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190529T082603/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv",
-        dataset_type=DatasetType.KEYNUMBERS,
-    )
-    pprint(data)
+    jsonl = output.generate_output()
+    write_to_intermediate(output_key=output_prefix, output_list=jsonl)

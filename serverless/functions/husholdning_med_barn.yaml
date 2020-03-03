@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-husholdning_med_barn
-handler: functions/husholdning_med_barn.handle
+handler: functions/husholdning_med_barn.start
 timeout: 60
 layers: ${self:custom.layers}

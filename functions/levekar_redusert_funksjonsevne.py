@@ -1,9 +1,14 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 import common.transform as transform
 import common.aws as common_aws
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
+from common.event import event_handler
 
+patch_all()
 
 graph_metadata = Metadata(
     heading="Personer fra 16 til 66 år med redusert funksjonsevne",
@@ -11,16 +16,11 @@ graph_metadata = Metadata(
 )
 
 
-def handle(event, context):
-    s3_key_redusert_funksjonsevne = event["input"]["redusert-funksjonsevne"]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-
+@logging_wrapper("levekar_redusert_funksjonsevne")
+@xray_recorder.capture("event_handler")
+@event_handler(input_df="redusert-funksjonsevne")
+def start(input_df, output_prefix, type_of_ds):
     data_point = "antall_personer_med_redusert_funksjonsevne"
-
-    input_df = common_aws.read_from_s3(
-        s3_key=s3_key_redusert_funksjonsevne, date_column="aar"
-    )
 
     input_df[f"{data_point}_ratio"] = (
         input_df["andel_personer_med_redusert_funksjonsevne"] / 100
@@ -34,9 +34,9 @@ def handle(event, context):
         output_list = output_status(input_df, [data_point])
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        return f"Created {output_key}"
-
+        common_aws.write_to_intermediate(
+            output_key=output_prefix, output_list=output_list
+        )
     else:
         raise Exception("No data in outputlist")
 
@@ -61,15 +61,3 @@ def output_status(input_df, data_points):
         values=data_points, df=input_df, metadata=graph_metadata, template=TemplateA()
     ).generate_output()
     return output
-
-
-if __name__ == "__main__":
-    redusert_funksjonsevne_s3_key = get_latest_edition_of("redusert-funksjonsevne")
-    handle(
-        {
-            "input": {"redusert-funksjonsevne": redusert_funksjonsevne_s3_key},
-            "output": "intermediate/green/levekar-redusert-funksjonsevne-status/version=1/edition=20191111T144000/",
-            "config": {"type": "status"},
-        },
-        None,
-    )

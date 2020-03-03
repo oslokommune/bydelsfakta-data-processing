@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-folkemengde
-handler: functions/folkemengde.handle
+handler: functions/folkemengde.start
 timeout: 60
 layers: ${self:custom.layers}

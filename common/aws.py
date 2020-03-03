@@ -1,12 +1,41 @@
 import json
 import os
 from datetime import date
+from dataplatform.awslambda.logging import log_add
 
 import boto3
 import numpy as np
 import pandas as pd
 
 s3_bucket = os.environ.get("BUCKET_NAME", "ok-origo-dataplatform-dev")
+
+
+class AwsError(Exception):
+    pass
+
+
+class EmptyPrefixError(AwsError):
+    pass
+
+
+class MultipleFilesInPrefixError(AwsError):
+    pass
+
+
+def find_s3_key(s3_prefix):
+    s3 = boto3.client("s3", region_name="eu-west-1")
+    objects = s3.list_objects_v2(Bucket=s3_bucket, Prefix=s3_prefix)
+
+    if not objects or "Contents" not in objects:
+        raise EmptyPrefixError(s3_prefix)
+
+    if len(objects["Contents"]) > 1:
+        raise MultipleFilesInPrefixError(s3_prefix)
+
+    s3_key = next(iter(objects["Contents"]))["Key"]
+
+    log_add(s3_input_path=s3_key)
+    return s3_key
 
 
 def read_from_s3(s3_key, date_column="aar", dtype=None):
@@ -28,6 +57,7 @@ def write_to_intermediate(output_key: str, output_list: list):
     :param output_list: a list of dictionaries
     :return:
     """
+    log_add(s3_bucket=s3_bucket)
     client = boto3.client("s3")
     for output in output_list:
         filename = "{}.json".format(output.get("id") or output["district"])

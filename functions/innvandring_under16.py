@@ -1,10 +1,16 @@
-from common.aws import read_from_s3, write_to_intermediate
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
+from common.aws import write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateA, TemplateB
-from common.util import get_latest_edition_of, get_min_max_values_and_ratios
+from common.util import get_min_max_values_and_ratios
+from common.event import event_handler
 
+patch_all()
+S3_KEY = "innvandrer-befolkningen-0-15-ar"
 
 METADATA = {
     "en-innvandrer_historisk": Metadata(
@@ -35,17 +41,10 @@ DATA_POINTS = {
 VALUE_POINTS = ["to_foreldre", "en_forelder", "innvandrer"]
 
 
-def handler(event, context):
-    s3_key = event["input"]["innvandrer-befolkningen-0-15-ar"]
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-    start(s3_key, output_key, type_of_ds)
-    return "OK"
-
-
-def start(key, output_key, type_of_ds):
-    df = read_from_s3(key)
-
+@logging_wrapper("innvandring_under16")
+@xray_recorder.capture("event_handler")
+@event_handler(df=S3_KEY)
+def start(df, output_prefix, type_of_ds):
     df = df[df["alder"] == "0-15 år"].reset_index()
     df["en_forelder"] = (
         df["norskfodt_med_en_utenlandskfodt_forelder"]
@@ -74,26 +73,26 @@ def start(key, output_key, type_of_ds):
     df = agg.add_ratios(df, VALUE_POINTS, ["total"])
 
     if type_of_ds == "en-innvandrer_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "en-innvandrer_status":
         METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
         )
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "to-innvandrer_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "to-innvandrer_status":
         METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
         )
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
     elif type_of_ds == "innvandrer_historisk":
-        create_ds(output_key, TemplateB(), type_of_ds, *historic(df))
+        create_ds(output_prefix, TemplateB(), type_of_ds, *historic(df))
     elif type_of_ds == "innvandrer_status":
         METADATA[type_of_ds].add_scale(
             get_min_max_values_and_ratios(df, DATA_POINTS[type_of_ds][0])
         )
-        create_ds(output_key, TemplateA(), type_of_ds, *status(df))
+        create_ds(output_prefix, TemplateA(), type_of_ds, *status(df))
 
 
 def create_ds(output_key, template, type_of_ds, df):
@@ -104,18 +103,3 @@ def create_ds(output_key, template, type_of_ds, df):
         values=DATA_POINTS[type_of_ds],
     ).generate_output()
     write_to_intermediate(output_key=output_key, output_list=jsonl)
-
-
-if __name__ == "__main__":
-    handler(
-        {
-            "input": {
-                "innvandrer-befolkningen-0-15-ar": get_latest_edition_of(
-                    "innvandrer-befolkningen-0-15-ar"
-                )
-            },
-            "output": "intermediate/green/innvandrer-befolkningen-0-15-ar/version=1/edition=20190604T164725/",
-            "config": {"type": "innvandrer_status"},
-        },
-        {},
-    )

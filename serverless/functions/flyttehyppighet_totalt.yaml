@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-flyttehyppighet-totalt
-handler: functions/flyttehyppighet_totalt.handle
+handler: functions/flyttehyppighet_totalt.start
 timeout: 60
 layers: ${self:custom.layers}

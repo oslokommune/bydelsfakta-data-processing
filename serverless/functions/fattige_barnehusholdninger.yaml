@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-fattige-barnehusholdninger
-handler: functions/fattige_barnehusholdninger.handle
+handler: functions/fattige_barnehusholdninger.start
 timeout: 60
 layers: ${self:custom.layers}

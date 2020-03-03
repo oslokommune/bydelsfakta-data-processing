@@ -1,4 +1,4 @@
 name: bydelsfakta-data-processing-trangboddhet
-handler: functions/trangboddhet.handle
+handler: functions/trangboddhet.start
 timeout: 60
 layers: ${self:custom.layers}

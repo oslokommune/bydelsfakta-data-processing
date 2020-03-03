@@ -1,13 +1,16 @@
 import pandas as pd
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
 
 import common.transform as transform
 import common.aws as common_aws
 from common.aggregateV2 import Aggregate, ColumnNames
-from common.util import get_latest_edition_of
 from common.output import Output, Metadata
 from common.templates import TemplateK
 from common.population_utils import generate_population_df
+from common.event import event_handler
 
+patch_all()
 
 value_columns = [
     "antall_redusert_funksjonsevne",
@@ -41,46 +44,32 @@ graph_metadata = Metadata(
 key_cols = ColumnNames().default_groupby_columns()
 
 
-def handle(event, context):
-    s3_key_redusert_funksjonsevne = event["input"]["redusert-funksjonsevne"]
-    s3_key_botid_ikke_vestlige = event["input"]["botid-ikke-vestlige"]
-    s3_key_lav_utdanning = event["input"]["lav-utdanning"]
-    s3_key_fattige_husholdninger = event["input"]["fattige-husholdninger"]
-    s3_key_sysselsatte = event["input"]["sysselsatte"]
-    s3_key_befolkning = event["input"]["befolkning-etter-kjonn-og-alder"]
-    s3_key_ikke_fullfort_vgs = event["input"]["ikke-fullfort-vgs"]
-    s3_key_dodsrater = event["input"]["dodsrater"]
-    s3_key_trangbodde = event["input"]["trangbodde"]
-
-    output_key = event["output"]
-    type_of_ds = event["config"]["type"]
-
-    redusert_funksjonsevne_raw = common_aws.read_from_s3(
-        s3_key=s3_key_redusert_funksjonsevne, date_column="aar"
-    )
-    botid_ikke_vestlige_raw = common_aws.read_from_s3(
-        s3_key=s3_key_botid_ikke_vestlige, date_column="aar"
-    )
-    lav_utdanning_raw = common_aws.read_from_s3(
-        s3_key=s3_key_lav_utdanning, date_column="aar"
-    )
-    fattige_husholdninger_raw = common_aws.read_from_s3(
-        s3_key=s3_key_fattige_husholdninger, date_column="aar"
-    )
-    sysselsatte_raw = common_aws.read_from_s3(
-        s3_key=s3_key_sysselsatte, date_column="aar"
-    )
-    befolkning_raw = common_aws.read_from_s3(
-        s3_key=s3_key_befolkning, date_column="aar"
-    )
-    ikke_fullfort_vgs_raw = common_aws.read_from_s3(
-        s3_key=s3_key_ikke_fullfort_vgs, date_column="aar"
-    )
-    dodsrater_raw = common_aws.read_from_s3(s3_key=s3_key_dodsrater, date_column="aar")
-    trangbodde_raw = common_aws.read_from_s3(
-        s3_key=s3_key_trangbodde, date_column="aar"
-    )
-
+@logging_wrapper("levekar_totalt")
+@xray_recorder.capture("event_handler")
+@event_handler(
+    redusert_funksjonsevne_raw="redusert-funksjonsevne",
+    botid_ikke_vestlige_raw="botid-ikke-vestlige",
+    lav_utdanning_raw="lav-utdanning",
+    fattige_husholdninger_raw="fattige-husholdninger",
+    sysselsatte_raw="sysselsatte",
+    befolkning_raw="befolkning-etter-kjonn-og-alder",
+    ikke_fullfort_vgs_raw="ikke-fullfort-vgs",
+    dodsrater_raw="dodsrater",
+    trangbodde_raw="trangbodde",
+)
+def start(
+    redusert_funksjonsevne_raw,
+    botid_ikke_vestlige_raw,
+    lav_utdanning_raw,
+    fattige_husholdninger_raw,
+    sysselsatte_raw,
+    befolkning_raw,
+    ikke_fullfort_vgs_raw,
+    dodsrater_raw,
+    trangbodde_raw,
+    output_prefix,
+    type_of_ds,
+):
     redusert_funksjonsevne_input_df = generate_redusert_funksjonsevne_df(
         redusert_funksjonsevne_raw
     )
@@ -120,9 +109,9 @@ def handle(event, context):
         raise Exception(f"Invalid config type: {type_of_ds}")
 
     if output_list:
-        common_aws.write_to_intermediate(output_key=output_key, output_list=output_list)
-        return f"Created {output_key}"
-
+        common_aws.write_to_intermediate(
+            output_key=output_prefix, output_list=output_list
+        )
     else:
         raise Exception("No data in outputlist")
 
@@ -324,35 +313,3 @@ def pivot_table(df, pivot_column, value_columns):
         (df[key_columns], df.pivot(columns=pivot_column, values=value_columns)), axis=1
     )
     return df_pivot.groupby(key_columns).sum().reset_index()
-
-
-if __name__ == "__main__":
-    redusert_funksjonsevne_s3_key = get_latest_edition_of("redusert-funksjonsevne")
-    botid_ikke_vestlige_s3_key = get_latest_edition_of("botid-ikke-vestlige")
-    lav_utdanning_s3_key = get_latest_edition_of("lav-utdanning")
-    fattige_husholdninger_s3_key = get_latest_edition_of("fattige-husholdninger")
-    sysselsatte_s3_key = get_latest_edition_of("sysselsatte")
-    befolkning_s3_key = get_latest_edition_of(
-        "befolkning-etter-kjonn-og-alder", confidentiality="yellow"
-    )
-    ikke_fullfort_vgs_s3_key = get_latest_edition_of("ikke-fullfort-vgs")
-    dodsrater_s3_key = get_latest_edition_of("dodsrater")
-    trangbodde_s3_key = get_latest_edition_of("trangbodde")
-    handle(
-        {
-            "input": {
-                "redusert-funksjonsevne": redusert_funksjonsevne_s3_key,
-                "botid-ikke-vestlige": botid_ikke_vestlige_s3_key,
-                "lav-utdanning": lav_utdanning_s3_key,
-                "fattige-husholdninger": fattige_husholdninger_s3_key,
-                "sysselsatte": sysselsatte_s3_key,
-                "befolkning-etter-kjonn-og-alder": befolkning_s3_key,
-                "ikke-fullfort-vgs": ikke_fullfort_vgs_s3_key,
-                "dodsrater": dodsrater_s3_key,
-                "trangbodde": trangbodde_s3_key,
-            },
-            "output": "s3/key/or/prefix",
-            "config": {"type": "status"},
-        },
-        None,
-    )

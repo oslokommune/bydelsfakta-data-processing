@@ -1,3 +1,6 @@
+from aws_xray_sdk.core import patch_all, xray_recorder
+from dataplatform.awslambda.logging import logging_wrapper
+
 import common.aggregate_dfs
 import common.aws
 import common.transform
@@ -6,24 +9,21 @@ import common.util
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
 from common.templates import TemplateE
+from common.event import event_handler
+
+patch_all()
+S3_KEY = "befolkning-etter-kjonn-og-alder"
 
 
-def handler(event, context):
-    """ Assuming we recieve a complete s3 key"""
-    s3_key = event["input"]["befolkning-etter-kjonn-og-alder"]
-    output_key = event["output"]
-    df = start(s3_key)
-    create_ds(df, output_key)
-    return "OK"
-
-
-def start(key):
+@logging_wrapper("alder_distribusjon_status")
+@xray_recorder.capture("event_handler")
+@event_handler(df=S3_KEY)
+def start(df, output_key, type_of_ds="status"):
     agg = Aggregate("sum")
-    original = common.aws.read_from_s3(s3_key=key)
-    original = common.transform.status(original)[0]
-    original["total"] = original.loc[:, "0":"120"].sum(axis=1)
-    aggregated = agg.aggregate(original, extra_groupby_columns=["kjonn"])
-    return aggregated
+    df = common.transform.status(df)[0]
+    df["total"] = df.loc[:, "0":"120"].sum(axis=1)
+    aggregated = agg.aggregate(df, extra_groupby_columns=["kjonn"])
+    create_ds(aggregated, output_key)
 
 
 def _ratio(df):
@@ -44,16 +44,3 @@ def create_ds(df, output_key):
         values=ages,
     ).generate_output()
     common.aws.write_to_intermediate(output_list=jsonl, output_key=output_key)
-    return output_key
-
-
-if __name__ == "__main__":
-    handler(
-        {
-            "input": {
-                "befolkning-etter-kjonn-og-alder": "raw/yellow/befolkning-etter-kjonn-og-alder/version=1/edition=20190528T123302/Befolkningen_etter_bydel_delbydel_kjonn_og_1-aars_aldersgrupper(1.1.2008-1.1.2019-v01).csv"
-            },
-            "output": "intermediate/green/alder-distribusjon-status/version=1/edition=20190703T142500/",
-        },
-        {},
-    )
