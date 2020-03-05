@@ -12,18 +12,17 @@ from common.templates import TemplateE
 from common.event import event_handler
 
 patch_all()
-S3_KEY = "befolkning-etter-kjonn-og-alder"
 
 
 @logging_wrapper("alder_distribusjon_status")
 @xray_recorder.capture("event_handler")
-@event_handler(df=S3_KEY)
-def start(df, output_key, type_of_ds="status"):
+@event_handler(df="befolkning-etter-kjonn-og-alder")
+def start(df, output_prefix, type_of_ds="status"):
     agg = Aggregate("sum")
     df = common.transform.status(df)[0]
     df["total"] = df.loc[:, "0":"120"].sum(axis=1)
     aggregated = agg.aggregate(df, extra_groupby_columns=["kjonn"])
-    create_ds(aggregated, output_key)
+    create_ds(aggregated, output_prefix)
 
 
 def _ratio(df):

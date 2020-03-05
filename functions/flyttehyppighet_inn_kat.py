@@ -17,9 +17,6 @@ graph_metadata = Metadata(
     series=[{"heading": "Flytting med innvandringskategorier", "subheading": ""}],
 )
 
-flytting_fra_etter_inn_kat_id = "flytting-fra-etter-inn-kat"
-flytting_til_etter_inn_kat_id = "flytting-til-etter-inn-kat"
-
 aldersgruppe_col = "aldersgruppe_5_aar"
 key_cols = ["date", "bydel_id", "bydel_navn", aldersgruppe_col]
 
@@ -27,8 +24,8 @@ key_cols = ["date", "bydel_id", "bydel_navn", aldersgruppe_col]
 @logging_wrapper("flyttehyppighet_inn_kat")
 @xray_recorder.capture("event_handler")
 @event_handler(
-    flytting_fra_df=flytting_fra_etter_inn_kat_id,
-    flytting_til_df=flytting_til_etter_inn_kat_id,
+    flytting_fra_df="flytting-fra-etter-inn-kat",
+    flytting_til_df="flytting-til-etter-inn-kat",
 )
 def start(flytting_fra_df, flytting_til_df, output_prefix, type_of_ds):
     input_df = generate_input_df(flytting_fra_df, flytting_til_df)

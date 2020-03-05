@@ -10,8 +10,6 @@ from common.event import event_handler
 
 patch_all()
 
-S3_KEY = "fattige-husholdninger"
-
 METADATA = {
     "status": Metadata(heading="Lavinntekts husholdninger med barn", series=[]),
     "historisk": Metadata(heading="Lavinntekts husholdninger med barn", series=[]),
@@ -20,7 +18,7 @@ METADATA = {
 
 @logging_wrapper("fattige_barnehusholdninger")
 @xray_recorder.capture("event_handler")
-@event_handler(df=S3_KEY)
+@event_handler(df="fattige-husholdninger")
 def start(df, output_prefix, type_of_ds):
     df = df[df["husholdninger_med_barn_under_18_aar_eu_skala_antall"].notnull()]
     df = df[df["husholdninger_med_barn_under_18_aar_eu_skala_andel"].notnull()]

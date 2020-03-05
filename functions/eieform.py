@@ -10,8 +10,6 @@ from common.event import event_handler
 
 patch_all()
 
-S3_KEY = "eieform"
-
 METADATA = Metadata(
     heading="Husholdninger fordelt etter eie-/leieforhold",
     series=[
@@ -24,7 +22,7 @@ METADATA = Metadata(
 
 @logging_wrapper("eieform")
 @xray_recorder.capture("event_handler")
-@event_handler(df=S3_KEY)
+@event_handler(df="eieform")
 def start(df, output_prefix, type_of_ds):
     df = df.rename(
         columns={

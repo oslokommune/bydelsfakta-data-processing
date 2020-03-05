@@ -45,22 +45,20 @@ def generate(df_municipal, df_housing):
 @event_handler(
     df_municipal="kommunale-boliger", df_housing="boligmengde-etter-boligtype"
 )
-def start(df_municipal, df_housing, output_prefix, dataset_type):
-    if dataset_type == "status":
+def start(df_municipal, df_housing, output_prefix, type_of_ds):
+    if type_of_ds == "status":
         dfs = status(df_municipal, df_housing)
         template = TemplateA()
-    elif dataset_type == "historisk":
+    elif type_of_ds == "historisk":
         dfs = historic(df_municipal, df_housing)
         template = TemplateB()
 
     df = generate(*dfs)
-    METADATA[dataset_type].add_scale(
-        get_min_max_values_and_ratios(df, "antall_boliger")
-    )
+    METADATA[type_of_ds].add_scale(get_min_max_values_and_ratios(df, "antall_boliger"))
     jsonl = Output(
         values=["antall_boliger"],
         df=df,
         template=template,
-        metadata=METADATA[dataset_type],
+        metadata=METADATA[type_of_ds],
     ).generate_output()
     write_to_intermediate(output_key=output_prefix, output_list=jsonl)

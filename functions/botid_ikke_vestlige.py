@@ -33,7 +33,7 @@ graph_metadata = Metadata(
     botid_ikke_vestlige_raw="botid-ikke-vestlige",
     befolkning_raw="befolkning-etter-kjonn-og-alder",
 )
-def start(botid_ikke_vestlige_raw, befolkning_raw, output_key, type_of_ds):
+def start(botid_ikke_vestlige_raw, befolkning_raw, output_prefix, type_of_ds):
     data_point = "ikke_vestlig_kort"
 
     df = generate_ikke_vestlig_innvandrer_kort_botid_df(
@@ -42,11 +42,11 @@ def start(botid_ikke_vestlige_raw, befolkning_raw, output_key, type_of_ds):
 
     if type_of_ds == "historisk":
         historic = common.transform.historic(df)
-        create_ds(output_key, TemplateB(), [data_point], graph_metadata, *historic)
+        create_ds(output_prefix, TemplateB(), [data_point], graph_metadata, *historic)
     elif type_of_ds == "status":
         graph_metadata.add_scale(get_min_max_values_and_ratios(df, data_point))
         status = common.transform.status(df)
-        create_ds(output_key, TemplateA(), [data_point], graph_metadata, *status)
+        create_ds(output_prefix, TemplateA(), [data_point], graph_metadata, *status)
 
 
 def generate_ikke_vestlig_innvandrer_kort_botid_df(

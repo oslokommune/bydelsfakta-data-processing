@@ -11,12 +11,11 @@ from common.util import get_min_max_values_and_ratios
 from common.event import event_handler
 
 patch_all()
-S3_KEY = "boligpriser-blokkleiligheter"
 
 
 @logging_wrapper("boligpriser")
 @xray_recorder.capture("event_handler")
-@event_handler(df=S3_KEY)
+@event_handler(df="boligpriser-blokkleiligheter")
 def start(df, output_prefix, type_of_ds):
     df = df.rename(columns={"kvmpris": "value"})
     df = df.drop(columns=["antall_omsatte_blokkleiligheter"])
