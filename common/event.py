@@ -55,7 +55,9 @@ def event_handler(status="OK", **kwargs):
                 dataset_id=output_dataset.id,
                 version=output_dataset.version,
                 edition_id=output_dataset.edition,
-                source_key=config.payload.step_data.s3_input_prefixes.values(),
+                task=task,
+                task_config=str(task_config),
+                source_key=str(config.payload.step_data.s3_input_prefixes),
             )
 
             type_of_ds = task_config["type"]
