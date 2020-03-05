@@ -165,9 +165,9 @@ def write(output_list, output_key):
 @logging_wrapper("innvandrer_befolkning")
 @xray_recorder.capture("event_handler")
 @event_handler(
-    origin_by_age="befolkning-etter-kjonn-og-alder",
+    origin_by_age="innvandrer-befolkningen-0-15-ar",
     livage="botid-ikke-vestlige",
-    population_df="innvandrer-befolkningen-0-15-ar",
+    population_df="befolkning-etter-kjonn-og-alder",
 )
 def start(origin_by_age, livage, population_df, output_prefix, type_of_ds):
     origin_by_age = origin_by_age[origin_by_age["delbydel_id"].notnull()]
