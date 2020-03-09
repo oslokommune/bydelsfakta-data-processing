@@ -10,7 +10,6 @@ from common.util import get_min_max_values_and_ratios
 from common.event import event_handler
 
 patch_all()
-S3_KEY = "innvandrer-befolkningen-0-15-ar"
 
 METADATA = {
     "en-innvandrer_historisk": Metadata(
@@ -43,7 +42,7 @@ VALUE_POINTS = ["to_foreldre", "en_forelder", "innvandrer"]
 
 @logging_wrapper("innvandring_under16")
 @xray_recorder.capture("event_handler")
-@event_handler(df=S3_KEY)
+@event_handler(df="innvandrer-befolkningen-0-15-ar")
 def start(df, output_prefix, type_of_ds):
     df = df[df["alder"] == "0-15 år"].reset_index()
     df["en_forelder"] = (

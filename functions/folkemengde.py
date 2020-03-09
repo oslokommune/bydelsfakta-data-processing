@@ -105,27 +105,27 @@ def generate_keynumbers(df):
 @logging_wrapper("folkemengde")
 @xray_recorder.capture("event_handler")
 @event_handler(df="befolkning-etter-kjonn-og-alder")
-def start(df, output_prefix, dataset_type):
+def start(df, output_prefix, type_of_ds):
     [df] = historic(df)
     df = generate(df)
 
-    if dataset_type is DatasetType.HISTORIC:
+    if type_of_ds is DatasetType.HISTORIC:
         output = Output(
             values=["population"],
             df=df,
             template=TemplateB(),
-            metadata=METADATA[dataset_type],
+            metadata=METADATA[type_of_ds],
         )
-    elif dataset_type is DatasetType.HISTORIC_CHANGE:
+    elif type_of_ds is DatasetType.HISTORIC_CHANGE:
         df = df.dropna(axis=0, how="any", subset=["change", "change_ratio"])
 
         output = Output(
             values=["change"],
             df=df,
             template=TemplateB(),
-            metadata=METADATA[dataset_type],
+            metadata=METADATA[type_of_ds],
         )
-    elif dataset_type is DatasetType.KEYNUMBERS:
+    elif type_of_ds is DatasetType.KEYNUMBERS:
         df = generate_keynumbers(df)
         max_year = df["date"].max()
         year_range = list(range(max_year - 9, max_year + 1))
@@ -134,7 +134,7 @@ def start(df, output_prefix, dataset_type):
             values=["population", "change", "change_10y"],
             df=df,
             template=TemplateG(history_columns=year_range),
-            metadata=METADATA[dataset_type],
+            metadata=METADATA[type_of_ds],
         )
 
     jsonl = output.generate_output()

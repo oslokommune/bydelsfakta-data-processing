@@ -16,17 +16,14 @@ graph_metadata = Metadata(
     heading="Flytting etter alder", series=[{"heading": "Flytting", "subheading": ""}]
 )
 
-flytting_fra_etter_alder_id = "flytting-fra-etter-alder"
-flytting_til_etter_alder_id = "flytting-til-etter-alder"
-
 aldersgruppe_col = "aldersgruppe_5_aar"
 
 
 @logging_wrapper("flyttehyppighet_totalt")
 @xray_recorder.capture("event_handler")
 @event_handler(
-    flytting_fra_raw=flytting_fra_etter_alder_id,
-    flytting_til_raw=flytting_til_etter_alder_id,
+    flytting_fra_raw="flytting-fra-etter-alder",
+    flytting_til_raw="flytting-til-etter-alder",
 )
 def start(flytting_fra_raw, flytting_til_raw, output_prefix, type_of_ds):
     input_df = generate_input_df(flytting_fra_raw, flytting_til_raw)

@@ -11,8 +11,6 @@ from common.event import event_handler
 
 patch_all()
 
-S3_KEY = "boligmengde-etter-boligtype"
-
 METADATA = {
     "blokk_status": Metadata(heading="Blokker og leiegårder", series=[]),
     "enebolig_status": Metadata(heading="Eneboliger", series=[]),
@@ -44,7 +42,7 @@ METADATA = {
 
 @logging_wrapper("bygningstyper")
 @xray_recorder.capture("event_handler")
-@event_handler(df=S3_KEY)
+@event_handler(df="boligmengde-etter-boligtype")
 def start(df, output_prefix, type_of_ds):
     df = df.rename(
         columns={
