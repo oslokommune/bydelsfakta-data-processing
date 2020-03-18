@@ -1,4 +1,4 @@
-frameworkVersion: ">=1.50.0 <2.0.0"
+frameworkVersion: ">=1.64.0 <2.0.0"
 
 service: bydelsfakta-data-processing
 
@@ -11,6 +11,7 @@ provider:
     name: ok-origo-dataplatform-config-${self:provider.stage}
     serverSideEncryption: AES256
   deploymentPrefix: deploy
+  rolePermissionsBoundary: "arn:aws:iam::#{AWS::AccountId}:policy/oslokommune/oslokommune-boundary"
   iamManagedPolicies:
     - arn:aws:iam::aws:policy/AmazonS3FullAccess
   environment:
@@ -24,6 +25,7 @@ provider:
 plugins:
   - serverless-python-requirements
   - serverless-plugin-git-variables
+  - serverless-pseudo-parameters
 
 resources:
   Description: >
