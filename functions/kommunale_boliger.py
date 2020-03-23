@@ -1,7 +1,7 @@
 from aws_xray_sdk.core import patch_all, xray_recorder
 from dataplatform.awslambda.logging import logging_wrapper
 
-from common.aws import read_from_s3, write_to_intermediate
+from common.aws import write_to_intermediate
 from common.transform import status, historic
 from common.aggregateV2 import Aggregate
 from common.output import Output, Metadata
@@ -17,8 +17,7 @@ METADATA = {
 }
 
 
-def housing(key):
-    df = read_from_s3(key)
+def housing(df):
     df["total"] = (
         df["blokk_leiegaard_el"]
         + df["forretningsgaard_bygg_for_felleshusholdning_el"]
@@ -46,6 +45,8 @@ def generate(df_municipal, df_housing):
     df_municipal="kommunale-boliger", df_housing="boligmengde-etter-boligtype"
 )
 def start(df_municipal, df_housing, output_prefix, type_of_ds):
+    df_housing = housing(df_housing)
+
     if type_of_ds == "status":
         dfs = status(df_municipal, df_housing)
         template = TemplateA()
