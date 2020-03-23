@@ -54,6 +54,7 @@ def filter_10year_set(df):
 
 
 def calculate_change(df, *, column_name):
+    df = df[["bydel_id", "delbydel_id", "date", "population"]]
     indexed = df.set_index(["bydel_id", "delbydel_id", "date"])
     grouped = indexed.groupby(level="delbydel_id")
     return grouped.diff().rename(columns={"population": column_name}).reset_index()

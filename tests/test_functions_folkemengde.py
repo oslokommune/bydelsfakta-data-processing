@@ -40,6 +40,22 @@ class TestFilter10YearSet:
 
 
 class TestCalculateChange:
+    def test_columns_are_dropped(self):
+        df = pd.DataFrame(
+            data={
+                "date": [2009, 2010],
+                "population": [100, 105],
+                "bydel_id": "01",
+                "delbydel_id": "0101",
+                "bydel_navn": "Fydel",
+                "delbydel_navn": "Delfydel",
+            }
+        )
+        try:
+            df = calculate_change(df, column_name="change")
+        except Exception:
+            pytest.fail("bydel_navn and delbydel_navn columns were not dropped")
+
     def test_change(self):
         df = pd.DataFrame(
             data={
