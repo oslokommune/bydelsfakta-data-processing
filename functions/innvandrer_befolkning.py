@@ -55,21 +55,6 @@ DATA_POITNS = {
 }
 
 
-def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
-    origin_by_age = common.aws.read_from_s3(origin_by_age_key)
-    origin_by_age = origin_by_age[origin_by_age["delbydel_id"].notnull()]
-
-    livage = common.aws.read_from_s3(botid_key)
-    livage = livage[livage["delbydel_id"].notnull()]
-
-    population_df = common.aws.read_from_s3(befolkning_key)
-    population_df = population_df[population_df["delbydel_id"].notnull()]
-    population_total = population_df.loc[:, "date":"kjonn"]
-    population_total["total"] = population_df.loc[:, "0":].sum(axis=1)
-
-    return origin_by_age, livage, population_total
-
-
 def prepare(livage, population_df):
     population_df = population(population_df)
 
@@ -133,8 +118,7 @@ def generate(livage_df, population_df):
     with_ratios = agg_class.add_ratios(
         aggregated, ["two_parents", "short", "long", "total"], ["total"]
     )
-    result = with_ratios.drop(columns=["total"])
-    return result
+    return with_ratios
 
 
 def write(output_list, output_key):
