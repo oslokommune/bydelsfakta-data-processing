@@ -45,7 +45,7 @@ METADATA = {
 
 DATA_POITNS = {
     "alle_status": ["short", "long", "two_parents"],
-    "alle_historisk": ["short", "long", "two_parents", "total_cat"],
+    "alle_historisk": ["short", "long", "two_parents", "total"],
     "kort_status": ["short"],
     "kort_historisk": ["short"],
     "lang_status": ["long"],
@@ -55,33 +55,12 @@ DATA_POITNS = {
 }
 
 
-def read_from_s3(origin_by_age_key, botid_key, befolkning_key):
-    origin_by_age = common.aws.read_from_s3(origin_by_age_key)
-    origin_by_age = origin_by_age[origin_by_age["delbydel_id"].notnull()]
-
-    livage = common.aws.read_from_s3(botid_key)
-    livage = livage[livage["delbydel_id"].notnull()]
-
-    population_df = common.aws.read_from_s3(befolkning_key)
-    population_df = population_df[population_df["delbydel_id"].notnull()]
-    population_total = population_df.loc[:, "date":"kjonn"]
-    population_total["total"] = population_df.loc[:, "0":].sum(axis=1)
-
-    return origin_by_age, livage, population_total
-
-
-def prepare(origin_by_age, livage, population_df):
+def prepare(livage, population_df):
     population_df = population(population_df)
 
-    origin = by_parents(origin_by_age)
     livage = by_liveage(livage)
 
-    merge = pd.merge(
-        origin,
-        livage,
-        on=["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn"],
-    )
-    merge = pd.merge(merge, population_df, on=["date", "delbydel_id", "bydel_id"])
+    merge = pd.merge(livage, population_df, on=["date", "delbydel_id", "bydel_id"])
     return merge
 
 
@@ -90,54 +69,43 @@ def population(df):
     return df.reset_index()
 
 
-def by_parents(df):
-    result = df.loc[:, "date":"bydel_navn"]
-    result["two_parents"] = df.norskfodt_med_innvandrerforeldre
-    result["one_parent"] = df.norskfodt_med_en_utenlandskfodt_forelder
-    result = result.groupby(
-        ["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn"]
-    ).sum()
-    return result.reset_index()
-
-
 def by_liveage(liveage):
+    liveage = liveage.drop(
+        columns=[
+            "fodt_i_utlandet_av_norskfodte_foreldre",
+            "norskfodt_med_en_utenlandskfodt_forelder",
+            "uten_innvandringsbakgrunn",
+            "utenlandsfodt_med_en_norsk_forelder",
+        ]
+    )
     meta_columns = ["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn"]
     liveage = liveage.groupby(
         ["date", "delbydel_id", "delbydel_navn", "bydel_id", "bydel_navn", "botid"]
     ).sum()
+
     total = (
-        liveage[
-            [
-                "asia_afrika_latin_amerika_og_ost_europa_utenfor_eu",
-                "norge",
-                "vest_europa_usa_canada_australia_og_new_zealand",
-                "ost_europeiske_eu_land",
-            ]
-        ]
+        liveage[["innvandrer", "norskfodt_med_innvandrerforeldre",]]
         .sum(axis=1)
         .reset_index()
     )
-    pivot = total.pivot_table(index=meta_columns, columns="botid", values=0).drop(
-        columns="Øvrige befolkning"
-    )
+
+    pivot = total.pivot_table(index=meta_columns, columns="botid", values=0)
     pivot = pivot.rename(
         columns={
             "Innvandrer, kort botid (<=5 år)": "short",
             "Innvandrer, lang botid (>5 år)": "long",
+            "Øvrige befolkning": "two_parents",
         }
     )
 
     return pivot.reset_index()
 
 
-def generate(origin_by_age_df, livage_df, population_df):
+def generate(livage_df, population_df):
     # Create the df with only subdistricts
-    sub_districts = prepare(
-        origin_by_age=origin_by_age_df, livage=livage_df, population_df=population_df
-    )
+    sub_districts = prepare(livage=livage_df, population_df=population_df)
 
     aggregate_config = {
-        "one_parent": "sum",
         "two_parents": "sum",
         "short": "sum",
         "long": "sum",
@@ -147,15 +115,10 @@ def generate(origin_by_age_df, livage_df, population_df):
 
     aggregated = agg_class.aggregate(sub_districts)
 
-    aggregated["total_cat"] = (
-        aggregated["two_parents"] + aggregated["short"] + aggregated["long"]
-    )
-
     with_ratios = agg_class.add_ratios(
-        aggregated, ["two_parents", "short", "long", "total_cat"], ["total_cat"]
+        aggregated, ["two_parents", "short", "long", "total"], ["total"]
     )
-    result = with_ratios.drop(columns=["total"])
-    return result
+    return with_ratios
 
 
 def write(output_list, output_key):
@@ -165,19 +128,16 @@ def write(output_list, output_key):
 @logging_wrapper("innvandrer_befolkning")
 @xray_recorder.capture("event_handler")
 @event_handler(
-    origin_by_age="innvandrer-befolkningen-0-15-ar",
-    livage="botid-ikke-vestlige",
-    population_df="befolkning-etter-kjonn-og-alder",
+    livage="botid", population_df="befolkning-etter-kjonn-og-alder",
 )
-def start(origin_by_age, livage, population_df, output_prefix, type_of_ds):
-    origin_by_age = origin_by_age[origin_by_age["delbydel_id"].notnull()]
+def start(livage, population_df, output_prefix, type_of_ds):
     livage = livage[livage["delbydel_id"].notnull()]
 
     population_df = population_df[population_df["delbydel_id"].notnull()]
     population_total = population_df.loc[:, "date":"kjonn"]
     population_total["total"] = population_df.loc[:, "0":].sum(axis=1)
 
-    source = [origin_by_age, livage, population_total]
+    source = [livage, population_total]
 
     df_status = status(*source)
     df_historic = historic(*source)

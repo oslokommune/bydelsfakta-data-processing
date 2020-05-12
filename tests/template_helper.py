@@ -5,7 +5,7 @@ from common.templates import Template
 
 column_names = ColumnNames()
 test_df = pd.read_csv(
-    f"tests/transform_output_test_input.csv",
+    "tests/transform_output_test_input.csv",
     sep=";",
     dtype={column_names.sub_district_id: object, column_names.district_id: object},
 )
