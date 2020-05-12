@@ -9,7 +9,7 @@ from tests.transform_output_test_data import output_list_k
 template = TemplateK()
 
 test_df = pd.read_csv(
-    f"tests/template_k_test_input.csv",
+    "tests/template_k_test_input.csv",
     sep=";",
     dtype={column_names.sub_district_id: object, column_names.district_id: object},
 )

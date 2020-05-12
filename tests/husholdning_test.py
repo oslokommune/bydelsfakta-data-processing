@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 
 df_with_district_id = pd.read_csv(
-    f"tests/husholdning_test_input.csv",
+    "tests/husholdning_test_input.csv",
     sep=";",
     converters={"delbydelid": lambda x: str(x), "district": lambda x: str(x)},
 ).rename(columns={"År": "date"})
