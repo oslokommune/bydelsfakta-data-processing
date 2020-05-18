@@ -116,7 +116,7 @@ def generate(livage_df, population_df):
     aggregated = agg_class.aggregate(sub_districts)
 
     aggregated["total_cat"] = (
-            aggregated["two_parents"] + aggregated["short"] + aggregated["long"]
+        aggregated["two_parents"] + aggregated["short"] + aggregated["long"]
     )
 
     with_ratios = agg_class.add_ratios(
