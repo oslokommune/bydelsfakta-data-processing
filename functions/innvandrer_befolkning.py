@@ -45,7 +45,7 @@ METADATA = {
 
 DATA_POITNS = {
     "alle_status": ["short", "long", "two_parents"],
-    "alle_historisk": ["short", "long", "two_parents", "total"],
+    "alle_historisk": ["short", "long", "two_parents", "total_cat"],
     "kort_status": ["short"],
     "kort_historisk": ["short"],
     "lang_status": ["long"],
@@ -115,8 +115,12 @@ def generate(livage_df, population_df):
 
     aggregated = agg_class.aggregate(sub_districts)
 
+    aggregated["total_cat"] = (
+            aggregated["two_parents"] + aggregated["short"] + aggregated["long"]
+    )
+
     with_ratios = agg_class.add_ratios(
-        aggregated, ["two_parents", "short", "long", "total"], ["total"]
+        aggregated, ["two_parents", "short", "long", "total_cat"], ["total"]
     )
     return with_ratios
 
