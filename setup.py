@@ -23,6 +23,6 @@ setuptools.setup(
         "structlog",
     ],
     extras_require={
-        "testing": ["pytest", "pytest-mock", "moto"],
+        "testing": ["pytest", "pytest-mock", "moto==1.3.14"],
     },
 )
