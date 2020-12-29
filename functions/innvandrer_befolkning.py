@@ -84,7 +84,12 @@ def by_liveage(liveage):
     ).sum()
 
     total = (
-        liveage[["innvandrer", "norskfodt_med_innvandrerforeldre",]]
+        liveage[
+            [
+                "innvandrer",
+                "norskfodt_med_innvandrerforeldre",
+            ]
+        ]
         .sum(axis=1)
         .reset_index()
     )
@@ -132,7 +137,8 @@ def write(output_list, output_key):
 @logging_wrapper("innvandrer_befolkning")
 @xray_recorder.capture("event_handler")
 @event_handler(
-    livage="botid", population_df="befolkning-etter-kjonn-og-alder",
+    livage="botid",
+    population_df="befolkning-etter-kjonn-og-alder",
 )
 def start(livage, population_df, output_prefix, type_of_ds):
     livage = livage[livage["delbydel_id"].notnull()]
