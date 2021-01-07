@@ -5,6 +5,7 @@
   "private": true,
   "dependencies": {},
   "devDependencies": {
+    "serverless": "^2.10.0",
     "serverless-plugin-existing-s3": "^2.4.0",
     "serverless-plugin-git-variables": "^3.4.0",
     "serverless-pseudo-parameters": "^2.5.0",
